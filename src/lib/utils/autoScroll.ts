@@ -5,10 +5,25 @@
  * @returns Function to cancel scrolling
  */
 export function startAutoScroll(container: HTMLElement, speed: number): () => void {
+	let lastTimestamp = 0;
+	let accumulatedDelta = 0;
 	let animationFrame: number;
 
-	function step() {
-		container.scrollTop += speed / 60; // Normalize for consistent speed across devices
+	function step(timestamp: number) {
+		if (!lastTimestamp) lastTimestamp = timestamp;
+
+		const elapsed = timestamp - lastTimestamp;
+		lastTimestamp = timestamp;
+
+		// Accumulate partial pixels for smooth slow scrolling
+		accumulatedDelta += speed * (elapsed / 16);
+
+		if (Math.abs(accumulatedDelta) >= 0.1) {
+			const scrollAmount = Math.floor(accumulatedDelta);
+			container.scrollTop += scrollAmount;
+			accumulatedDelta -= scrollAmount;
+		}
+
 		animationFrame = requestAnimationFrame(step);
 	}
 
@@ -17,6 +32,8 @@ export function startAutoScroll(container: HTMLElement, speed: number): () => vo
 	return () => {
 		if (animationFrame) {
 			cancelAnimationFrame(animationFrame);
+			lastTimestamp = 0;
+			accumulatedDelta = 0;
 		}
 	};
 }

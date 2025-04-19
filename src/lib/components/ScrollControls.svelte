@@ -5,7 +5,7 @@
 	export let container: HTMLElement;
 
 	let isScrolling = false;
-	let scrollSpeed = 2; // Default speed - pixels per animation frame
+	let scrollSpeed = 0.5; // Lower default speed
 	let stopScroll: () => void;
 
 	const dispatch = createEventDispatcher<{
@@ -93,9 +93,9 @@
 		<span class="speed-label">Slow</span>
 		<input
 			type="range"
-			min="0.5"
-			max="10"
-			step="0.5"
+			min="0.1"
+			max="2"
+			step="0.1"
 			bind:value={scrollSpeed}
 			on:change={handleSpeedChange}
 		/>

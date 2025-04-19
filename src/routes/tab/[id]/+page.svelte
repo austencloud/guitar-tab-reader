@@ -13,6 +13,7 @@
 
 	$: id = $page.params.id;
 	$: currentTab = $tabs.find((tab) => tab.id === id);
+	$: if (tabContainer) console.log('Container bound:', tabContainer);
 
 	function goBack() {
 		goto('/');
@@ -29,6 +30,7 @@
 
 	// Make sure we have access to the container after component is mounted
 	onMount(() => {
+		console.log('Tab page mounted, container:', tabContainer);
 		return () => {
 			// Cleanup if needed
 		};

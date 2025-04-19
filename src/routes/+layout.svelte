@@ -15,7 +15,9 @@
 </svelte:head>
 
 <div class="app-container">
-	{@render children()}
+	<div class="content-wrapper">
+		{@render children()}
+	</div>
 </div>
 
 <style>
@@ -37,6 +39,16 @@
 	.app-container {
 		width: 100%;
 		min-height: 100vh;
+		display: flex;
+		justify-content: center;
+		background: linear-gradient(to bottom right, #f9f9f9, #e9e9e9);
+	}
+
+	.content-wrapper {
+		width: 100%;
+		max-width: 900px;
+		padding: 0 1rem;
+		margin: 0 auto;
 	}
 
 	/* Dark mode support */
@@ -44,6 +56,10 @@
 		:global(body) {
 			background-color: #1a1a1a;
 			color: #eee;
+		}
+
+		.app-container {
+			background: linear-gradient(to bottom right, #1a1a1a, #252525);
 		}
 	}
 </style>
