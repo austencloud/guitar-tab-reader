@@ -4,6 +4,8 @@ export interface Tab {
 	id: string;
 	title: string;
 	content: string;
+	artist?: string;
+	album?: string;
 	createdAt: number;
 }
 

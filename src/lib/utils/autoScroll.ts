@@ -16,7 +16,9 @@ export function startAutoScroll(container: HTMLElement, speed: number): () => vo
 		lastTimestamp = timestamp;
 
 		// Accumulate partial pixels for smooth slow scrolling
-		accumulatedDelta += speed * (elapsed / 16);
+		// Scale by elapsed time for consistent scrolling regardless of frame rate
+		// Pixels per frame calculation: speed * (elapsed / 16.67)
+		accumulatedDelta += speed * (elapsed / 16.67);
 
 		if (Math.abs(accumulatedDelta) >= 0.1) {
 			const scrollAmount = Math.floor(accumulatedDelta);

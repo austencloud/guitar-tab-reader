@@ -3,17 +3,19 @@
 	import { page } from '$app/stores';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import TabViewer from '$lib/components/TabViewer.svelte';
+	import EnhancedTabViewer from '$lib/components/EnhancedTabViewer.svelte';
 	import ScrollControls from '$lib/components/ScrollControls.svelte';
+	import preferences from '$lib/stores/preferences';
+	import SettingsButton from '$lib/components/SettingsButton.svelte';
+	import SettingsModal from '$lib/components/SettingsModal.svelte';
 
 	let currentTab = null;
-	let tabViewer;
 	let tabContainer: HTMLDivElement;
-	let fontSize = 16;
+	let showSettingsModal = false;
+	let currentPosition = 0;
 
 	$: id = $page.params.id;
 	$: currentTab = $tabs.find((tab) => tab.id === id);
-	$: if (tabContainer) console.log('Container bound:', tabContainer);
 
 	function goBack() {
 		goto('/');
@@ -23,14 +25,20 @@
 		goto(`/tab/${id}/edit`);
 	}
 
-	function handleFontSizeChange(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		fontSize = parseInt(input.value);
+	function handleScrollChange(event: CustomEvent<boolean>) {
+		// If scrolling is active, update current position based on scroll
+		if (event.detail && tabContainer) {
+			const updatePositionInterval = setInterval(() => {
+				// Calculate position based on scroll position
+				currentPosition = tabContainer.scrollTop;
+			}, 100);
+
+			return () => clearInterval(updatePositionInterval);
+		}
 	}
 
 	// Make sure we have access to the container after component is mounted
 	onMount(() => {
-		console.log('Tab page mounted, container:', tabContainer);
 		return () => {
 			// Cleanup if needed
 		};
@@ -44,31 +52,35 @@
 {#if currentTab}
 	<div class="tab-view">
 		<header>
-			<button class="back-btn" on:click={goBack}> ← Back </button>
-			<h1>{currentTab.title}</h1>
-			<button class="edit-btn" on:click={editTab}> Edit </button>
+			<button class="back-btn" on:click={goBack} aria-label="Back to home"> ← Back </button>
+			<div class="title-container">
+				<h1>{currentTab.title}</h1>
+				{#if currentTab.artist || currentTab.album}
+					<div class="tab-metadata">
+						{#if currentTab.artist}<span class="artist">{currentTab.artist}</span>{/if}
+						{#if currentTab.artist && currentTab.album}<span class="separator">·</span>{/if}
+						{#if currentTab.album}<span class="album">{currentTab.album}</span>{/if}
+					</div>
+				{/if}
+			</div>
+			<div class="action-buttons">
+				<SettingsButton on:click={() => (showSettingsModal = true)} />
+				<button class="edit-btn" on:click={editTab} aria-label="Edit tab"> Edit </button>
+			</div>
 		</header>
 
-		<div class="font-size-control">
-			<label>
-				Font size: {fontSize}px
-				<input
-					type="range"
-					min="12"
-					max="24"
-					step="1"
-					bind:value={fontSize}
-					on:input={handleFontSizeChange}
-				/>
-			</label>
-		</div>
-
 		<div class="tab-container">
-			<TabViewer content={currentTab.content} {fontSize} bind:container={tabContainer} />
+			<EnhancedTabViewer
+				content={currentTab.content}
+				fontSize={$preferences.fontSize}
+				showChordDiagrams={true}
+				{currentPosition}
+				bind:container={tabContainer}
+			/>
 		</div>
 
 		<div class="controls-container">
-			<ScrollControls container={tabContainer} />
+			<ScrollControls container={tabContainer} on:scrollStateChange={handleScrollChange} />
 		</div>
 	</div>
 {:else}
@@ -78,6 +90,8 @@
 		<button on:click={goBack}>Back to Home</button>
 	</div>
 {/if}
+
+<SettingsModal bind:open={showSettingsModal} />
 
 <style>
 	.tab-view {
@@ -108,6 +122,25 @@
 		text-overflow: ellipsis;
 	}
 
+	.title-container {
+		flex: 1;
+		text-align: center;
+	}
+
+	.tab-metadata {
+		font-size: 0.9rem;
+		color: #666;
+	}
+
+	.artist,
+	.album {
+		font-weight: bold;
+	}
+
+	.separator {
+		margin: 0 0.5rem;
+	}
+
 	.back-btn,
 	.edit-btn {
 		padding: 0.5rem 1rem;
@@ -116,23 +149,11 @@
 		border-radius: 4px;
 		cursor: pointer;
 	}
-
-	.font-size-control {
-		padding: 0.5rem 1rem;
+	
+	.action-buttons {
 		display: flex;
-		justify-content: center;
-		border-bottom: 1px solid #eee;
-	}
-
-	.font-size-control label {
-		display: flex;
-		align-items: center;
 		gap: 0.5rem;
-		font-size: 0.9rem;
-	}
-
-	.font-size-control input {
-		width: 150px;
+		align-items: center;
 	}
 
 	.tab-container {
@@ -180,10 +201,6 @@
 			color: #eee;
 		}
 
-		.font-size-control {
-			border-color: #444;
-		}
-
 		.controls-container {
 			border-color: #444;
 		}
@@ -203,10 +220,6 @@
 		.edit-btn {
 			padding: 0.3rem 0.6rem;
 			font-size: 0.9rem;
-		}
-
-		.font-size-control {
-			padding: 0.3rem 0.5rem;
 		}
 	}
 </style>

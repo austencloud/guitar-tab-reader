@@ -31,6 +31,8 @@
 			id={currentTab.id}
 			title={currentTab.title}
 			content={currentTab.content}
+			artist={currentTab.artist || ''}
+			album={currentTab.album || ''}
 			on:saved={handleSaved}
 			on:canceled={handleCanceled}
 		/>

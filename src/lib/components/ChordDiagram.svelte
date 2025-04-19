@@ -1,0 +1,198 @@
+<script lang="ts">
+	import preferences from '../stores/preferences';
+
+	export let name: string;
+	export let positions: number[] = [];
+	export let barre: number | undefined = undefined;
+	export let baseFret: number = 1;
+	export let size: 'sm' | 'md' | 'lg' = 'md';
+
+	// Size constants
+	const sizes = {
+		sm: {
+			width: 70,
+			height: 80,
+			fontSize: 10,
+			lineWidth: 1,
+			dotRadius: 4,
+			nutHeight: 4
+		},
+		md: {
+			width: 100,
+			height: 120,
+			fontSize: 14,
+			lineWidth: 1.5,
+			dotRadius: 6,
+			nutHeight: 6
+		},
+		lg: {
+			width: 130,
+			height: 160,
+			fontSize: 16,
+			lineWidth: 2,
+			dotRadius: 8,
+			nutHeight: 8
+		}
+	};
+
+	// Get size values
+	$: currentSize = sizes[size];
+
+	// SVG dimensions
+	$: width = currentSize.width;
+	$: height = currentSize.height;
+	$: stringSpacing = width / 7;
+	$: fretSpacing = (height - 20) / 6;
+
+	// Display properties
+	$: showNut = baseFret === 1;
+	$: fretNumberX = width - 14;
+	$: fretNumberY = fretSpacing;
+
+	// Adjust positions based on handedness
+	$: displayPositions = $preferences.isLeftHanded ? [...positions].reverse() : positions;
+</script>
+
+<div class="chord-diagram" style="--width: {width}px; --height: {height}px;">
+	<div class="chord-name">{name}</div>
+	<svg {width} {height} viewBox="0 0 {width} {height}">
+		<!-- Strings -->
+		{#each Array(6) as _, i}
+			{@const x = stringSpacing + i * stringSpacing}
+			{@const isThickString = $preferences.isLeftHanded ? i === 5 : i === 0}
+			{@const isThinString = $preferences.isLeftHanded ? i === 0 : i === 5}
+			<line
+				x1={x}
+				y1={10}
+				x2={x}
+				y2={height - 10}
+				stroke="#555"
+				stroke-width={isThickString
+					? currentSize.lineWidth * 1.5
+					: isThinString
+						? currentSize.lineWidth * 1.3
+						: currentSize.lineWidth}
+			/>
+		{/each}
+
+		<!-- Frets -->
+		{#each Array(6) as _, i}
+			{@const y = 10 + i * fretSpacing}
+			<line
+				x1={stringSpacing}
+				y1={y}
+				x2={width - stringSpacing}
+				y2={y}
+				stroke="#555"
+				stroke-width={currentSize.lineWidth}
+			/>
+		{/each}
+
+		<!-- Nut -->
+		{#if showNut}
+			<rect
+				x={stringSpacing}
+				y={10 - currentSize.nutHeight / 2}
+				width={width - 2 * stringSpacing}
+				height={currentSize.nutHeight}
+				fill="#000"
+			/>
+		{:else}
+			<text
+				x={10}
+				y={fretNumberY + 5}
+				fill="#000"
+				font-size={currentSize.fontSize}
+				text-anchor="middle">{baseFret}</text
+			>
+		{/if}
+
+		<!-- Finger positions -->
+		{#each displayPositions as position, i}
+			{@const stringIndex = 5 - i}
+			{@const x = stringSpacing + stringIndex * stringSpacing}
+			{#if position > 0}
+				{@const y = 10 + (position - (showNut ? 0 : baseFret - 1) - 0.5) * fretSpacing}
+				<circle cx={x} cy={y} r={currentSize.dotRadius} fill="#1976d2" />
+			{:else if position === 0}
+				<circle
+					cx={x}
+					cy={5}
+					r={currentSize.dotRadius / 2}
+					fill="transparent"
+					stroke="#000"
+					stroke-width={currentSize.lineWidth}
+				/>
+			{:else}
+				<text
+					{x}
+					y={5}
+					text-anchor="middle"
+					dominant-baseline="middle"
+					font-size={currentSize.fontSize}
+					fill="#000">×</text
+				>
+			{/if}
+		{/each}
+
+		<!-- Barre if present -->
+		{#if barre !== undefined}
+			{@const barrePositions = displayPositions.map((p, i) => ({ pos: p, string: 5 - i }))}
+			{@const barredStrings = barrePositions.filter((p) => p.pos === barre)}
+			{#if barredStrings.length > 1}
+				{@const firstString = Math.min(...barredStrings.map((s) => s.string))}
+				{@const lastString = Math.max(...barredStrings.map((s) => s.string))}
+				{@const barreWidth = (lastString - firstString) * stringSpacing}
+				{@const barreY = 10 + (barre - (showNut ? 0 : baseFret - 1) - 0.5) * fretSpacing}
+				{@const barreX = stringSpacing + firstString * stringSpacing}
+				<rect
+					x={barreX}
+					y={barreY - currentSize.dotRadius}
+					width={barreWidth}
+					height={currentSize.dotRadius * 2}
+					fill="#1976d2"
+					rx={currentSize.dotRadius}
+					ry={currentSize.dotRadius}
+				/>
+			{/if}
+		{/if}
+	</svg>
+</div>
+
+<style>
+	.chord-diagram {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: var(--width);
+	}
+
+	.chord-name {
+		font-weight: bold;
+		margin-bottom: 5px;
+		text-align: center;
+	}
+
+	svg {
+		display: block;
+	}
+
+	/* Dark theme support */
+	@media (prefers-color-scheme: dark) {
+		.chord-name {
+			color: #e0e0e0;
+		}
+
+		:global(.chord-diagram svg line) {
+			stroke: #888;
+		}
+
+		:global(.chord-diagram svg text) {
+			fill: #e0e0e0;
+		}
+
+		:global(.chord-diagram svg circle[stroke='#000']) {
+			stroke: #e0e0e0;
+		}
+	}
+</style>

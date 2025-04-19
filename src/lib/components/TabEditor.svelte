@@ -5,6 +5,8 @@
 	export let id: string | null = null;
 	export let title: string = '';
 	export let content: string = '';
+	export let artist: string = '';
+	export let album: string = '';
 
 	let isSaving = false;
 	const dispatch = createEventDispatcher<{
@@ -26,10 +28,10 @@
 			let savedId: string;
 
 			if (isEditMode && id) {
-				tabs.update(id, { title, content });
+				tabs.update(id, { title, content, artist, album });
 				savedId = id;
 			} else {
-				savedId = tabs.add({ title, content });
+				savedId = tabs.add({ title, content, artist, album });
 			}
 
 			dispatch('saved', { id: savedId });
@@ -43,12 +45,14 @@
 	}
 
 	// Example tab template for new users
-	const exampleTab = `e|----3--------------|
-B|----------3--------|
-G|----0-------0-----|
-D|-----------0------|
-A|--3---------------|
-E|-------------------|`;
+	const exampleTab = `
+		e|----3--------------|
+		B|----------3--------|
+		G|----0-------0------|
+		D|-----------0-------|
+		A|--3----------------|
+		E|-------------------|
+	`;
 
 	function insertExampleTab() {
 		if (!content) {
@@ -67,6 +71,30 @@ E|-------------------|`;
 			placeholder="Enter tab title"
 			class="title-input"
 		/>
+	</div>
+
+	<div class="metadata-row">
+		<div class="form-group">
+			<label for="tab-artist">Artist (optional)</label>
+			<input
+				id="tab-artist"
+				type="text"
+				bind:value={artist}
+				placeholder="Artist name"
+				class="text-input"
+			/>
+		</div>
+
+		<div class="form-group">
+			<label for="tab-album">Album (optional)</label>
+			<input
+				id="tab-album"
+				type="text"
+				bind:value={album}
+				placeholder="Album name"
+				class="text-input"
+			/>
+		</div>
 	</div>
 
 	<div class="form-group content-area">
@@ -178,9 +206,27 @@ E|-------------------|`;
 		color: #333;
 	}
 
+	.metadata-row {
+		display: flex;
+		gap: 1rem;
+	}
+
+	.metadata-row .form-group {
+		flex: 1;
+	}
+
+	.text-input {
+		width: 100%;
+		padding: 0.75rem;
+		font-size: 1rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+	}
+
 	/* Dark mode support */
 	@media (prefers-color-scheme: dark) {
 		.title-input,
+		.text-input,
 		.content-input {
 			background-color: #333;
 			color: #fff;
@@ -206,6 +252,11 @@ E|-------------------|`;
 
 		.content-input {
 			min-height: 200px;
+		}
+
+		.metadata-row {
+			flex-direction: column;
+			gap: 1rem;
 		}
 	}
 </style>
