@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy, tick, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy, tick, createEventDispatcher, getContext } from 'svelte';
 	import {
 		loadChordDictionary,
 		findChordsInText,
@@ -9,7 +9,15 @@
 	import { startAutoScroll } from '../utils/autoScroll';
 	import ChordDiagram from './ChordDiagram.svelte';
 	import ScrollControls from './ScrollControls.svelte';
+	import GuitarTuner from './GuitarTuner.svelte';
 	import { browser } from '$app/environment';
+	import { fade } from 'svelte/transition';
+
+	interface TunerContext {
+		open: () => void;
+		close: () => void;
+		toggle: () => void;
+	}
 
 	export let content: string = '';
 	export let tabContent: string = '';
@@ -41,12 +49,17 @@
 	let stopScrollFunction: (() => void) | null = null;
 	let cancelScroll: (() => void) | null = null;
 
-	const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher<{
+		openTuner: void;
+	}>();
 
 	const TOOLTIP_DELAY = 150;
 	const TOOLTIP_HIDE_DELAY = 300;
 
 	export { container };
+
+	// Get the global tuner context if available
+	const tunerContext = getContext<TunerContext>('tuner');
 
 	$: contentStyle = `
 		font-family: 'Courier New', monospace;
@@ -323,6 +336,15 @@
 			cancelScroll = null;
 		}
 		isAutoScrolling = false;
+	}
+
+	function openTunerModal() {
+		if (tunerContext) {
+			tunerContext.open();
+		} else {
+			// Fall back to event dispatch if context not available
+			dispatch('openTuner');
+		}
 	}
 
 	onMount(() => {

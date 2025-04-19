@@ -65,5 +65,9 @@
 	},
 	"keywords": [
 		"svelte"
-	]
+	],
+	"dependencies": {
+		"lucide-svelte": "^0.501.0",
+		"pitchy": "^4.1.0"
+	}
 }

@@ -5,7 +5,7 @@
 	export let positions: number[] = [];
 	export let barre: number | undefined = undefined;
 	export let baseFret: number = 1;
-	export let size: 'sm' | 'md' | 'lg' = 'md';
+	export let size: 'sm' | 'md' | 'lg' = 'lg';
 
 	// Size constants
 	const sizes = {

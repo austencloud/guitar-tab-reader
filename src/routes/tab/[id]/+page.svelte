@@ -1,21 +1,19 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, setContext } from 'svelte';
 	import { page } from '$app/stores';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
 	import EnhancedTabViewer from '$lib/components/EnhancedTabViewer.svelte';
 	import ScrollControls from '$lib/components/ScrollControls.svelte';
+	import GuitarTuner from '$lib/components/GuitarTuner.svelte';
 	import preferences from '$lib/stores/preferences';
-	import SettingsButton from '$lib/components/SettingsButton.svelte';
-	import SettingsModal from '$lib/components/SettingsModal.svelte';
 
-	let currentTab = null;
-	let tabContainer: HTMLDivElement;
-	let showSettingsModal = false;
-	let currentPosition = 0;
+	let tabContainer = $state<HTMLDivElement | undefined>(undefined);
+	let currentPosition = $state(0);
+	let tunerOpen = $state(false);
 
-	$: id = $page.params.id;
-	$: currentTab = $tabs.find((tab) => tab.id === id);
+	const id = $derived($page.params.id);
+	const currentTab = $derived($tabs.find((tab) => tab.id === id));
 
 	function goBack() {
 		goto('/');
@@ -30,11 +28,21 @@
 		if (event.detail && tabContainer) {
 			const updatePositionInterval = setInterval(() => {
 				// Calculate position based on scroll position
-				currentPosition = tabContainer.scrollTop;
+				if (tabContainer) {
+					currentPosition = tabContainer.scrollTop;
+				}
 			}, 100);
 
 			return () => clearInterval(updatePositionInterval);
 		}
+	}
+
+	function handleOpenTuner() {
+		tunerOpen = true;
+	}
+
+	function handleCloseTuner() {
+		tunerOpen = false;
 	}
 
 	// Make sure we have access to the container after component is mounted
@@ -42,6 +50,14 @@
 		return () => {
 			// Cleanup if needed
 		};
+	});
+
+	// Provide tuner state context
+	setContext('tunerState', {
+		get open() {
+			return tunerOpen;
+		},
+		setOpen: (value: boolean) => (tunerOpen = value)
 	});
 </script>
 
@@ -52,7 +68,7 @@
 {#if currentTab}
 	<div class="tab-view">
 		<header>
-			<button class="back-btn" on:click={goBack} aria-label="Back to home"> ← Back </button>
+			<button class="back-btn" onclick={goBack} aria-label="Back to home"> ← Back </button>
 			<div class="title-container">
 				<h1>{currentTab.title}</h1>
 				{#if currentTab.artist || currentTab.album}
@@ -64,34 +80,54 @@
 				{/if}
 			</div>
 			<div class="action-buttons">
-				<SettingsButton on:click={() => (showSettingsModal = true)} />
-				<button class="edit-btn" on:click={editTab} aria-label="Edit tab"> Edit </button>
+				<button class="edit-btn" onclick={editTab} aria-label="Edit tab">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M12 20h9"></path>
+						<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+					</svg>
+				</button>
 			</div>
 		</header>
 
-		<div class="tab-container">
-			<EnhancedTabViewer
-				content={currentTab.content}
-				fontSize={$preferences.fontSize}
-				showChordDiagrams={true}
-				{currentPosition}
-				bind:container={tabContainer}
-			/>
+		<div class="tab-container" bind:this={tabContainer}>
+			{#if tabContainer}
+				<EnhancedTabViewer
+					content={currentTab.content}
+					fontSize={$preferences.fontSize}
+					showChordDiagrams={true}
+					{currentPosition}
+					container={tabContainer}
+					on:openTuner={handleOpenTuner}
+				/>
+			{/if}
 		</div>
 
 		<div class="controls-container">
-			<ScrollControls container={tabContainer} on:scrollStateChange={handleScrollChange} />
+			{#if tabContainer}
+				<ScrollControls container={tabContainer} on:scrollStateChange={handleScrollChange} />
+			{/if}
 		</div>
+
+		<!-- Add GuitarTuner component here -->
+		<GuitarTuner bind:showTuner={tunerOpen} on:close={handleCloseTuner} />
 	</div>
 {:else}
 	<div class="not-found">
 		<h1>Tab Not Found</h1>
 		<p>Sorry, the tab you're looking for doesn't exist or has been deleted.</p>
-		<button on:click={goBack}>Back to Home</button>
+		<button onclick={goBack}>Back to Home</button>
 	</div>
 {/if}
-
-<SettingsModal bind:open={showSettingsModal} />
 
 <style>
 	.tab-view {
@@ -143,13 +179,16 @@
 
 	.back-btn,
 	.edit-btn {
-		padding: 0.5rem 1rem;
+		padding: 0.5rem;
 		background: none;
 		border: 1px solid #ddd;
 		border-radius: 4px;
 		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
-	
+
 	.action-buttons {
 		display: flex;
 		gap: 0.5rem;
@@ -218,7 +257,7 @@
 
 		.back-btn,
 		.edit-btn {
-			padding: 0.3rem 0.6rem;
+			padding: 0.4rem;
 			font-size: 0.9rem;
 		}
 	}

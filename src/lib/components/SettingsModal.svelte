@@ -4,6 +4,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import preferences from '../stores/preferences';
 	import { browser } from '$app/environment';
+	import GuitarTuner from './GuitarTuner.svelte';
 
 	export let open = false;
 
@@ -12,6 +13,7 @@
 	}>();
 
 	let modalElement: HTMLDivElement;
+	let showTuner = false;
 
 	// Font size settings
 	const MIN_FONT_SIZE = 10;
@@ -198,6 +200,34 @@
 							{$preferences.showChordDiagrams ? 'Showing chord diagrams' : 'Hiding chord diagrams'}
 						</span>
 					</div>
+				</div>
+
+				<div class="setting-group">
+					<h3>Guitar Tuner</h3>
+					<p class="setting-description">Use the built-in guitar tuner to tune your instrument</p>
+					<div class="toggle-control">
+						<button
+							class="tuner-btn"
+							on:click={() => (showTuner = !showTuner)}
+							aria-label="Toggle guitar tuner"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+								<path
+									fill="currentColor"
+									d="M12 3a9 9 0 0 0-9 9h3c0-3.31 2.69-6 6-6s6 2.69 6 6h3a9 9 0 0 0-9-9zm3.14 12a3.01 3.01 0 0 1-2.14.9 3 3 0 0 1-3-3 2.97 2.97 0 0 1 .9-2.14L12 8.07l1.14 2.69c.58.59.9 1.35.9 2.14a2.99 2.99 0 0 1-.9 2.1z"
+								/>
+							</svg>
+							<span>
+								{showTuner ? 'Hide Tuner' : 'Show Tuner'}
+							</span>
+						</button>
+					</div>
+
+					{#if showTuner}
+						<div class="tuner-container" transition:fade={{ duration: 200 }}>
+							<GuitarTuner showTuner={true} />
+						</div>
+					{/if}
 				</div>
 
 				<!-- Additional settings groups can be added here in the future -->
@@ -458,6 +488,35 @@
 		font-size: 0.95rem;
 	}
 
+	.tuner-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		background-color: #4caf50;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		padding: 0.75rem 1rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.tuner-btn:hover {
+		background-color: #45a049;
+		transform: translateY(-1px);
+	}
+
+	.tuner-btn svg {
+		width: 1.5rem;
+		height: 1.5rem;
+	}
+
+	.tuner-container {
+		margin-top: 1rem;
+		max-height: 500px;
+	}
+
 	@media (prefers-color-scheme: dark) {
 		.modal {
 			background-color: #222;
@@ -512,6 +571,14 @@
 
 		.toggle-label {
 			color: #aaa;
+		}
+
+		.tuner-btn {
+			background-color: #388e3c;
+		}
+
+		.tuner-btn:hover {
+			background-color: #2e7d32;
 		}
 	}
 </style>

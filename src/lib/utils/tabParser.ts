@@ -1,3 +1,6 @@
+import { createTabParser } from './parsing';
+import type { ParsedTab as NewParsedTab, ParsedNote, TabSection as NewTabSection } from './parsing';
+
 export interface TabNote {
 	fret: number;
 	technique?: string;
@@ -35,347 +38,139 @@ export interface ParsedTab {
  * Parse guitar tab text into structured data format
  */
 export function parseTab(tabText: string): ParsedTab {
-	const lines = tabText.split('\n');
-	const sections: TabSection[] = [];
+	// Use the new parser pipeline
+	const parser = createTabParser({
+		detectStringCount: true,
+		detectTuning: true
+	});
 
-	// Default to 6-string guitar
-	let stringCount = 6;
-	let stringNames = ['e', 'B', 'G', 'D', 'A', 'E'];
+	const newParsedTab: NewParsedTab = parser.parse(tabText);
 
-	// Find tab sections
-	let currentSectionLines: string[] = [];
-	let currentTitle: string | undefined;
-	let startPosition = 0;
+	// Convert to the old format for backward compatibility
+	return convertToLegacyFormat(newParsedTab);
+}
 
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+/**
+ * Convert the new parser output format to the legacy format
+ */
+function convertToLegacyFormat(newTab: NewParsedTab): ParsedTab {
+	const sections: TabSection[] = newTab.sections.map((section) => {
+		// Convert notes to positions
+		const positions = convertNotesToPositions(section);
 
-		// Check for section headers (typically in brackets or separated by empty lines)
-		if (line.trim() === '' && currentSectionLines.length > 0) {
-			// Process completed section
-			const parsedSection = parseTabSection(currentSectionLines, currentTitle, startPosition);
-			sections.push(parsedSection);
+		// Extract chords from the section
+		const chords: TabChord[] = (section.chords || []).map((chord: string) => {
+			// Find the chord position (using first occurrence in text)
+			let position = 0;
+			for (const line of section.lines) {
+				const pos = line.indexOf(chord);
+				if (pos >= 0) {
+					position = pos;
+					break;
+				}
+			}
 
-			// Reset for next section
-			currentSectionLines = [];
-			currentTitle = undefined;
-			startPosition = i + 1;
-			continue;
-		}
+			return {
+				name: chord,
+				position
+			};
+		});
 
-		// Check if this is a potential section header
-		if (
-			currentSectionLines.length === 0 &&
-			(line.match(/^\[.*\]$/) || line.match(/^[A-Za-z\s]+:$/))
-		) {
-			currentTitle = line.replace(/[\[\]:]/g, '').trim();
-			startPosition = i + 1;
-			continue;
-		}
-
-		// Add line to current section
-		currentSectionLines.push(line);
-	}
-
-	// Process final section if it exists
-	if (currentSectionLines.length > 0) {
-		const parsedSection = parseTabSection(currentSectionLines, currentTitle, startPosition);
-		sections.push(parsedSection);
-	}
-
-	// Determine string count from the sections
-	const detectedStringCount = detectStringCount(sections);
-	if (detectedStringCount > 0) {
-		stringCount = detectedStringCount;
-
-		// Update string names based on detected count
-		if (stringCount === 4) {
-			// Bass guitar
-			stringNames = ['G', 'D', 'A', 'E'];
-		} else if (stringCount === 7) {
-			// 7-string guitar
-			stringNames = ['e', 'B', 'G', 'D', 'A', 'E', 'B'];
-		} else if (stringCount === 8) {
-			// 8-string guitar
-			stringNames = ['e', 'B', 'G', 'D', 'A', 'E', 'B', 'F#'];
-		}
-	}
+		return {
+			title: section.title,
+			lines: section.lines,
+			positions,
+			chords,
+			startPosition: section.startLine,
+			endPosition: section.endLine
+		};
+	});
 
 	return {
 		sections,
-		stringCount,
-		stringNames
+		stringCount: newTab.stringCount,
+		stringNames: newTab.stringNames
 	};
 }
 
 /**
- * Parse tab section into structured format
+ * Convert the new notes format to the legacy positions format
  */
-function parseTabSection(sectionLines: string[], title?: string, startPosition = 0): TabSection {
-	// Identify tab lines vs chord/lyric lines
-	const tabLines: string[] = [];
-	const chordLines: string[] = [];
+function convertNotesToPositions(section: NewTabSection): TabPosition[] {
+	// Group notes by position
+	const notesByPosition: Record<number, ParsedNote[]> = {};
+	const measurePositions = new Set<number>();
+
+	// Identify measure line positions
+	for (const line of section.lines) {
+		for (let i = 0; i < line.length; i++) {
+			if (line[i] === '|') {
+				measurePositions.add(i);
+			}
+		}
+	}
+
+	// Group notes by position
+	for (const note of section.notes) {
+		if (!notesByPosition[note.position]) {
+			notesByPosition[note.position] = [];
+		}
+		notesByPosition[note.position].push(note);
+	}
+
+	// Convert to positions
 	const positions: TabPosition[] = [];
-	const chords: TabChord[] = [];
 
-	// First identify which lines are tab lines (contain string indicators like |-----|)
-	sectionLines.forEach((line, index) => {
-		if (
-			line.includes('--') ||
-			line.includes('|') ||
-			line.match(/^[eEADGBbf]:?\|?-+/) ||
-			line.match(/^[eEADGBbf]\|/) ||
-			line.match(/^\|?-+\|?$/) ||
-			line.includes('-')
-		) {
-			tabLines.push(line);
-		} else if (line.trim().length > 0) {
-			// This might be a chord line
-			chordLines.push(line);
+	// Add measure positions first
+	for (const pos of measurePositions) {
+		positions.push({
+			position: pos,
+			notes: new Map(),
+			isMeasureLine: true
+		});
+	}
+
+	// Add note positions
+	for (const [pos, notes] of Object.entries(notesByPosition)) {
+		const position = parseInt(pos);
+
+		// Skip if already added as a measure line
+		if (measurePositions.has(position)) {
+			const existingPosition = positions.find((p) => p.position === position);
+			if (existingPosition) {
+				// Add notes to existing position
+				for (const note of notes) {
+					existingPosition.notes.set(note.string, {
+						fret: typeof note.fret === 'number' ? note.fret : 0,
+						...(note.technique ? { technique: note.technique } : {}),
+						...(note.targetFret !== undefined ? { techniqueFret: note.targetFret } : {})
+					});
+				}
+				continue;
+			}
 		}
-	});
 
-	// Process tab lines to find notes and measures
-	if (tabLines.length > 0) {
-		// Find all positions where notes or measures exist
-		const allPositions = new Set<number>();
-		const measurePositions = new Set<number>();
+		// Create new position
+		const tabPosition: TabPosition = {
+			position,
+			notes: new Map(),
+			isMeasureLine: measurePositions.has(position)
+		};
 
-		tabLines.forEach((line) => {
-			// Find all positions with content
-			Array.from(line).forEach((char, pos) => {
-				if (char !== '-' && char !== '|') {
-					allPositions.add(pos);
-				}
-				if (char === '|') {
-					measurePositions.add(pos);
-					allPositions.add(pos);
-				}
+		// Add notes
+		for (const note of notes) {
+			tabPosition.notes.set(note.string, {
+				fret: typeof note.fret === 'number' ? note.fret : 0,
+				...(note.technique ? { technique: note.technique } : {}),
+				...(note.targetFret !== undefined ? { techniqueFret: note.targetFret } : {})
 			});
-		});
-
-		// Sort positions
-		const sortedPositions = Array.from(allPositions).sort((a, b) => a - b);
-
-		// Create tab positions
-		sortedPositions.forEach((pos) => {
-			const tabPosition: TabPosition = {
-				position: pos,
-				notes: new Map(),
-				isMeasureLine: measurePositions.has(pos)
-			};
-
-			// Find notes at this position
-			tabLines.forEach((line, stringIndex) => {
-				if (pos < line.length) {
-					const char = line[pos];
-
-					if (char !== '-' && char !== '|') {
-						// This is a note
-						const note = parseNote(line, pos);
-						if (note) {
-							tabPosition.notes.set(stringIndex, note);
-						}
-					}
-				}
-			});
-
-			positions.push(tabPosition);
-		});
-	}
-
-	// Look for chord names above tab lines
-	if (chordLines.length > 0 && tabLines.length > 0) {
-		chordLines.forEach((line) => {
-			const foundChords = findChords(line, tabLines[0]);
-			chords.push(...foundChords);
-		});
-	}
-
-	return {
-		title,
-		lines: tabLines,
-		positions,
-		chords,
-		startPosition,
-		endPosition: startPosition + sectionLines.length
-	};
-}
-
-/**
- * Parse a note and any techniques at the given position
- */
-function parseNote(line: string, position: number): TabNote | null {
-	if (position >= line.length) {
-		return null;
-	}
-
-	const char = line[position];
-	if (char === '-' || char === '|') {
-		return null;
-	}
-
-	// Parse the fret number
-	let fretStr = char;
-	let pos = position + 1;
-
-	// Handle multi-digit fret numbers (e.g., 10, 12, etc)
-	while (pos < line.length && /\d/.test(line[pos])) {
-		fretStr += line[pos];
-		pos++;
-	}
-
-	const fret = parseInt(fretStr, 10);
-
-	if (isNaN(fret)) {
-		return null;
-	}
-
-	// Look for techniques after the fret number
-	let technique = '';
-	let techniqueFret: number | undefined;
-
-	if (pos < line.length) {
-		// Check for hammer-ons
-		if (line[pos] === 'h') {
-			technique = 'h';
-			// Look for the target fret
-			pos++;
-			let techFretStr = '';
-			while (pos < line.length && /\d/.test(line[pos])) {
-				techFretStr += line[pos];
-				pos++;
-			}
-			if (techFretStr) {
-				techniqueFret = parseInt(techFretStr, 10);
-			}
 		}
-		// Check for pull-offs
-		else if (line[pos] === 'p') {
-			technique = 'p';
-			// Look for the target fret
-			pos++;
-			let techFretStr = '';
-			while (pos < line.length && /\d/.test(line[pos])) {
-				techFretStr += line[pos];
-				pos++;
-			}
-			if (techFretStr) {
-				techniqueFret = parseInt(techFretStr, 10);
-			}
-		}
-		// Check for bends
-		else if (line[pos] === 'b') {
-			technique = 'b';
-			pos++;
-			// Look for bend amount like b1/2 or b1
-			if (pos < line.length && /[\d\/]/.test(line[pos])) {
-				let bendAmount = '';
-				while (pos < line.length && /[\d\/]/.test(line[pos])) {
-					bendAmount += line[pos];
-					pos++;
-				}
-				if (bendAmount) {
-					technique = `b${bendAmount}`;
-				}
-			}
-		}
-		// Check for slides
-		else if (line[pos] === '/' || line[pos] === '\\') {
-			technique = line[pos];
-			// Look for the target fret
-			pos++;
-			let techFretStr = '';
-			while (pos < line.length && /\d/.test(line[pos])) {
-				techFretStr += line[pos];
-				pos++;
-			}
-			if (techFretStr) {
-				techniqueFret = parseInt(techFretStr, 10);
-			}
-		}
-		// Check for vibrato
-		else if (line[pos] === '~') {
-			technique = '~';
-		}
+
+		positions.push(tabPosition);
 	}
 
-	return {
-		fret,
-		...(technique ? { technique } : {}),
-		...(techniqueFret !== undefined ? { techniqueFret } : {})
-	};
-}
-
-/**
- * Find chords in a chord line, matching positions with the tab line
- */
-function findChords(chordLine: string, tabLine: string): TabChord[] {
-	const chords: TabChord[] = [];
-	let currentChord = '';
-	let chordStartPos = -1;
-
-	// Track chords in the line
-	for (let i = 0; i < chordLine.length; i++) {
-		const char = chordLine[i];
-
-		if (char.trim() !== '') {
-			if (currentChord === '') {
-				// Start of new chord
-				chordStartPos = i;
-			}
-			currentChord += char;
-		} else if (currentChord !== '') {
-			// End of chord
-			if (chordStartPos >= 0) {
-				chords.push({
-					name: currentChord,
-					position: chordStartPos
-				});
-			}
-			currentChord = '';
-			chordStartPos = -1;
-		}
-	}
-
-	// Handle last chord if exists
-	if (currentChord !== '' && chordStartPos >= 0) {
-		chords.push({
-			name: currentChord,
-			position: chordStartPos
-		});
-	}
-
-	return chords;
-}
-
-/**
- * Detect the number of strings used in the tab
- */
-function detectStringCount(sections: TabSection[]): number {
-	const stringCounts = new Map<number, number>();
-
-	sections.forEach((section) => {
-		// Count lines that appear to be tab lines
-		const count = section.lines.length;
-		if (count >= 4 && count <= 8) {
-			// Common string counts
-			stringCounts.set(count, (stringCounts.get(count) || 0) + 1);
-		}
-	});
-
-	// Find the most common string count
-	let maxCount = 0;
-	let mostCommonStringCount = 6; // Default to 6-string guitar
-
-	for (const [count, occurrences] of stringCounts.entries()) {
-		if (occurrences > maxCount) {
-			maxCount = occurrences;
-			mostCommonStringCount = count;
-		}
-	}
-
-	return mostCommonStringCount;
+	// Sort positions
+	return positions.sort((a, b) => a.position - b.position);
 }
 
 /**
