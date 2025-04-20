@@ -7,6 +7,7 @@ export interface Tab {
 	artist?: string;
 	album?: string;
 	createdAt: number;
+	updatedAt?: number;
 }
 
 const STORAGE_KEY = 'tabscroll-tabs';

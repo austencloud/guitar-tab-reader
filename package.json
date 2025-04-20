@@ -67,7 +67,9 @@
 		"svelte"
 	],
 	"dependencies": {
+		"@types/uuid": "^10.0.0",
 		"lucide-svelte": "^0.501.0",
-		"pitchy": "^4.1.0"
+		"pitchy": "^4.1.0",
+		"uuid": "^11.1.0"
 	}
 }
