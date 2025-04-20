@@ -1,4 +1,4 @@
-import { ParserStep, ParserContext } from '../types';
+import { ParserStep, ParserContext, ParsedChord } from '../types';
 
 export class ChordDetectionStep implements ParserStep {
 	name = 'ChordDetection';
@@ -14,76 +14,42 @@ export class ChordDetectionStep implements ParserStep {
 		for (const section of sections) {
 			const { lines } = section;
 
-			// Look for chord name patterns at the beginning of lines
-			// or in a line by themselves before tab notation
-			const chordsInSection: string[] = [];
-
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i].trim();
-
-				// Skip tab notation lines
-				if (line.match(/^[a-zA-Z]?[|:][|-]/)) {
-					continue;
+			// Find chords in the non-tab lines
+			const chordLines = section.lines.filter(
+				(line, index) => !isTabLine(line, context.result.stringCount ?? 6)
+			);
+			const chordsInSection: ParsedChord[] = [];
+			let lineOffset = 0;
+			chordLines.forEach((line) => {
+				let match;
+				const chordRegex =
+					/\b([A-G][b#]?(?:m|maj|min|aug|dim|sus[24]|add\d|m?7|m?9|m?11|m?13|6|5)*)/g;
+				while ((match = chordRegex.exec(line)) !== null) {
+					chordsInSection.push({ name: match[1], position: match.index });
 				}
+				lineOffset += line.length + 1; // +1 for newline
+			});
 
-				// Look for lines that might be chord names
-				const matches = line.match(chordRegex);
-				if (matches) {
-					// If the line ONLY contains chord names and spacing
-					// or if the chords are evenly spaced (like chord charts)
-					const nonChordContent = line.replace(chordRegex, '').trim();
-					if (nonChordContent === '' || nonChordContent.match(/^[\s-|:]+$/)) {
-						chordsInSection.push(...matches);
-					}
-				}
-			}
+			// Assign unique chords found to the section
+			// Use a Map to ensure uniqueness based on name and position for simplicity
+			const uniqueChords = Array.from(
+				new Map(chordsInSection.map((c) => [`${c.name}@${c.position}`, c])).values()
+			);
+			section.chords = uniqueChords;
 
-			// Add unique chords to section metadata
-			if (chordsInSection.length > 0) {
-				section.chords = [...new Set(chordsInSection)];
-			}
+			// Remove chord lines from the main lines if they don't contain tab elements
+			// This part might need refinement based on desired behavior
+			// section.lines = section.lines.filter(line => isTabLine(line, context.result.stringCount ?? 6) || line.trim() === '' || line.match(/^\s*\|/));
 
-			// Analyze notes to find potential chord shapes
-			if (section.notes && section.notes.length > 0) {
-				this.detectChordShapesFromNotes(section);
-			}
+			// Note: The logic checking section.notes was removed as 'notes' is no longer directly on ParsedSection
 		}
 	}
+}
 
-	private detectChordShapesFromNotes(section: any): void {
-		const { notes, stringCount } = section;
-		const chordShapes: { position: number; notes: number[] }[] = [];
-
-		// Group notes by position
-		const notesByPosition: Record<number, any[]> = {};
-
-		for (const note of notes) {
-			if (!notesByPosition[note.position]) {
-				notesByPosition[note.position] = [];
-			}
-			notesByPosition[note.position].push(note);
-		}
-
-		// Find positions with multiple notes (potential chords)
-		for (const [position, notesAtPosition] of Object.entries(notesByPosition)) {
-			// If we have at least 3 notes at the same position, it's likely a chord
-			if (notesAtPosition.length >= 3) {
-				const chordShape = {
-					position: parseInt(position),
-					notes: notesAtPosition.map((n) => (typeof n.fret === 'number' ? n.fret : -1))
-				};
-
-				// Fill in muted strings as -1
-				while (chordShape.notes.length < stringCount) {
-					chordShape.notes.push(-1);
-				}
-
-				chordShapes.push(chordShape);
-			}
-		}
-
-		if (chordShapes.length > 0) {
-			section.chordShapes = chordShapes;
-		}
-	}
+// Helper function (assuming similar logic exists or is needed)
+function isTabLine(line: string, stringCount: number): boolean {
+	// Basic check: does it start with a string name (eBGDAE) or contain typical tab characters?
+	const tabLineRegex = new RegExp(`^\s*[eBGDAE]-\|`);
+	const containsTabChars = /[\d\-hps\/\\~xb]/g.test(line);
+	return tabLineRegex.test(line) || (containsTabChars && line.includes('-'));
 }

@@ -3,36 +3,36 @@ import type { StringDefinition, Tunings } from './types';
 
 export const standardTunings: Tunings = {
 	Standard: [
-		{ note: 'E', octave: 4, frequency: 329.63, string: 1 },
-		{ note: 'B', octave: 3, frequency: 246.94, string: 2 },
-		{ note: 'G', octave: 3, frequency: 196.0, string: 3 },
-		{ note: 'D', octave: 3, frequency: 146.83, string: 4 },
+		{ note: 'E', octave: 2, frequency: 82.41, string: 6 }, // Low E
 		{ note: 'A', octave: 2, frequency: 110.0, string: 5 },
-		{ note: 'E', octave: 2, frequency: 82.41, string: 6 }
+		{ note: 'D', octave: 3, frequency: 146.83, string: 4 },
+		{ note: 'G', octave: 3, frequency: 196.0, string: 3 },
+		{ note: 'B', octave: 3, frequency: 246.94, string: 2 },
+		{ note: 'E', octave: 4, frequency: 329.63, string: 1 } // High E
 	],
 	'Drop D': [
-		{ note: 'E', octave: 4, frequency: 329.63, string: 1 },
-		{ note: 'B', octave: 3, frequency: 246.94, string: 2 },
-		{ note: 'G', octave: 3, frequency: 196.0, string: 3 },
-		{ note: 'D', octave: 3, frequency: 146.83, string: 4 },
+		{ note: 'D', octave: 2, frequency: 73.42, string: 6 }, // Low D
 		{ note: 'A', octave: 2, frequency: 110.0, string: 5 },
-		{ note: 'D', octave: 2, frequency: 73.42, string: 6 }
+		{ note: 'D', octave: 3, frequency: 146.83, string: 4 },
+		{ note: 'G', octave: 3, frequency: 196.0, string: 3 },
+		{ note: 'B', octave: 3, frequency: 246.94, string: 2 },
+		{ note: 'E', octave: 4, frequency: 329.63, string: 1 } // High E
 	],
 	'Half Step Down': [
-		{ note: 'Eb', octave: 4, frequency: 311.13, string: 1 },
-		{ note: 'Bb', octave: 3, frequency: 233.08, string: 2 },
-		{ note: 'Gb', octave: 3, frequency: 185.0, string: 3 },
-		{ note: 'Db', octave: 3, frequency: 138.59, string: 4 },
+		{ note: 'Eb', octave: 2, frequency: 77.78, string: 6 }, // Low Eb
 		{ note: 'Ab', octave: 2, frequency: 103.83, string: 5 },
-		{ note: 'Eb', octave: 2, frequency: 77.78, string: 6 }
+		{ note: 'Db', octave: 3, frequency: 138.59, string: 4 },
+		{ note: 'Gb', octave: 3, frequency: 185.0, string: 3 },
+		{ note: 'Bb', octave: 3, frequency: 233.08, string: 2 },
+		{ note: 'Eb', octave: 4, frequency: 311.13, string: 1 } // High Eb
 	],
 	DADGAD: [
-		{ note: 'D', octave: 4, frequency: 293.66, string: 1 },
-		{ note: 'A', octave: 3, frequency: 220.0, string: 2 },
-		{ note: 'G', octave: 3, frequency: 196.0, string: 3 },
-		{ note: 'D', octave: 3, frequency: 146.83, string: 4 },
+		{ note: 'D', octave: 2, frequency: 73.42, string: 6 }, // Low D
 		{ note: 'A', octave: 2, frequency: 110.0, string: 5 },
-		{ note: 'D', octave: 2, frequency: 73.42, string: 6 }
+		{ note: 'D', octave: 3, frequency: 146.83, string: 4 },
+		{ note: 'G', octave: 3, frequency: 196.0, string: 3 },
+		{ note: 'A', octave: 3, frequency: 220.0, string: 2 },
+		{ note: 'D', octave: 4, frequency: 293.66, string: 1 } // High D
 	]
 };
 

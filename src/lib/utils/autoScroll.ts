@@ -1,29 +1,51 @@
 /**
  * Initiates auto-scrolling on a container element
  * @param container The HTML element to scroll
- * @param speed Scroll speed in pixels per animation frame
+ * @param speed Scroll speed in pixels per second
  * @returns Function to cancel scrolling
  */
 export function startAutoScroll(container: HTMLElement, speed: number): () => void {
-	let lastTimestamp = 0;
-	let accumulatedDelta = 0;
+	console.log('startAutoScroll called. Speed:', speed); // Log start
+	console.log(
+		`Container dimensions: scrollHeight=${container.scrollHeight}, clientHeight=${container.clientHeight}`
+	); // Log dimensions
+
+	// Check if scrolling is possible
+	if (container.scrollHeight <= container.clientHeight) {
+		console.warn('Container content is not taller than the container, no scrolling needed.');
+		return () => {}; // Return an empty cancel function
+	}
+
 	let animationFrame: number;
+	let lastTimestamp = 0;
 
 	function step(timestamp: number) {
-		if (!lastTimestamp) lastTimestamp = timestamp;
+		if (!lastTimestamp) {
+			lastTimestamp = timestamp;
+			requestAnimationFrame(step);
+			return;
+		}
 
 		const elapsed = timestamp - lastTimestamp;
 		lastTimestamp = timestamp;
 
-		// Accumulate partial pixels for smooth slow scrolling
-		// Scale by elapsed time for consistent scrolling regardless of frame rate
-		// Pixels per frame calculation: speed * (elapsed / 16.67)
-		accumulatedDelta += speed * (elapsed / 16.67);
+		// Calculate scroll amount based on speed and elapsed time
+		// Assuming speed is pixels per second for more intuitive control
+		const scrollAmount = (speed * elapsed) / 1000;
 
-		if (Math.abs(accumulatedDelta) >= 0.1) {
-			const scrollAmount = Math.floor(accumulatedDelta);
-			container.scrollTop += scrollAmount;
-			accumulatedDelta -= scrollAmount;
+		// Log the speed being used in this frame
+		console.log(
+			`Step: speed=${speed}, elapsed=${elapsed.toFixed(2)}ms, scrollAmount=${scrollAmount.toFixed(2)}`
+		);
+
+		// Apply the scroll amount directly
+		container.scrollTop += scrollAmount;
+
+		// Stop scrolling if we've reached the bottom
+		if (container.scrollTop + container.clientHeight >= container.scrollHeight - 1) {
+			// Add a small buffer
+			// Optionally dispatch an event or call a callback here
+			return; // Stop requesting new frames
 		}
 
 		animationFrame = requestAnimationFrame(step);
@@ -34,8 +56,6 @@ export function startAutoScroll(container: HTMLElement, speed: number): () => vo
 	return () => {
 		if (animationFrame) {
 			cancelAnimationFrame(animationFrame);
-			lastTimestamp = 0;
-			accumulatedDelta = 0;
 		}
 	};
 }

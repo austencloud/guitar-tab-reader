@@ -4,13 +4,22 @@
 	export let activeStrings: StringDefinition[] = [];
 	export let closestString: StringDefinition | null = null;
 	export let detectedCents: number = 0;
-	
+
 	// Sort strings to display in standard order (low E to high e)
 	$: sortedStrings = [...activeStrings].sort((a, b) => {
 		// Standard 6-string guitar strings are typically numbered 1 (high E) to 6 (low E)
 		// We want to display them in reverse order (6 to 1) to show low E on left
 		return b.string - a.string;
 	});
+
+	// Function to get the display note (e.g., 'e' for high E)
+	function getDisplayNote(stringDef: StringDefinition): string {
+		// Assuming string 1 is the high E string
+		if (stringDef.string === 1 && stringDef.note === 'E') {
+			return 'e';
+		}
+		return stringDef.note;
+	}
 </script>
 
 <div class="strings-display">
@@ -24,7 +33,7 @@
 			class:flat={closestString && closestString.string === string.string && detectedCents < -5}
 			class:sharp={closestString && closestString.string === string.string && detectedCents > 5}
 		>
-			{string.note}{string.octave}
+			{getDisplayNote(string)}
 		</div>
 	{/each}
 </div>
@@ -82,9 +91,13 @@
 
 	@media (max-width: 500px) {
 		.strings-display {
-			flex-wrap: wrap;
+			/* Remove flex-wrap to keep it single line */
+			/* flex-wrap: wrap; */
 			gap: 0.5rem;
 			justify-content: center;
+			/* Allow horizontal scrolling if needed on small screens */
+			overflow-x: auto;
+			padding-bottom: 5px; /* Add padding for scrollbar */
 		}
 
 		.string-indicator {

@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
-	import { onDestroy, createEventDispatcher } from 'svelte';
-	import TuningControls from './TuningControls.svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import TuningMeter from './TuningMeter.svelte';
-	import StringsDisplay from './StringsDisplay.svelte';
 	import {
 		startTuner,
 		stopTuner,
@@ -59,17 +57,20 @@
 		}
 	}
 
-	function handleStart() {
-		startTuner(handlePitch);
-	}
+	// Remove handleStart function
+	// function handleStart() {
+	// 	startTuner(handlePitch);
+	// }
 
-	function handleStop() {
-		stopTuner();
-		closestString = null;
-	}
+	// Remove handleStop function
+	// function handleStop() {
+	// 	stopTuner();
+	// 	closestString = null;
+	// }
 
-	function handleTuningChange(event: CustomEvent<string>) {
-		selectedTuning = event.detail;
+	function handleTuningChange(event: Event) {
+		const target = event.target as HTMLSelectElement;
+		selectedTuning = target.value;
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -92,6 +93,18 @@
 		open = false;
 		dispatch('close');
 	}
+
+	// Automatically start tuner when modal opens
+	$: if (open) {
+		startTuner(handlePitch);
+	}
+
+	onMount(() => {
+		// If the modal is already open on mount, start the tuner
+		if (open) {
+			startTuner(handlePitch);
+		}
+	});
 
 	onDestroy(() => {
 		if ($isListening) {
@@ -117,14 +130,14 @@
 			<button class="close-button" on:click={close} aria-label="Close tuner">×</button>
 
 			<div class="tuner-container">
-				<div class="tuner-header">
-					<h2 id="tuner-title">Guitar Tuner</h2>
-					<TuningControls
-						{selectedTuning}
-						on:start={handleStart}
-						on:stop={handleStop}
-						on:tuningChange={handleTuningChange}
-					/>
+				<!-- Add Tuning Selector Dropdown -->
+				<div class="tuning-selector-container">
+					<label for="tuning-select">Tuning:</label>
+					<select id="tuning-select" bind:value={selectedTuning} on:change={handleTuningChange}>
+						{#each Object.keys($tunings) as tuningName}
+							<option value={tuningName}>{tuningName}</option>
+						{/each}
+					</select>
 				</div>
 
 				{#if $tunerStatus === 'error'}
@@ -138,20 +151,8 @@
 						detectedCents={$detectedCents}
 						{closestString}
 						strings={activeStrings}
-						statusMessage={!$isListening ? 'Press Start to begin tuning' : 'Play a string...'}
+						statusMessage={!$isListening ? 'Initializing tuner...' : 'Play a string...'}
 					/>
-
-					<StringsDisplay {activeStrings} {closestString} detectedCents={$detectedCents} />
-				</div>
-
-				<div class="tuner-help">
-					<h3>Quick guide:</h3>
-					<ol>
-						<li>Click "Start" to activate your microphone</li>
-						<li>Play a single string on your guitar</li>
-						<li>The tuner will show which string you're playing and how in-tune it is</li>
-						<li>Adjust your tuning until the needle is centered (green)</li>
-					</ol>
 				</div>
 			</div>
 		</div>
@@ -224,18 +225,6 @@
 		width: 100%;
 	}
 
-	.tuner-header {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-	}
-
-	.tuner-header h2 {
-		margin: 0;
-		font-size: 1.5rem;
-	}
-
 	.tuner-display {
 		display: flex;
 		flex-direction: column;
@@ -252,15 +241,23 @@
 		margin: 1rem 0;
 	}
 
-	.tuner-help {
-		border-top: 1px solid #ddd;
-		padding-top: 1rem;
-		margin-top: 1rem;
-		font-size: 0.9rem;
+	.tuning-selector-container {
+		display: flex;
+		align-items: center;
+		justify-content: center; /* Center the selector */
+		gap: 0.5rem;
+		margin-bottom: 1rem; /* Add some space below */
 	}
 
-	.tuner-help h3 {
-		margin-top: 0;
+	.tuning-selector-container label {
+		font-weight: 500;
+	}
+
+	.tuning-selector-container select {
+		padding: 0.3rem 0.6rem;
+		border-radius: 4px;
+		border: 1px solid #ccc;
+		background-color: #fff;
 	}
 
 	@media (prefers-color-scheme: dark) {
@@ -277,20 +274,14 @@
 			background-color: rgba(255, 255, 255, 0.1);
 		}
 
-		.tuner-help {
-			border-color: #444;
+		.tuning-selector-container select {
+			background-color: #333;
+			color: #e0e0e0;
+			border-color: #555;
 		}
 
 		.tuner-error {
 			background-color: rgba(244, 67, 54, 0.2);
-		}
-	}
-
-	@media (min-width: 768px) {
-		.tuner-header {
-			flex-direction: row;
-			justify-content: space-between;
-			align-items: center;
 		}
 	}
 </style>

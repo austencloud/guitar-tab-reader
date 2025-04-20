@@ -1,115 +1,82 @@
-import { ParserStep, ParserContext, TabSection } from '../types';
+import { ParserStep, ParserContext, ParsedSection } from '../types';
 
 export class SectionDetectionStep implements ParserStep {
 	name = 'SectionDetection';
 
 	process(context: ParserContext): void {
-		const { lines, result } = context;
-		const sections: TabSection[] = [];
-		const stringCount = result.stringCount || 6;
+		context.result.sections = [];
+		let currentSection: Partial<ParsedSection> | null = null;
+		let sectionLines: string[] = [];
+		let inSection = false;
 
-		// Check for tab line pattern (e|----, etc)
-		const isTabLine = (line: string): boolean => {
-			return /^[a-zA-Z][|:][|-]/.test(line.trim()) || /^[|-]/.test(line.trim());
-		};
+		for (let i = 0; i < context.lines.length; i++) {
+			const line = context.lines[i].trim();
 
-		// Find section titles (usually all caps or surrounded by [] or similar)
-		const isSectionTitle = (line: string): boolean => {
-			return (
-				/^\s*\[.*\]\s*$/.test(line) || // [VERSE], [CHORUS], etc.
-				/^\s*[A-Z\s]+:?\s*$/.test(line) || // VERSE:, CHORUS:, etc.
-				/^\s*[A-Z][a-z]+\s+[0-9]+:?\s*$/.test(line)
-			); // Verse 1:, Chorus 2:, etc.
-		};
-
-		let sectionStartLine = 0;
-		let inTabSection = false;
-		let currentTitle = '';
-		let consecutiveTabLines = 0;
-		let tabLinesInSection = 0;
-
-		const tryFinishSection = (endLine: number): void => {
-			if (tabLinesInSection > 0 && endLine - sectionStartLine > 0) {
-				const sectionLines = lines.slice(sectionStartLine, endLine);
-				sections.push({
-					title: currentTitle,
-					startLine: sectionStartLine,
-					endLine: endLine - 1,
-					stringCount,
-					lines: sectionLines,
-					notes: [], // Will be filled in by NoteParsingStep
-					rawContent: sectionLines.join('\n')
-				});
-				currentTitle = '';
-				tabLinesInSection = 0;
-			}
-		};
-
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
-
-			if (isSectionTitle(line)) {
-				if (inTabSection) {
-					// End previous section
-					tryFinishSection(i);
-					sectionStartLine = i;
-					inTabSection = false;
+			// Detect section start (e.g., [Intro], [Verse 1], etc.)
+			const sectionMatch = line.match(/^\s*\[([^\]]+)\]\s*$/);
+			if (sectionMatch) {
+				// Finalize previous section if exists
+				if (currentSection) {
+					currentSection.lines = sectionLines;
+					currentSection.endLine = i - 1;
+					context.result.sections.push(currentSection as ParsedSection);
 				}
-				currentTitle = line
-					.trim()
-					.replace(/[\[\]:]/g, '')
-					.trim();
+
+				// Start new section
+				currentSection = {
+					title: sectionMatch[1].trim(),
+					startLine: i,
+					chords: [],
+					positions: []
+				};
+				sectionLines = [];
+				inSection = true;
+				continue; // Don't add the title line to sectionLines
+			}
+
+			// If it's a blank line and we are between sections, ignore it
+			if (!inSection && line === '') {
 				continue;
 			}
 
-			if (isTabLine(line)) {
-				consecutiveTabLines++;
-				tabLinesInSection++;
+			// If it's the first non-blank, non-title line, start the default section
+			if (!inSection && line !== '') {
+				currentSection = {
+					title: undefined, // Default section might not have a title
+					startLine: i,
+					chords: [],
+					positions: []
+				};
+				sectionLines = [];
+				inSection = true;
+			}
 
-				if (consecutiveTabLines === 1) {
-					// First tab line encountered after a non-tab sequence
-					if (!inTabSection) {
-						sectionStartLine = Math.max(0, i - 1); // Include the line before for context
-						inTabSection = true;
-					}
+			// Add line to current section if we are in one
+			if (inSection && currentSection) {
+				// Only add non-empty lines or lines that are part of the tab structure
+				if (line !== '' || context.lines[i].match(/^\s*[eBGDAE]-\|/)) {
+					sectionLines.push(context.lines[i]); // Store original line with leading/trailing whitespace
 				}
-
-				// If we've found a complete set of strings, check for section break
-				if (consecutiveTabLines === stringCount) {
-					// Look ahead to see if this is the end of a section
-					if (i + 1 >= lines.length || !isTabLine(lines[i + 1])) {
-						// Next line isn't a tab line, this might be the end of a section
-						// Only end section if we've moved a good distance from the start
-						if (i - sectionStartLine >= stringCount * 2) {
-							tryFinishSection(i + 1);
-							inTabSection = false;
-						}
-					}
-					consecutiveTabLines = 0;
-				}
-			} else {
-				consecutiveTabLines = 0;
 			}
 		}
 
-		// Process any remaining section
-		if (inTabSection) {
-			tryFinishSection(lines.length);
+		// Finalize the last section
+		if (currentSection) {
+			currentSection.lines = sectionLines;
+			currentSection.endLine = context.lines.length - 1;
+			context.result.sections.push(currentSection as ParsedSection);
 		}
 
-		// If no sections were found but we have tab content, create a default section
-		if (sections.length === 0 && lines.length > 0) {
-			sections.push({
-				title: 'Tab',
+		// If no sections were detected but there are lines, create a single default section
+		if (context.result.sections.length === 0 && context.lines.some((l) => l.trim() !== '')) {
+			context.result.sections.push({
+				title: undefined,
 				startLine: 0,
-				endLine: lines.length - 1,
-				stringCount,
-				lines: lines.slice(),
-				notes: [],
-				rawContent: lines.join('\n')
+				endLine: context.lines.length - 1,
+				lines: context.lines.filter((l) => l.trim() !== ''), // Store non-empty original lines
+				chords: [],
+				positions: []
 			});
 		}
-
-		result.sections = sections;
 	}
 }

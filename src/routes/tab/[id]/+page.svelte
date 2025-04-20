@@ -3,10 +3,10 @@
 	import { page } from '$app/stores';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import EnhancedTabViewer from '$lib/components/EnhancedTabViewer.svelte';
 	import ScrollControls from '$lib/components/ScrollControls.svelte';
 	import GuitarTuner from '$lib/components/GuitarTuner.svelte';
 	import preferences from '$lib/stores/preferences';
+	import TabViewer from '$lib/components/TabViewer.svelte';
 
 	let tabContainer = $state<HTMLDivElement | undefined>(undefined);
 	let currentPosition = $state(0);
@@ -101,12 +101,10 @@
 
 		<div class="tab-container" bind:this={tabContainer}>
 			{#if tabContainer}
-				<EnhancedTabViewer
+				<TabViewer
 					content={currentTab.content}
 					fontSize={$preferences.fontSize}
 					showChordDiagrams={true}
-					{currentPosition}
-					container={tabContainer}
 					on:openTuner={handleOpenTuner}
 				/>
 			{/if}
@@ -197,7 +195,8 @@
 
 	.tab-container {
 		flex: 1;
-		overflow: hidden;
+		/* Change overflow to allow scrolling */
+		overflow-y: auto;
 		padding: 0;
 	}
 

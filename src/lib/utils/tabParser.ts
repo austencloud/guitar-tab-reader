@@ -1,5 +1,10 @@
 import { createTabParser } from './parsing';
-import type { ParsedTab as NewParsedTab, ParsedNote, TabSection as NewTabSection } from './parsing';
+import type {
+	ParsedTab as NewParsedTab,
+	ParsedNote,
+	ParsedSection as NewTabSection,
+	ParsedChord
+} from './parsing';
 
 export interface TabNote {
 	fret: number;
@@ -58,22 +63,11 @@ function convertToLegacyFormat(newTab: NewParsedTab): ParsedTab {
 		// Convert notes to positions
 		const positions = convertNotesToPositions(section);
 
-		// Extract chords from the section
-		const chords: TabChord[] = (section.chords || []).map((chord: string) => {
-			// Find the chord position (using first occurrence in text)
-			let position = 0;
-			for (const line of section.lines) {
-				const pos = line.indexOf(chord);
-				if (pos >= 0) {
-					position = pos;
-					break;
-				}
-			}
-
-			return {
-				name: chord,
-				position
-			};
+		// Map ParsedChord objects to the structure expected by TabChord (if different)
+		// Assuming TabChord is { name: string; position: number; }
+		const chords: TabChord[] = (section.chords || []).map((chord: ParsedChord) => {
+			// If TabChord structure is different, adjust the return object here
+			return { name: chord.name, position: chord.position };
 		});
 
 		return {

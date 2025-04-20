@@ -5,14 +5,14 @@
 	export let container: HTMLElement;
 
 	let isScrolling = false;
-	let scrollSpeed = 0.05; // Much lower default speed for more precision
+	let scrollSpeed = 20; // Default speed in pixels per second
 	let stopScroll: () => void;
 
-	// Speed adjustment settings
-	const MIN_SPEED = 0.01;
-	const MAX_SPEED = 0.75;
-	const SPEED_STEP = 0.05;
-	const FORMAT_PRECISION = 2;
+	// Speed adjustment settings (pixels per second)
+	const MIN_SPEED = 1;
+	const MAX_SPEED = 100;
+	const SPEED_STEP = 5;
+	const FORMAT_PRECISION = 0; // No decimals needed for px/s
 
 	const dispatch = createEventDispatcher<{
 		scrollStateChange: boolean;
@@ -29,7 +29,11 @@
 	}
 
 	function startScroll() {
-		if (!container) return;
+		console.log('Attempting to start scroll. Container:', container); // Log container
+		if (!container) {
+			console.error('Scroll container not found!');
+			return;
+		}
 		isScrolling = true;
 		stopScroll = startAutoScroll(container, scrollSpeed);
 		dispatch('scrollStateChange', isScrolling);

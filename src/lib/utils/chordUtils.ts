@@ -4,7 +4,8 @@ export interface ChordPosition {
 	string: number;
 }
 
-interface ChordDefinition {
+// Export ChordDefinition
+export interface ChordDefinition {
 	positions: number[];
 	barre?: number;
 	baseFret?: number;
