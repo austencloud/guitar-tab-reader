@@ -8,47 +8,64 @@
 	} from '$lib/utils/visualizationConstants';
 	import { tick } from 'svelte';
 
-	export let note: ParsedNote;
-	export let stringIndex: number;
-	export let x: number;
-	export let y: number;
-	export let fontSize: number;
-	export let stringSpacing: number;
-	export let xScale: number;
-	export let currentPosition: number; // Horizontal scroll position in pixels
-	export let notePosition: number; // Character position of the note
+	interface Props {
+		note: ParsedNote;
+		stringIndex: number;
+		x: number;
+		y: number;
+		fontSize: number;
+		stringSpacing: number;
+		xScale: number;
+		currentPosition: number;
+		notePosition: number;
+	}
 
-	let element: SVGGElement;
-	let highlightOffset = 0;
-	let animationFrameId: number | null = null;
+	let {
+		note,
+		stringIndex,
+		x,
+		y,
+		fontSize,
+		stringSpacing,
+		xScale,
+		currentPosition,
+		notePosition
+	}: Props = $props();
 
-	$: noteX = x - fontSize / 2;
-	$: noteY = y - fontSize / 2;
-	$: textX = x;
-	$: textY = y + fontSize / 4;
-	$: techniqueTextX = x + fontSize;
-	$: techniqueTextY = y;
-	$: noteColor = stringColors[stringIndex % stringColors.length] || defaultColor;
+	let highlightOffset = $state(0);
+	let animationFrameId = $state<number | null>(null);
 
-	$: isHighlighted = Math.floor(currentPosition / (fontSize * xScale)) === notePosition;
+	const textX = $derived(x);
+	const textY = $derived(y + fontSize / 4);
+	const techniqueTextX = $derived(x + fontSize);
+	const techniqueTextY = $derived(y);
+	const noteColor = $derived(stringColors[stringIndex % stringColors.length] || defaultColor);
+
+	const isHighlighted = $derived(
+		Math.floor(currentPosition / (fontSize * xScale)) === notePosition
+	);
 
 	// Technique calculations
-	$: technique = note.technique;
-	$: techniqueFret = note.techniqueFret;
-	$: techniqueColor = technique
-		? techniqueColors[technique.charAt(0)] || defaultColor
-		: defaultColor;
+	const technique = $derived(note.technique);
+	const techniqueFret = $derived(note.techniqueFret);
+	const techniqueColor = $derived(
+		technique ? techniqueColors[technique.charAt(0)] || defaultColor : defaultColor
+	);
 
 	// Technique path calculations
-	$: techStartX = x + fontSize / 2;
-	$: techEndX = x + fontSize * 2; // For h, p, /, \
-	$: bendEndX = x + fontSize * 1.5; // For b
-	$: bendHeight = stringSpacing;
-	$: vibratoStartX = x + fontSize / 2;
+	const techStartX = $derived(x + fontSize / 2);
+	const techEndX = $derived(x + fontSize * 2); // For h, p, /, \
+	const bendEndX = $derived(x + fontSize * 1.5); // For b
+	const bendHeight = $derived(stringSpacing);
+	const vibratoStartX = $derived(x + fontSize / 2);
 
-	$: slidePath = `M ${techStartX} ${y} C ${x + fontSize} ${y - stringSpacing / 2}, ${techEndX - fontSize} ${y - stringSpacing / 2}, ${techEndX} ${y}`;
-	$: bendPath = `M ${techStartX} ${y} Q ${x + fontSize} ${y - bendHeight}, ${bendEndX} ${y - bendHeight}`;
-	$: vibratoPath = `M ${vibratoStartX} ${y} q 2 -3, 4 0 t 4 0 t 4 0 t 4 0`;
+	const slidePath = $derived(
+		`M ${techStartX} ${y} C ${x + fontSize} ${y - stringSpacing / 2}, ${techEndX - fontSize} ${y - stringSpacing / 2}, ${techEndX} ${y}`
+	);
+	const bendPath = $derived(
+		`M ${techStartX} ${y} Q ${x + fontSize} ${y - bendHeight}, ${bendEndX} ${y - bendHeight}`
+	);
+	const vibratoPath = $derived(`M ${vibratoStartX} ${y} q 2 -3, 4 0 t 4 0 t 4 0 t 4 0`);
 
 	function animateHighlight() {
 		highlightOffset = (Date.now() / 100) % 6; // Adjust speed/length as needed
@@ -57,18 +74,20 @@
 		}
 	}
 
-	$: if (isHighlighted && !animationFrameId) {
-		// Start animation only when highlighted
-		tick().then(() => {
-			// Ensure element exists if needed, though direct attribute binding is preferred
-			animationFrameId = requestAnimationFrame(animateHighlight);
-		});
-	} else if (!isHighlighted && animationFrameId) {
-		// Stop animation when not highlighted
-		cancelAnimationFrame(animationFrameId);
-		animationFrameId = null;
-		highlightOffset = 0; // Reset offset
-	}
+	$effect(() => {
+		if (isHighlighted && !animationFrameId) {
+			// Start animation only when highlighted
+			tick().then(() => {
+				// Ensure element exists if needed, though direct attribute binding is preferred
+				animationFrameId = requestAnimationFrame(animateHighlight);
+			});
+		} else if (!isHighlighted && animationFrameId) {
+			// Stop animation when not highlighted
+			cancelAnimationFrame(animationFrameId);
+			animationFrameId = null;
+			highlightOffset = 0; // Reset offset
+		}
+	});
 
 	// Cleanup animation frame on component destroy
 	import { onDestroy } from 'svelte';
@@ -79,7 +98,7 @@
 	});
 </script>
 
-<g bind:this={element} class="note-group">
+<g class="note-group">
 	<!-- Note Rectangle -->
 	<rect
 		{x}

@@ -1,16 +1,18 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
 	import { scale } from 'svelte/transition';
 	import ChordDiagram from '../ChordDiagram.svelte';
 	import type { ProcessedChord } from '../../utils/chordUtils';
 
-	export let visible: boolean = false;
-	export let chord: ProcessedChord | null = null;
+	interface Props {
+		visible?: boolean;
+		chord?: ProcessedChord | null;
+		onclose?: () => void;
+	}
 
-	const dispatch = createEventDispatcher<{ close: void }>();
+	let { visible = false, chord = null, onclose }: Props = $props();
 
 	function closeModal() {
-		dispatch('close');
+		onclose?.();
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -27,29 +29,31 @@
 	}
 
 	// Focus management for accessibility
-	let modalElement: HTMLDivElement;
-	let previouslyFocusedElement: HTMLElement | null;
+	let modalElement = $state<HTMLDivElement>();
+	let previouslyFocusedElement = $state<HTMLElement | null>(null);
 
-	$: if (visible && modalElement) {
-		previouslyFocusedElement = document.activeElement as HTMLElement;
-		// Use requestAnimationFrame to ensure modal is rendered before focusing
-		requestAnimationFrame(() => {
-			modalElement?.focus();
-		});
-	} else if (!visible && previouslyFocusedElement) {
-		previouslyFocusedElement?.focus();
-		previouslyFocusedElement = null;
-	}
+	$effect(() => {
+		if (visible && modalElement) {
+			previouslyFocusedElement = document.activeElement as HTMLElement;
+			// Use requestAnimationFrame to ensure modal is rendered before focusing
+			requestAnimationFrame(() => {
+				modalElement?.focus();
+			});
+		} else if (!visible && previouslyFocusedElement) {
+			previouslyFocusedElement?.focus();
+			previouslyFocusedElement = null;
+		}
+	});
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if visible && chord}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="chord-modal-backdrop"
-		on:click={handleBackdropClick}
+		onclick={handleBackdropClick}
 		transition:scale={{ duration: 150, start: 0.95, opacity: 0.7 }}
 	>
 		<div
@@ -67,7 +71,7 @@
 				barre={chord.barre}
 				baseFret={chord.baseFret}
 			/>
-			<button on:click={closeModal}>Close</button>
+			<button onclick={closeModal}>Close</button>
 		</div>
 	</div>
 {/if}

@@ -15,7 +15,7 @@ export class TuningDetectionStep implements ParserStep {
 
 		// Common tuning patterns in tab notation
 		const tuningPatterns = [
-			/^([eEADGBbfCF])[\|:]/, // e|----, E|---- etc.
+			/^([eEADGBbfCF])[|:]/, // e|----, E|---- etc.
 			/^String\s*(\d+)\s*:\s*([eEADGBbfCF])/i, // String 1: E etc.
 			/^([eEADGBbfCF])\s*String/i, // E String etc.
 			/Tuning:\s*([eEADGBbfCF][#b]?)\s*([eEADGBbfCF][#b]?)\s*([eEADGBbfCF][#b]?)\s*([eEADGBbfCF][#b]?)\s*([eEADGBbfCF][#b]?)\s*([eEADGBbfCF][#b]?)/i
@@ -42,10 +42,9 @@ export class TuningDetectionStep implements ParserStep {
 						// If line starts with a string name followed by | or :
 						// Store it and look for consecutive lines
 						const potentialStringNames = [];
-						const startIndex = i;
 
 						for (let j = 0; j < stringCount && i + j < lines.length; j++) {
-							const lineMatch = lines[i + j].match(/^([eEADGBbfCF])[\|:]/);
+							const lineMatch = lines[i + j].match(/^([eEADGBbfCF])[|:]/);
 							if (lineMatch) {
 								potentialStringNames.push(lineMatch[1]);
 							} else {

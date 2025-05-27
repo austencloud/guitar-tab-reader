@@ -1,16 +1,22 @@
 <script lang="ts">
 	import type { StringDefinition } from '../../utils/tuner/types';
 
-	export let activeStrings: StringDefinition[] = [];
-	export let closestString: StringDefinition | null = null;
-	export let detectedCents: number = 0;
+	interface Props {
+		activeStrings?: StringDefinition[];
+		closestString?: StringDefinition | null;
+		detectedCents?: number;
+	}
+
+	let { activeStrings = [], closestString = null, detectedCents = 0 }: Props = $props();
 
 	// Sort strings to display in standard order (low E to high e)
-	$: sortedStrings = [...activeStrings].sort((a, b) => {
-		// Standard 6-string guitar strings are typically numbered 1 (high E) to 6 (low E)
-		// We want to display them in reverse order (6 to 1) to show low E on left
-		return b.string - a.string;
-	});
+	const sortedStrings = $derived(
+		[...activeStrings].sort((a, b) => {
+			// Standard 6-string guitar strings are typically numbered 1 (high E) to 6 (low E)
+			// We want to display them in reverse order (6 to 1) to show low E on left
+			return b.string - a.string;
+		})
+	);
 
 	// Function to get the display note (e.g., 'e' for high E)
 	function getDisplayNote(stringDef: StringDefinition): string {
@@ -22,18 +28,31 @@
 	}
 </script>
 
-<div class="strings-display">
+<div class="strings-display" role="group" aria-label="Guitar strings tuning status">
 	{#each sortedStrings as string}
+		{@const isActive = closestString && closestString.string === string.string}
+		{@const isInTune = isActive && Math.abs(detectedCents) < 5}
+		{@const isFlat = isActive && detectedCents < -5}
+		{@const isSharp = isActive && detectedCents > 5}
+		{@const tuningStatus = isInTune
+			? 'in tune'
+			: isFlat
+				? 'flat'
+				: isSharp
+					? 'sharp'
+					: 'not detected'}
+
 		<div
 			class="string-indicator"
-			class:active={closestString && closestString.string === string.string}
-			class:in-tune={closestString &&
-				closestString.string === string.string &&
-				Math.abs(detectedCents) < 5}
-			class:flat={closestString && closestString.string === string.string && detectedCents < -5}
-			class:sharp={closestString && closestString.string === string.string && detectedCents > 5}
+			class:active={isActive}
+			class:in-tune={isInTune}
+			class:flat={isFlat}
+			class:sharp={isSharp}
+			role="status"
+			aria-label="String {string.string} ({getDisplayNote(string)}): {tuningStatus}"
+			aria-live="polite"
 		>
-			{getDisplayNote(string)}
+			<span aria-hidden="true">{getDisplayNote(string)}</span>
 		</div>
 	{/each}
 </div>
@@ -47,45 +66,54 @@
 	}
 
 	.string-indicator {
-		padding: 0.5rem;
-		border-radius: 4px;
-		font-weight: bold;
-		border: 2px solid #ddd;
-		background-color: #eee;
+		padding: var(--spacing-sm);
+		border-radius: var(--radius-md);
+		font-weight: var(--font-weight-bold);
+		border: 2px solid var(--color-border);
+		background-color: var(--color-surface-variant);
+		color: var(--color-text-primary);
 		width: 40px;
 		text-align: center;
-		transition: all 0.2s;
+		transition: var(--transition-all);
+		cursor: default;
+		user-select: none;
 	}
 
 	.string-indicator.active {
-		border-color: #333;
-		background-color: #f9f9f9;
+		border-color: var(--color-text-primary);
+		background-color: var(--color-surface-elevated);
+		transform: scale(1.05);
+		box-shadow: var(--shadow-md);
 	}
 
 	.string-indicator.in-tune {
-		border-color: #4caf50;
-		background-color: rgba(76, 175, 80, 0.1);
+		border-color: var(--color-success);
+		background-color: color-mix(in srgb, var(--color-success) 10%, transparent);
+		color: var(--color-success);
+		animation: pulse-success 1.5s infinite ease-in-out;
 	}
 
 	.string-indicator.flat {
-		border-color: #2196f3;
-		background-color: rgba(33, 150, 243, 0.1);
+		border-color: var(--color-info);
+		background-color: color-mix(in srgb, var(--color-info) 10%, transparent);
+		color: var(--color-info);
 	}
 
 	.string-indicator.sharp {
-		border-color: #f44336;
-		background-color: rgba(244, 67, 54, 0.1);
+		border-color: var(--color-error);
+		background-color: color-mix(in srgb, var(--color-error) 10%, transparent);
+		color: var(--color-error);
 	}
 
-	@media (prefers-color-scheme: dark) {
-		.string-indicator {
-			border-color: #444;
-			background-color: #333;
+	@keyframes pulse-success {
+		0%,
+		100% {
+			transform: scale(1.05);
+			box-shadow: var(--shadow-md);
 		}
-
-		.string-indicator.active {
-			border-color: #ccc;
-			background-color: #2d2d2d;
+		50% {
+			transform: scale(1.1);
+			box-shadow: var(--shadow-lg);
 		}
 	}
 

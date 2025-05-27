@@ -1,40 +1,45 @@
 <script lang="ts">
 	// Import the new parser and types
-	import { createTabParser, type ParsedTab as NewParsedTab, type ParsedSection } from '$lib/utils/parsing';
+	import { createTabParser, type ParsedTab as NewParsedTab } from '$lib/utils/parsing';
 	import SvgSectionRenderer from './tabVisualizer/SvgSectionRenderer.svelte';
-	import { onMount, onDestroy } from 'svelte';
-	// Removed import { parseTab, type ParsedTab } from '$lib/utils/tabParser';
+	import { onMount } from 'svelte';
 
-	export let content: string;
-	export let fontSize: number = 14;
-	export let showChordDiagrams: boolean = true;
-	export let currentPosition: number = 0; // Horizontal pixel position
+	interface Props {
+		content: string;
+		fontSize?: number;
+		showChordDiagrams?: boolean;
+		currentPosition?: number;
+	}
 
-	let container: HTMLDivElement;
-	let svgElement: SVGElement;
-	// Use the new ParsedTab type
-	let parsedTab: NewParsedTab | null = null;
-	let tabWidth = 0;
-	let tabHeight = 0;
-	let stringSpacing = 0;
-	let xScale = 0.5; // Units per character
-	let resizeObserver: ResizeObserver | null = null;
-	let sectionYOffsets: number[] = []; // Store pre-calculated offsets
+	let { content, fontSize = 14, showChordDiagrams = true, currentPosition = 0 }: Props = $props();
+
+	let container = $state<HTMLDivElement>();
+	let svgElement = $state<SVGElement>();
+	let parsedTab = $state<NewParsedTab | null>(null);
+	let tabWidth = $state(0);
+	let tabHeight = $state(0);
+	let stringSpacing = $state(0);
+	let xScale = $state(0.5);
+	let resizeObserver = $state<ResizeObserver | null>(null);
+	let sectionYOffsets = $state<number[]>([]);
 
 	// Define reactive variables for stringCount and stringNames
-	$: stringCount = parsedTab?.stringCount ?? 6;
-	$: stringNames = parsedTab?.stringNames ?? ['e', 'B', 'G', 'D', 'A', 'E'];
+	const stringCount = $derived(parsedTab?.stringCount ?? 6);
+	const stringNames = $derived(parsedTab?.stringNames ?? ['e', 'B', 'G', 'D', 'A', 'E']);
 
 	export { container };
 
-	$: if (content) {
-		// Use the new parser directly
-		parsedTab = createTabParser().parse(content);
-	}
+	$effect(() => {
+		if (content) {
+			parsedTab = createTabParser().parse(content);
+		}
+	});
 
-	$: if (parsedTab && svgElement) {
-		updateTabVisualization();
-	}
+	$effect(() => {
+		if (parsedTab && svgElement) {
+			updateTabVisualization();
+		}
+	});
 
 	// ... onMount/onDestroy remain largely the same ...
 	onMount(() => {
@@ -65,7 +70,6 @@
 			resizeObserver = null;
 		};
 	});
-
 
 	function updateTabVisualization() {
 		if (!parsedTab) return;
@@ -123,9 +127,9 @@
 			{#each parsedTab.sections as section, sectionIndex (section.startLine ?? sectionIndex)}
 				<SvgSectionRenderer
 					{section}
-					{stringCount} 
+					{stringCount}
 					{stringNames}
-					yOffset={sectionYOffsets[sectionIndex]} 
+					yOffset={sectionYOffsets[sectionIndex]}
 					{fontSize}
 					{stringSpacing}
 					{xScale}

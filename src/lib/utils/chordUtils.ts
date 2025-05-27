@@ -22,28 +22,29 @@ export interface ProcessedChord {
 
 export type ChordDictionary = Record<string, ChordDefinition>;
 
-const CHORD_ROOTS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-const MODIFIERS = ['b', '#', '♭', '♯'];
-const SUFFIXES = [
-	'',
-	'm',
-	'7',
-	'maj7',
-	'm7',
-	'dim',
-	'aug',
-	'sus2',
-	'sus4',
-	'add9',
-	'9',
-	'6',
-	'm6',
-	'5',
-	'11',
-	'13',
-	'maj9',
-	'mmaj7'
-];
+// Chord parsing constants (for future use)
+// const CHORD_ROOTS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+// const MODIFIERS = ['b', '#', '♭', '♯'];
+// const SUFFIXES = [
+// 	'',
+// 	'm',
+// 	'7',
+// 	'maj7',
+// 	'm7',
+// 	'dim',
+// 	'aug',
+// 	'sus2',
+// 	'sus4',
+// 	'add9',
+// 	'9',
+// 	'6',
+// 	'm6',
+// 	'5',
+// 	'11',
+// 	'13',
+// 	'maj9',
+// 	'mmaj7'
+// ];
 
 let chordDictionary: ChordDictionary = {};
 let loadingPromise: Promise<void> | null = null;

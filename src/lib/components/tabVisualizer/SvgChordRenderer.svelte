@@ -1,18 +1,21 @@
 <script lang="ts">
 	import type { ParsedChord } from '$lib/utils/parsing/types';
-	import { getChordByName, type ChordDefinition } from '$lib/utils/chordUtils';
+	import { getChordByName } from '$lib/utils/chordUtils';
 	import { chordTextColor } from '$lib/utils/visualizationConstants';
 	import SvgChordDiagramRenderer from './SvgChordDiagramRenderer.svelte';
 
-	export let chord: ParsedChord;
-	export let x: number;
-	export let y: number; // Y position for the chord name text (above the staff)
-	export let diagramY: number; // Y position for the top of the chord diagram
-	export let fontSize: number;
-	export let showDiagram: boolean;
+	interface Props {
+		chord: ParsedChord;
+		x: number;
+		y: number;
+		diagramY: number;
+		fontSize: number;
+		showDiagram: boolean;
+	}
 
-	// Correct reactive declaration syntax
-	$: chordDefinition = showDiagram ? getChordByName(chord.name) : null;
+	let { chord, x, y, diagramY, fontSize, showDiagram }: Props = $props();
+
+	const chordDefinition = $derived(showDiagram ? getChordByName(chord.name) : null);
 </script>
 
 <g class="chord-display">

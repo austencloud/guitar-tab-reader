@@ -1,59 +1,64 @@
 <script lang="ts">
-	import { onMount, onDestroy, tick, createEventDispatcher, getContext } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { loadChordDictionary, findChordsInText, type ProcessedChord } from '../utils/chordUtils';
 	import { browser } from '$app/environment';
 	import TabContentRenderer from './tabViewer/TabContentRenderer.svelte';
 	import ChordTooltip from './tabViewer/ChordTooltip.svelte';
 	import ChordModal from './tabViewer/ChordModal.svelte';
 
-	// Props
-	export let content: string = '';
-	export let fontSize: number = 14;
-	export let showChordDiagrams: boolean = true;
+	interface Props {
+		content?: string;
+		fontSize?: number;
+		showChordDiagrams?: boolean;
+		onopenTuner?: () => void;
+	}
+
+	let { content = '', fontSize = 14, showChordDiagrams = true, onopenTuner }: Props = $props();
 
 	// Internal state
-	let container: HTMLDivElement; // Bound element for coordinate calculations
-	let processedContentHtml: string = '';
-	let chordsMap = new Map<string, ProcessedChord>(); // Store chord data by name
-	let chordDictionaryLoaded = false;
-	let contentHash = '';
-	let isMobile = false;
-	let isTouch = false;
+	let container = $state<HTMLDivElement>();
+	let processedContentHtml = $state('');
+	let chordsMap = $state(new Map<string, ProcessedChord>());
+	let chordDictionaryLoaded = $state(false);
+	let contentHash = $state('');
+	let isMobile = $state(false);
+	let isTouch = $state(false);
 
 	// Tooltip state
-	let tooltipVisible = false;
-	let tooltipX = 0;
-	let tooltipY = 0;
-	let tooltipChord: ProcessedChord | null = null;
-	let tooltipPlacement: 'above' | 'below' = 'below';
-	let tooltipTimeout: number | null = null;
-	let tooltipComponent: ChordTooltip; // Reference to the tooltip component instance
+	let tooltipVisible = $state(false);
+	let tooltipX = $state(0);
+	let tooltipY = $state(0);
+	let tooltipChord = $state<ProcessedChord | null>(null);
+	let tooltipPlacement = $state<'above' | 'below'>('below');
+	let tooltipTimeout = $state<number | null>(null);
+	let tooltipComponent = $state<ChordTooltip>();
 
 	// Modal state
-	let modalVisible = false;
-	let modalChord: ProcessedChord | null = null;
-
-	const dispatch = createEventDispatcher<{ openTuner: void }>();
-	const tunerContext = getContext<{ open: () => void }>('tuner'); // Simplified context example
+	let modalVisible = $state(false);
+	let modalChord = $state<ProcessedChord | null>(null);
 
 	const TOOLTIP_DELAY = 150;
 	const TOOLTIP_HIDE_DELAY = 300;
 
 	// --- Reactive Computations ---
 
-	$: contentStyle = `font-family: 'Courier New', monospace; font-size: ${fontSize}px; line-height: 1.5;`;
+	const contentStyle = $derived(
+		`font-family: 'Courier New', monospace; font-size: ${fontSize}px; line-height: 1.5;`
+	);
 
 	// Re-process content when it changes or dictionary loads
-	$: if (browser && content && chordDictionaryLoaded) {
-		const newHash = hashString(content);
-		if (newHash !== contentHash) {
-			contentHash = newHash;
-			processAndRenderContent();
+	$effect(() => {
+		if (browser && content && chordDictionaryLoaded) {
+			const newHash = hashString(content);
+			if (newHash !== contentHash) {
+				contentHash = newHash;
+				processAndRenderContent();
+			}
+		} else if (!content) {
+			processedContentHtml = '';
+			contentHash = '';
 		}
-	} else if (!content) {
-		processedContentHtml = ''; // Clear if content is empty
-		contentHash = '';
-	}
+	});
 
 	// --- Lifecycle ---
 
@@ -206,12 +211,30 @@
 
 	function handleKeyDown(event: KeyboardEvent) {
 		const target = event.target as HTMLElement;
+
+		// Global keyboard shortcuts
+		if (event.key === 't' && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			onopenTuner?.();
+			return;
+		}
+
 		if (!target.classList.contains('chord')) return;
 
 		// Trigger click (modal) on Enter or Space
 		if (event.key === 'Enter' || event.key === ' ') {
 			event.preventDefault(); // Prevent space from scrolling page
-			handleChordClick(event as any); // Reuse click logic
+			// Create a synthetic mouse event for keyboard activation
+			const syntheticEvent = new MouseEvent('click', {
+				bubbles: true,
+				cancelable: true,
+				view: window
+			});
+			Object.defineProperty(syntheticEvent, 'target', {
+				value: event.target,
+				enumerable: true
+			});
+			handleChordClick(syntheticEvent);
 		}
 	}
 
@@ -323,13 +346,13 @@
 	role="region"
 	aria-label="Tab Content"
 	tabindex="-1"
-	on:mouseenter={handleInteractionStart}
-	on:mouseleave={handleInteractionEnd}
-	on:touchstart={handleInteractionStart}
-	on:click={handleChordClick}
-	on:keydown={handleKeyDown}
-	on:focusin={handleFocusIn}
-	on:focusout={handleFocusOut}
+	onmouseenter={handleInteractionStart}
+	onmouseleave={handleInteractionEnd}
+	ontouchstart={handleInteractionStart}
+	onclick={handleChordClick}
+	onkeydown={handleKeyDown}
+	onfocusin={handleFocusIn}
+	onfocusout={handleFocusOut}
 >
 	{#if chordDictionaryLoaded}
 		<TabContentRenderer content={processedContentHtml} style={contentStyle} />
@@ -342,8 +365,8 @@
 			y={tooltipY}
 			placement={tooltipPlacement}
 			{isMobile}
-			on:mouseenter={handleTooltipMouseEnter}
-			on:mouseleave={handleTooltipMouseLeave}
+			onmouseenter={handleTooltipMouseEnter}
+			onmouseleave={handleTooltipMouseLeave}
 		/>
 	{:else}
 		<!-- Show plain content while dictionary loads -->
@@ -351,7 +374,7 @@
 	{/if}
 </div>
 
-<ChordModal visible={modalVisible} chord={modalChord} on:close={handleModalClose} />
+<ChordModal visible={modalVisible} chord={modalChord} onclose={handleModalClose} />
 
 <style>
 	.tab-viewer {

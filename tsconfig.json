@@ -11,6 +11,6 @@
 		"strict": true,
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"verbatimModuleSyntax": false,
+		"verbatimModuleSyntax": false
 	}
 }

@@ -4,28 +4,47 @@
 	import SvgNoteRenderer from './SvgNoteRenderer.svelte';
 	import SvgChordRenderer from './SvgChordRenderer.svelte';
 
-	export let section: ParsedSection;
-	export let stringCount: number;
-	export let stringNames: string[];
-	export let yOffset: number;
-	export let fontSize: number;
-	export let stringSpacing: number;
-	export let xScale: number;
-	export let tabWidth: number;
-	export let showChordDiagrams: boolean;
-	export let currentPosition: number;
-
-	let sectionY = yOffset;
-
-	// Adjust yOffset if title exists
-	$: if (section.title) {
-		sectionY += stringSpacing;
+	interface Props {
+		section: ParsedSection;
+		stringCount: number;
+		stringNames: string[];
+		yOffset: number;
+		fontSize: number;
+		stringSpacing: number;
+		xScale: number;
+		tabWidth: number;
+		showChordDiagrams: boolean;
+		currentPosition: number;
 	}
 
-	$: staffStartY = sectionY;
-	$: staffEndY = staffStartY + (stringCount - 1) * stringSpacing;
-	$: chordNameY = staffStartY - stringSpacing;
-	$: chordDiagramY = staffStartY - stringSpacing * 5; // Position diagram above chord name
+	let {
+		section,
+		stringCount,
+		stringNames,
+		yOffset,
+		fontSize,
+		stringSpacing,
+		xScale,
+		tabWidth,
+		showChordDiagrams,
+		currentPosition
+	}: Props = $props();
+
+	let sectionY = $state(yOffset);
+
+	// Adjust yOffset if title exists
+	$effect(() => {
+		if (section.title) {
+			sectionY = yOffset + stringSpacing;
+		} else {
+			sectionY = yOffset;
+		}
+	});
+
+	const staffStartY = $derived(sectionY);
+	const staffEndY = $derived(staffStartY + (stringCount - 1) * stringSpacing);
+	const chordNameY = $derived(staffStartY - stringSpacing);
+	const chordDiagramY = $derived(staffStartY - stringSpacing * 5);
 </script>
 
 <g class="tab-section">

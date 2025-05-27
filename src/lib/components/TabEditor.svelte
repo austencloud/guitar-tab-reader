@@ -1,20 +1,33 @@
 <script lang="ts">
 	import { tabs } from '../stores/tabs';
-	import { createEventDispatcher } from 'svelte';
 
-	export let id: string | null = null;
-	export let title: string = '';
-	export let content: string = '';
-	export let artist: string = '';
-	export let album: string = '';
+	interface Props {
+		id?: string | null;
+		title?: string;
+		content?: string;
+		artist?: string;
+		album?: string;
+		onsaved?: (event: { id: string }) => void;
+		oncanceled?: () => void;
+	}
 
-	let isSaving = false;
-	const dispatch = createEventDispatcher<{
-		saved: { id: string };
-		canceled: void;
-	}>();
+	let {
+		id = null,
+		title: initialTitle = '',
+		content: initialContent = '',
+		artist: initialArtist = '',
+		album: initialAlbum = '',
+		onsaved,
+		oncanceled
+	}: Props = $props();
 
-	$: isEditMode = !!id;
+	let title = $state(initialTitle);
+	let content = $state(initialContent);
+	let artist = $state(initialArtist);
+	let album = $state(initialAlbum);
+	let isSaving = $state(false);
+
+	const isEditMode = $derived(!!id);
 
 	async function saveTab() {
 		if (!title.trim()) {
@@ -34,14 +47,14 @@
 				savedId = tabs.add({ title, content, artist, album });
 			}
 
-			dispatch('saved', { id: savedId });
+			onsaved?.({ id: savedId });
 		} finally {
 			isSaving = false;
 		}
 	}
 
 	function cancel() {
-		dispatch('canceled');
+		oncanceled?.();
 	}
 
 	// Example tab template for new users
@@ -108,13 +121,13 @@
 		></textarea>
 
 		{#if !content}
-			<button class="example-btn" on:click={insertExampleTab}>Insert Example Tab</button>
+			<button class="example-btn" onclick={insertExampleTab}>Insert Example Tab</button>
 		{/if}
 	</div>
 
 	<div class="button-group">
-		<button class="cancel-btn" on:click={cancel}> Cancel </button>
-		<button class="save-btn" on:click={saveTab} disabled={isSaving}>
+		<button class="cancel-btn" onclick={cancel}> Cancel </button>
+		<button class="save-btn" onclick={saveTab} disabled={isSaving}>
 			{isSaving ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
 		</button>
 	</div>

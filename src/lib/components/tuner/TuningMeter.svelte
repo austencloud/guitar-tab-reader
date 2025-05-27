@@ -7,10 +7,19 @@
 	import MeterDisplay from './MeterDisplay.svelte';
 	import StringButtons from './StringButtons.svelte';
 
-	export let detectedCents: number = 0;
-	export let closestString: StringDefinition | null = null;
-	export let strings: StringDefinition[] = [];
-	export let statusMessage: string = '';
+	interface Props {
+		detectedCents?: number;
+		closestString?: StringDefinition | null;
+		strings?: StringDefinition[];
+		statusMessage?: string;
+	}
+
+	let {
+		detectedCents = 0,
+		closestString = null,
+		strings = [],
+		statusMessage = ''
+	}: Props = $props();
 
 	const TUNED_THRESHOLD = 10;
 
@@ -19,30 +28,32 @@
 		easing: cubicOut
 	});
 
-	let mounted = false;
-	let lastDetectedCents = 0;
+	let mounted = $state(false);
+	let lastDetectedCents = $state(0);
 
-	$: isCurrentlyTuned = !!(closestString && Math.abs(detectedCents) < TUNED_THRESHOLD);
+	const isCurrentlyTuned = $derived(!!(closestString && Math.abs(detectedCents) < TUNED_THRESHOLD));
 
-	$: if (mounted) {
-		if (isCurrentlyTuned) {
-			needleRotation.set(0, { duration: 100 });
-			lastDetectedCents = 0;
-		} else if (closestString) {
-			const targetRotation = Math.max(-45, Math.min(45, detectedCents));
-			if (Math.abs(detectedCents - lastDetectedCents) > 1) {
-				needleRotation.set(targetRotation);
-				lastDetectedCents = detectedCents;
+	$effect(() => {
+		if (mounted) {
+			if (isCurrentlyTuned) {
+				needleRotation.set(0, { duration: 100 });
+				lastDetectedCents = 0;
+			} else if (closestString) {
+				const targetRotation = Math.max(-45, Math.min(45, detectedCents));
+				if (Math.abs(detectedCents - lastDetectedCents) > 1) {
+					needleRotation.set(targetRotation);
+					lastDetectedCents = detectedCents;
+				}
+			} else {
+				needleRotation.set(0);
+				lastDetectedCents = 0;
 			}
-		} else {
-			needleRotation.set(0);
-			lastDetectedCents = 0;
 		}
-	}
+	});
 
-	$: tuningState = isCurrentlyTuned
-		? 'perfect'
-		: getTuningState(closestString ? detectedCents : lastDetectedCents);
+	const tuningState = $derived(
+		isCurrentlyTuned ? 'perfect' : getTuningState(closestString ? detectedCents : lastDetectedCents)
+	);
 
 	function getTuningState(cents: number) {
 		const absCents = Math.abs(cents);
@@ -52,7 +63,8 @@
 	}
 
 	function playReferenceNote(string: StringDefinition) {
-		const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+		const audioContext = new (window.AudioContext ||
+			(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
 		const oscillator = audioContext.createOscillator();
 		const gainNode = audioContext.createGain();
 
@@ -94,7 +106,7 @@
 		needleRotationStore={needleRotation}
 	/>
 
-	<StringButtons {strings} {closestString} on:playNote={(e) => playReferenceNote(e.detail)} />
+	<StringButtons {strings} {closestString} onplayNote={(string) => playReferenceNote(string)} />
 </div>
 
 <style>

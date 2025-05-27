@@ -1,9 +1,13 @@
 <script lang="ts">
 	import type { StringDefinition } from '../../utils/tuner/types';
 
-	export let closestString: StringDefinition | null = null;
-	export let statusMessage: string = '';
-	export let isCurrentlyTuned: boolean = false;
+	interface Props {
+		closestString?: StringDefinition | null;
+		statusMessage?: string;
+		isCurrentlyTuned?: boolean;
+	}
+
+	let { closestString = null, statusMessage = '', isCurrentlyTuned = false }: Props = $props();
 </script>
 
 <div class="note-info">

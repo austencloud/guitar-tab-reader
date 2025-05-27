@@ -1,11 +1,15 @@
 <script lang="ts">
 	import preferences from '../stores/preferences';
 
-	export let name: string;
-	export let positions: number[] = [];
-	export let barre: number | undefined = undefined;
-	export let baseFret: number = 1;
-	export let size: 'sm' | 'md' | 'lg' = 'lg';
+	interface Props {
+		name: string;
+		positions?: number[];
+		barre?: number | undefined;
+		baseFret?: number;
+		size?: 'sm' | 'md' | 'lg';
+	}
+
+	let { name, positions = [], barre = undefined, baseFret = 1, size = 'lg' }: Props = $props();
 
 	// Size constants
 	const sizes = {
@@ -36,28 +40,29 @@
 	};
 
 	// Get size values
-	$: currentSize = sizes[size];
+	const currentSize = $derived(sizes[size]);
 
 	// SVG dimensions
-	$: width = currentSize.width;
-	$: height = currentSize.height;
-	$: stringSpacing = width / 7;
-	$: fretSpacing = (height - 20) / 6;
+	const width = $derived(currentSize.width);
+	const height = $derived(currentSize.height);
+	const stringSpacing = $derived(width / 7);
+	const fretSpacing = $derived((height - 20) / 6);
 
 	// Display properties
-	$: showNut = baseFret === 1;
-	$: fretNumberX = width - 14;
-	$: fretNumberY = fretSpacing;
+	const showNut = $derived(baseFret === 1);
+	const fretNumberY = $derived(fretSpacing);
 
 	// Adjust positions based on handedness
-	$: displayPositions = $preferences.isLeftHanded ? [...positions].reverse() : positions;
+	const displayPositions = $derived(
+		$preferences.isLeftHanded ? [...positions].reverse() : positions
+	);
 </script>
 
 <div class="chord-diagram" style="--width: {width}px; --height: {height}px;">
 	<div class="chord-name">{name}</div>
 	<svg {width} {height} viewBox="0 0 {width} {height}">
 		<!-- Strings -->
-		{#each Array(6) as _, i}
+		{#each Array(6) as _, i (i)}
 			{@const x = stringSpacing + i * stringSpacing}
 			{@const isThickString = $preferences.isLeftHanded ? i === 5 : i === 0}
 			{@const isThinString = $preferences.isLeftHanded ? i === 0 : i === 5}
@@ -76,7 +81,7 @@
 		{/each}
 
 		<!-- Frets -->
-		{#each Array(6) as _, i}
+		{#each Array(6) as _, i (i)}
 			{@const y = 10 + i * fretSpacing}
 			<line
 				x1={stringSpacing}
@@ -108,7 +113,7 @@
 		{/if}
 
 		<!-- Finger positions -->
-		{#each displayPositions as position, i}
+		{#each displayPositions as position, i (i)}
 			{@const stringIndex = 5 - i}
 			{@const x = stringSpacing + stringIndex * stringSpacing}
 			{#if position > 0}

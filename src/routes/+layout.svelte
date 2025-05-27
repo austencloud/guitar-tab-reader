@@ -3,6 +3,7 @@
 	import SettingsButton from '$lib/components/SettingsButton.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import GuitarTuner from '$lib/components/GuitarTuner.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import { setContext, getContext } from 'svelte';
 
 	interface TunerState {
@@ -30,14 +31,14 @@
 	});
 
 	// Try to get context from child routes
-	function handleContextMount(node: HTMLElement) {
+	function handleContextMount(_node: HTMLElement) {
 		try {
 			// Try to get tuner state from a child route
 			childTunerState = getContext<TunerState>('tunerState');
 			if (childTunerState) {
 				tunerOpen = childTunerState.open;
 			}
-		} catch (e) {
+		} catch {
 			// Context not available, no problem
 		}
 
@@ -50,6 +51,14 @@
 
 	function toggleSettings() {
 		settingsOpen = !settingsOpen;
+	}
+
+	function closeSettings() {
+		settingsOpen = false;
+	}
+
+	function closeTuner() {
+		tunerOpen = false;
 	}
 
 	function toggleTuner() {
@@ -71,17 +80,12 @@
 	<header class="app-header">
 		<div class="logo-area">
 			<a href="/" class="logo-link">
-				<svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-					<path
-						d="M19 3H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 10.5h-1V15H9.5v-1.5h-3V9H8v3h1.5V9H11v3h1v1.5zm6 1.5h-1.75l-1.75-2.25V15H13V9h1.5v2.25L16.25 9H18l-2.25 3L18 15z"
-					/>
-				</svg>
 				<h1 class="app-title">Guitar Tab Reader</h1>
 			</a>
 		</div>
 		<div class="app-actions">
 			<button class="tuner-button" onclick={toggleTuner} aria-label="Open Guitar Tuner">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
 					<path
 						fill="currentColor"
 						d="M12 3a9 9 0 0 0-9 9h3c0-3.31 2.69-6 6-6s6 2.69 6 6h3a9 9 0 0 0-9-9zm3.14 12a3.01 3.01 0 0 1-2.14.9 3 3 0 0 1-3-3 2.97 2.97 0 0 1 .9-2.14L12 8.07l1.14 2.69c.58.59.9 1.35.9 2.14a2.99 2.99 0 0 1-.9 2.1z"
@@ -89,17 +93,19 @@
 				</svg>
 				<span>Tune Guitar</span>
 			</button>
-			<SettingsButton on:click={toggleSettings} />
+			<SettingsButton onclick={toggleSettings} />
 		</div>
 	</header>
 
 	<div class="content-wrapper" use:handleContextMount>
 		{@render children()}
 	</div>
+
+	<Footer />
 </div>
 
-<SettingsModal bind:open={settingsOpen} />
-<GuitarTuner bind:showTuner={tunerOpen} />
+<SettingsModal open={settingsOpen} onclose={closeSettings} />
+<GuitarTuner showTuner={tunerOpen} onclose={closeTuner} />
 
 <style>
 	:global(body) {
@@ -108,9 +114,10 @@
 		font-family:
 			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
 			'Helvetica Neue', sans-serif;
-		background-color: #f9f9f9;
-		color: #333;
+		background-color: var(--color-background);
+		color: var(--color-text-primary);
 		overscroll-behavior: none;
+		transition: var(--transition-colors);
 	}
 
 	:global(*) {
@@ -122,131 +129,150 @@
 		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
-		background: linear-gradient(to bottom right, #f9f9f9, #e9e9e9);
+		background: var(--color-background);
+		transition: var(--transition-colors);
 	}
 
 	.app-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid #ddd;
-		background-color: #fff;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+		padding: var(--spacing-md);
+		border-bottom: 1px solid var(--color-border);
+		background-color: var(--color-surface);
+		box-shadow: var(--shadow-sm);
+		transition: var(--transition-colors);
 	}
 
 	.logo-area {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--spacing-sm);
 	}
 
 	.logo-link {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--spacing-sm);
 		text-decoration: none;
-		color: inherit;
+		color: var(--color-text-primary);
+		transition: var(--transition-colors);
 	}
 
-	.logo-icon {
-		width: 1.75rem;
-		height: 1.75rem;
-		fill: #4caf50;
+	.logo-link:hover {
+		color: var(--color-primary);
 	}
 
 	.app-title {
-		font-size: 1.25rem;
-		font-weight: 600;
+		font-size: var(--font-size-xl);
+		font-weight: var(--font-weight-semibold);
 		margin: 0;
+		color: inherit;
 	}
 
 	.app-actions {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--spacing-sm);
 	}
 
 	.tuner-button {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		background-color: #4caf50;
-		color: white;
+		gap: var(--spacing-sm);
+		background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-hover));
+		color: var(--color-text-inverse);
 		border: none;
-		border-radius: 6px;
-		padding: 0.75rem 1rem;
-		font-weight: 500;
+		border-radius: var(--radius-lg);
+		padding: var(--spacing-sm) var(--spacing-md);
+		font-weight: var(--font-weight-semibold);
+		font-size: var(--font-size-sm);
 		cursor: pointer;
-		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-		transition: all 0.2s;
+		box-shadow: var(--shadow-md);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.tuner-button::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+		transition: left 0.5s;
 	}
 
 	.tuner-button:hover {
-		background-color: #45a049;
-		transform: translateY(-2px);
-		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+		background: linear-gradient(
+			135deg,
+			var(--color-secondary-hover),
+			var(--color-secondary-active)
+		);
+		transform: translateY(-2px) scale(1.02);
+		box-shadow: var(--shadow-xl);
+	}
+
+	.tuner-button:hover::before {
+		left: 100%;
+	}
+
+	.tuner-button:hover svg {
+		transform: rotate(15deg) scale(1.1);
+	}
+
+	.tuner-button:active {
+		background: linear-gradient(135deg, var(--color-secondary-active), var(--color-secondary));
+		transform: translateY(-1px) scale(1.01);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.tuner-button:focus {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.tuner-button svg {
-		width: 1.5rem;
-		height: 1.5rem;
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		flex-shrink: 0;
 	}
-
 
 	.content-wrapper {
 		width: 100%;
 		max-width: 900px;
-		padding: 1rem;
+		padding: var(--spacing-md);
 		margin: 0 auto;
 		flex: 1;
 	}
 
-	/* Dark mode support */
-	@media (prefers-color-scheme: dark) {
-		:global(body) {
-			background-color: #1a1a1a;
-			color: #eee;
-		}
-
-		.app-container {
-			background: linear-gradient(to bottom right, #1a1a1a, #252525);
-		}
-
-		.app-header {
-			background-color: #1a1a1a;
-			border-color: #333;
-			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-		}
-
-		.logo-icon {
-			fill: #66bb6a;
-		}
-
-
-
-		.tuner-button {
-			background-color: #388e3c;
-		}
-
-		.tuner-button:hover {
-			background-color: #2e7d32;
-		}
-	}
+	/* Responsive design improvements */
 
 	/* Mobile optimization */
 	@media (max-width: 600px) {
 		.app-title {
-			font-size: 1.1rem;
+			font-size: var(--font-size-lg);
 		}
 
+		.app-header {
+			padding: var(--spacing-sm) var(--spacing-md);
+		}
 
+		.app-actions {
+			gap: var(--spacing-xs);
+		}
 	}
 
 	/* Mobile optimization for tuner button */
 	@media (max-width: 768px) {
 		.tuner-button {
-			padding: 0.6rem;
+			padding: var(--spacing-sm);
+			font-size: var(--font-size-xs);
+		}
+
+		.content-wrapper {
+			padding: var(--spacing-sm);
 		}
 	}
 </style>

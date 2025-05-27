@@ -7,19 +7,10 @@ export class ChordDetectionStep implements ParserStep {
 		const { result } = context;
 		const sections = result.sections || [];
 
-		// Common chord patterns
-		const chordRegex =
-			/\b([A-G][#b]?(?:maj|min|m|dim|aug|sus[24]?|add\d|[2-9]|1[0-3])?(?:\/[A-G][#b]?)?)\b/g;
-
 		for (const section of sections) {
-			const { lines } = section;
-
 			// Find chords in the non-tab lines
-			const chordLines = section.lines.filter(
-				(line, index) => !isTabLine(line, context.result.stringCount ?? 6)
-			);
+			const chordLines = section.lines.filter((line) => !isTabLine(line));
 			const chordsInSection: ParsedChord[] = [];
-			let lineOffset = 0;
 			chordLines.forEach((line) => {
 				let match;
 				const chordRegex =
@@ -27,7 +18,6 @@ export class ChordDetectionStep implements ParserStep {
 				while ((match = chordRegex.exec(line)) !== null) {
 					chordsInSection.push({ name: match[1], position: match.index });
 				}
-				lineOffset += line.length + 1; // +1 for newline
 			});
 
 			// Assign unique chords found to the section
@@ -47,9 +37,9 @@ export class ChordDetectionStep implements ParserStep {
 }
 
 // Helper function (assuming similar logic exists or is needed)
-function isTabLine(line: string, stringCount: number): boolean {
+function isTabLine(line: string): boolean {
 	// Basic check: does it start with a string name (eBGDAE) or contain typical tab characters?
-	const tabLineRegex = new RegExp(`^\s*[eBGDAE]-\|`);
-	const containsTabChars = /[\d\-hps\/\\~xb]/g.test(line);
+	const tabLineRegex = new RegExp(`^\\s*[eBGDAE]-\\|`);
+	const containsTabChars = /[\d\-hps/\\~xb]/g.test(line);
 	return tabLineRegex.test(line) || (containsTabChars && line.includes('-'));
 }

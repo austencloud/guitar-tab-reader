@@ -1,4 +1,4 @@
-import { ParserStep, ParserContext, ParsedNote } from '../types';
+import { ParserStep, ParserContext, ParsedNote, ParsedSection } from '../types';
 
 export class NoteParsingStep implements ParserStep {
 	name = 'NoteParsing';
@@ -6,14 +6,15 @@ export class NoteParsingStep implements ParserStep {
 	process(context: ParserContext): void {
 		const { result } = context;
 		const sections = result.sections || [];
+		const stringCount = result.stringCount || 6;
 
 		for (const section of sections) {
-			this.parseNotesInSection(section);
+			this.parseNotesInSection(section, stringCount);
 		}
 	}
 
-	private parseNotesInSection(section: any): void {
-		const { lines, stringCount } = section;
+	private parseNotesInSection(section: ParsedSection, stringCount: number): void {
+		const { lines } = section;
 		const notes: ParsedNote[] = [];
 
 		// Find the tab lines within the section
@@ -48,7 +49,34 @@ export class NoteParsingStep implements ParserStep {
 			}
 		}
 
-		section.notes = notes;
+		// Store notes in positions array
+		if (!section.positions) {
+			section.positions = [];
+		}
+
+		// Group notes by position
+		const notesByPosition: { [pos: number]: ParsedNote[] } = {};
+		for (const note of notes) {
+			if (!notesByPosition[note.position]) {
+				notesByPosition[note.position] = [];
+			}
+			notesByPosition[note.position].push(note);
+		}
+
+		// Add to positions array
+		for (const [pos, posNotes] of Object.entries(notesByPosition)) {
+			const position = parseInt(pos);
+			const existingPos = section.positions.find((p) => p.position === position);
+			if (existingPos) {
+				existingPos.notes.push(...posNotes);
+			} else {
+				section.positions.push({
+					position,
+					isMeasureLine: false,
+					notes: posNotes
+				});
+			}
+		}
 	}
 
 	private parseTabLines(tabLines: string[], notes: ParsedNote[]): void {

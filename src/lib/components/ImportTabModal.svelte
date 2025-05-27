@@ -1,30 +1,30 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { importTab, type TabImportOptions } from '$lib/utils/tabImporter';
 	import type { Tab } from '$lib/stores/tabs';
 
-	export let visible = false;
+	interface Props {
+		visible?: boolean;
+		onclose?: () => void;
+		onimport?: (tab: Tab) => void;
+	}
 
-	const dispatch = createEventDispatcher<{
-		close: void;
-		import: Tab;
-	}>();
+	let { visible = false, onclose, onimport }: Props = $props();
 
-	let importMethod: 'url' | 'paste' = 'url';
-	let importUrl = '';
-	let importContent = '';
-	let tabTitle = '';
-	let artist = '';
-	let album = '';
-	let isLoading = false;
-	let errorMessage = '';
-	let successMessage = '';
-	let useAI = true;
-	let aiModel = 'phi3';
-	let aiEndpoint = 'http://localhost:11434/api/generate';
+	let importMethod = $state<'url' | 'paste'>('url');
+	let importUrl = $state('');
+	let importContent = $state('');
+	let tabTitle = $state('');
+	let artist = $state('');
+	let album = $state('');
+	let isLoading = $state(false);
+	let errorMessage = $state('');
+	let successMessage = $state('');
+	let useAI = $state(true);
+	let aiModel = $state('phi3');
+	let aiEndpoint = $state('http://localhost:11434/api/generate');
 
-	let isPreviewMode = false;
-	let previewContent = '';
+	let isPreviewMode = $state(false);
+	let previewContent = $state('');
 
 	function resetForm() {
 		importMethod = 'url';
@@ -41,7 +41,7 @@
 
 	function closeModal() {
 		resetForm();
-		dispatch('close');
+		onclose?.();
 	}
 
 	async function handlePreview() {
@@ -96,7 +96,7 @@
 			updatedAt: new Date().getTime()
 		};
 
-		dispatch('import', tab);
+		onimport?.(tab);
 		closeModal();
 	}
 </script>
@@ -106,7 +106,7 @@
 		<div class="modal-container">
 			<div class="modal-header">
 				<h2>{isPreviewMode ? 'Preview Imported Tab' : 'Import Guitar Tab'}</h2>
-				<button class="close-btn" on:click={closeModal} aria-label="Close">
+				<button class="close-btn" onclick={closeModal} aria-label="Close">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
 						<path
 							d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
@@ -254,18 +254,18 @@
 			</div>
 
 			<div class="modal-footer">
-				<button class="cancel-btn" on:click={closeModal}>Cancel</button>
+				<button class="cancel-btn" onclick={closeModal}>Cancel</button>
 				{#if !isPreviewMode}
 					<button
 						class="preview-btn"
-						on:click={handlePreview}
+						onclick={handlePreview}
 						disabled={isLoading || (importMethod === 'url' ? !importUrl : !importContent)}
 					>
 						{isLoading ? 'Loading...' : 'Preview'}
 					</button>
 				{:else}
-					<button class="back-btn" on:click={() => (isPreviewMode = false)}>Back</button>
-					<button class="save-btn" on:click={handleImport}>Save to My Tabs</button>
+					<button class="back-btn" onclick={() => (isPreviewMode = false)}>Back</button>
+					<button class="save-btn" onclick={handleImport}>Save to My Tabs</button>
 				{/if}
 			</div>
 		</div>

@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { StringDefinition } from '../../utils/tuner/types';
-	import { createEventDispatcher } from 'svelte';
 
-	export let strings: StringDefinition[] = [];
-	export let closestString: StringDefinition | null = null;
+	interface Props {
+		strings?: StringDefinition[];
+		closestString?: StringDefinition | null;
+		onplayNote?: (string: StringDefinition) => void;
+	}
 
-	const dispatch = createEventDispatcher<{ playNote: StringDefinition }>();
+	let { strings = [], closestString = null, onplayNote }: Props = $props();
 
 	function getDisplayNote(stringDef: StringDefinition): string {
 		if (stringDef.string === 1 && stringDef.note === 'E') {
@@ -15,7 +17,7 @@
 	}
 
 	function handleClick(string: StringDefinition) {
-		dispatch('playNote', string);
+		onplayNote?.(string);
 	}
 </script>
 
@@ -24,7 +26,7 @@
 		<button
 			class="string-button"
 			class:active={closestString?.string === string.string}
-			on:click={() => handleClick(string)}
+			onclick={() => handleClick(string)}
 		>
 			{getDisplayNote(string)}
 		</button>

@@ -1,24 +1,25 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
-	import { startAutoScroll, scrollToPosition } from '../utils/autoScroll';
+	import { onMount } from 'svelte';
+	import { AutoScrollController, scrollToPosition } from '../utils/autoScroll';
 
-	export let container: HTMLElement;
+	interface Props {
+		container: HTMLElement;
+		onscrollStateChange?: (isScrolling: boolean) => void;
+		onstartScroll?: () => void;
+		onstopScroll?: () => void;
+	}
 
-	let isScrolling = false;
-	let scrollSpeed = 20; // Default speed in pixels per second
-	let stopScroll: () => void;
+	let { container, onscrollStateChange, onstartScroll, onstopScroll }: Props = $props();
+
+	let isScrolling = $state(false);
+	let scrollSpeed = $state(20);
+	let scrollController: AutoScrollController | null = null;
 
 	// Speed adjustment settings (pixels per second)
 	const MIN_SPEED = 1;
 	const MAX_SPEED = 100;
 	const SPEED_STEP = 5;
-	const FORMAT_PRECISION = 0; // No decimals needed for px/s
-
-	const dispatch = createEventDispatcher<{
-		scrollStateChange: boolean;
-		startScroll: void;
-		stopScroll: void;
-	}>();
+	const FORMAT_PRECISION = 0;
 
 	function toggleScroll() {
 		if (isScrolling) {
@@ -29,24 +30,32 @@
 	}
 
 	function startScroll() {
-		console.log('Attempting to start scroll. Container:', container); // Log container
 		if (!container) {
-			console.error('Scroll container not found!');
 			return;
 		}
-		isScrolling = true;
-		stopScroll = startAutoScroll(container, scrollSpeed);
-		dispatch('scrollStateChange', isScrolling);
-		dispatch('startScroll');
+
+		// Create new controller if needed
+		if (!scrollController) {
+			scrollController = new AutoScrollController(container, scrollSpeed);
+		}
+
+		// Start scrolling
+		const started = scrollController.start();
+
+		if (started) {
+			isScrolling = true;
+			onscrollStateChange?.(isScrolling);
+			onstartScroll?.();
+		}
 	}
 
 	function pauseScroll() {
-		if (stopScroll) {
-			stopScroll();
+		if (scrollController) {
+			scrollController.stop();
 		}
 		isScrolling = false;
-		dispatch('scrollStateChange', isScrolling);
-		dispatch('stopScroll');
+		onscrollStateChange?.(isScrolling);
+		onstopScroll?.();
 	}
 
 	function resetScroll() {
@@ -71,10 +80,9 @@
 	}
 
 	function updateScrollWithNewSpeed() {
-		// If already scrolling, update the scroll speed
-		if (isScrolling) {
-			pauseScroll();
-			startScroll();
+		// If already scrolling, update the speed dynamically without stopping
+		if (isScrolling && scrollController) {
+			scrollController.updateSpeed(scrollSpeed);
 		}
 	}
 
@@ -114,8 +122,30 @@
 		);
 	}
 
-	$: formattedSpeed = scrollSpeed.toFixed(FORMAT_PRECISION);
-	$: speedPercentage = Math.round((scrollSpeed / MAX_SPEED) * 100);
+	const formattedSpeed = $derived(scrollSpeed.toFixed(FORMAT_PRECISION));
+	const speedPercentage = $derived(Math.round((scrollSpeed / MAX_SPEED) * 100));
+
+	// Track container changes and clean up when needed
+	let previousContainer: HTMLElement | null = null;
+	$effect(() => {
+		// Only reset when container actually changes
+		if (container !== previousContainer) {
+			// Clean up existing controller when container changes
+			if (scrollController) {
+				scrollController.stop();
+				scrollController = null;
+			}
+
+			// Reset scrolling state
+			if (isScrolling) {
+				isScrolling = false;
+				onscrollStateChange?.(false);
+				onstopScroll?.();
+			}
+
+			previousContainer = container;
+		}
+	});
 
 	onMount(() => {
 		window.addEventListener('keydown', handleKeydown);
@@ -127,15 +157,15 @@
 	// Clean up on component destroy
 	import { onDestroy } from 'svelte';
 	onDestroy(() => {
-		if (stopScroll) {
-			stopScroll();
+		if (scrollController) {
+			scrollController.stop();
 		}
 	});
 </script>
 
 <div class="scroll-controls">
 	<div class="controls-row">
-		<button aria-label={isScrolling ? 'Pause' : 'Play'} class="icon-button" on:click={toggleScroll}>
+		<button aria-label={isScrolling ? 'Pause' : 'Play'} class="icon-button" onclick={toggleScroll}>
 			{#if isScrolling}
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
 					><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg
@@ -147,7 +177,7 @@
 			{/if}
 		</button>
 
-		<button aria-label="Reset to top" class="icon-button" on:click={resetScroll}>
+		<button aria-label="Reset to top" class="icon-button" onclick={resetScroll}>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
 		</button>
 	</div>
@@ -155,7 +185,7 @@
 	<div class="speed-control">
 		<button
 			class="speed-button"
-			on:click={decreaseSpeed}
+			onclick={decreaseSpeed}
 			aria-label="Decrease speed"
 			disabled={scrollSpeed <= MIN_SPEED}
 		>
@@ -172,7 +202,7 @@
 					max={MAX_SPEED}
 					step={SPEED_STEP}
 					bind:value={scrollSpeed}
-					on:input={handleSpeedChange}
+					oninput={handleSpeedChange}
 					aria-label="Scroll speed"
 				/>
 			</div>
@@ -184,7 +214,7 @@
 
 		<button
 			class="speed-button"
-			on:click={increaseSpeed}
+			onclick={increaseSpeed}
 			aria-label="Increase speed"
 			disabled={scrollSpeed >= MAX_SPEED}
 		>

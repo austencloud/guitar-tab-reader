@@ -1,19 +1,20 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { fly, fade } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import preferences from '../stores/preferences';
 	import { browser } from '$app/environment';
-	import GuitarTuner from './GuitarTuner.svelte';
+	import { theme } from '../stores/theme';
+	import TuningSelector from './TuningSelector.svelte';
 
-	export let open = false;
+	interface Props {
+		open?: boolean;
+		onclose?: () => void;
+	}
 
-	const dispatch = createEventDispatcher<{
-		close: void;
-	}>();
+	let { open = false, onclose }: Props = $props();
 
-	let modalElement: HTMLDivElement;
-	let showTuner = false;
+	let modalElement = $state<HTMLDivElement>();
 
 	// Font size settings
 	const MIN_FONT_SIZE = 10;
@@ -38,8 +39,7 @@
 	}
 
 	function close() {
-		open = false;
-		dispatch('close');
+		onclose?.();
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -61,8 +61,13 @@
 		};
 	});
 
-	$: if (open && browser) document.body.classList.add('overflow-hidden');
-	$: if (!open && browser) document.body.classList.remove('overflow-hidden');
+	$effect(() => {
+		if (open && browser) {
+			document.body.classList.add('overflow-hidden');
+		} else if (!open && browser) {
+			document.body.classList.remove('overflow-hidden');
+		}
+	});
 
 	function handleBackdropKeydown(event: KeyboardEvent) {
 		// Close modal if Enter or Space is pressed directly on the backdrop
@@ -75,13 +80,13 @@
 	}
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if open}
 	<div
 		class="modal-backdrop"
-		on:click={handleOutsideClick}
-		on:keydown={handleBackdropKeydown}
+		onclick={handleOutsideClick}
+		onkeydown={handleBackdropKeydown}
 		role="button"
 		tabindex="0"
 		aria-label="Close settings"
@@ -97,140 +102,190 @@
 		>
 			<div class="modal-header">
 				<h2 id="settings-title">Settings</h2>
-				<button class="close-btn" on:click={close} aria-label="Close settings"> × </button>
+				<button class="close-btn" onclick={close} aria-label="Close settings"> × </button>
 			</div>
 
 			<div class="modal-body">
-				<div class="setting-group">
-					<h3>Font Size</h3>
-					<p class="setting-description">Adjust the size of the tab text</p>
-					<div class="font-size-control">
-						<button
-							class="control-btn"
-							on:click={decreaseFontSize}
-							disabled={$preferences.fontSize <= MIN_FONT_SIZE}
-							aria-label="Decrease font size"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-								<path d="M19 13H5v-2h14v2z" />
-							</svg>
-						</button>
+				<!-- Theme Section -->
+				<div class="setting-section">
+					<div class="setting-row">
+						<div class="setting-info">
+							<span class="setting-label">Theme</span>
+							<span class="setting-description">Choose your preferred color scheme</span>
+						</div>
+						<div class="theme-options">
+							<button
+								class="theme-option-btn"
+								class:active={$theme.mode === 'light'}
+								onclick={() => theme.setMode('light')}
+								aria-label="Light theme"
+								title="Light theme"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+									<circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
+									<path
+										d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+										stroke="currentColor"
+										stroke-width="2"
+									/>
+								</svg>
+							</button>
+							<button
+								class="theme-option-btn"
+								class:active={$theme.mode === 'dark'}
+								onclick={() => theme.setMode('dark')}
+								aria-label="Dark theme"
+								title="Dark theme"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+									<path
+										d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+										stroke="currentColor"
+										stroke-width="2"
+									/>
+								</svg>
+							</button>
+							<button
+								class="theme-option-btn"
+								class:active={$theme.mode === 'system'}
+								onclick={() => theme.setMode('system')}
+								aria-label="System theme"
+								title="Follow system preference"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+									<rect
+										x="2"
+										y="3"
+										width="20"
+										height="14"
+										rx="2"
+										ry="2"
+										stroke="currentColor"
+										stroke-width="2"
+									/>
+									<line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2" />
+									<line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2" />
+								</svg>
+							</button>
+						</div>
+					</div>
+				</div>
 
-						<div class="slider-container">
+				<!-- Font Size Section -->
+				<div class="setting-section">
+					<div class="setting-row">
+						<div class="setting-info">
+							<span class="setting-label">Font Size</span>
+							<span class="setting-description">Adjust the size of the tab text</span>
+						</div>
+						<div class="font-size-control">
+							<button
+								class="control-btn"
+								onclick={decreaseFontSize}
+								disabled={$preferences.fontSize <= MIN_FONT_SIZE}
+								aria-label="Decrease font size"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+									<path d="M19 13H5v-2h14v2z" />
+								</svg>
+							</button>
 							<input
 								type="range"
+								class="font-slider"
 								min={MIN_FONT_SIZE}
 								max={MAX_FONT_SIZE}
 								step={FONT_SIZE_STEP}
 								value={$preferences.fontSize}
-								on:input={handleFontSizeChange}
+								oninput={handleFontSizeChange}
 								aria-label="Font size"
 							/>
-							<div class="font-size-value">{$preferences.fontSize}px</div>
+							<button
+								class="control-btn"
+								onclick={increaseFontSize}
+								disabled={$preferences.fontSize >= MAX_FONT_SIZE}
+								aria-label="Increase font size"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+									<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+								</svg>
+							</button>
 						</div>
-
-						<button
-							class="control-btn"
-							on:click={increaseFontSize}
-							disabled={$preferences.fontSize >= MAX_FONT_SIZE}
-							aria-label="Increase font size"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-								<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-							</svg>
-						</button>
 					</div>
-					<div class="font-size-preview" style="font-size: {$preferences.fontSize}px">
-						e|----3--5--7--|<br />
-						B|--5----------|<br />
-						G|--------------|
-					</div>
-				</div>
-
-				<div class="setting-group">
-					<h3>Handedness</h3>
-					<p class="setting-description">Choose which hand you use to fret the guitar</p>
-					<div class="hand-toggle">
-						<button
-							class="hand-btn left-hand"
-							class:active={$preferences.isLeftHanded}
-							on:click={() => preferences.setLeftHanded(true)}
-							aria-label="Left-handed"
-							aria-pressed={$preferences.isLeftHanded}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-								<path
-									fill="currentColor"
-									d="M13 24c-3.26 0-6.19-1.99-7.4-5.02l-3.03-7.61a2 2 0 0 1 2.56-2.56l.17.07a.8.8 0 0 0 .72-.07l1.88-1.17a2 2 0 0 1 2.74.65l.62 1.03c.29.48.87.7 1.4.56l.68-.19a2 2 0 0 1 2.16.8l.69 1.04c.31.47.84.75 1.4.75h1.21a2 2 0 0 1 2 2v6c0 1.85-1.28 3.4-3 3.81V24H13zm-1-5c0 .55.45 1 1 1s1-.45 1-1v-5a1 1 0 1 0-2 0v5zm-3-2c0 .55.45 1 1 1s1-.45 1-1v-5a1 1 0 1 0-2 0v5zm-3-1c0 .55.45 1 1 1s1-.45 1-1v-5a1 1 0 1 0-2 0v5zm-3-2c0 .55.45 1 1 1s1-.45 1-1v-4a1 1 0 1 0-2 0v4z"
-								/>
-							</svg>
-							<span>Left</span>
-						</button>
-						<button
-							class="hand-btn right-hand"
-							class:active={!$preferences.isLeftHanded}
-							on:click={() => preferences.setLeftHanded(false)}
-							aria-label="Right-handed"
-							aria-pressed={!$preferences.isLeftHanded}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-								<path
-									fill="currentColor"
-									d="M11 24c3.26 0 6.19-1.99 7.4-5.02l3.03-7.61a2 2 0 0 0-2.56-2.56l-.17.07a.8.8 0 0 1-.72-.07l-1.88-1.17a2 2 0 0 0-2.74.65l-.62 1.03c-.29.48-.87.7-1.4.56l-.68-.19a2 2 0 0 0-2.16.8l-.69 1.04c-.31.47-.84.75-1.4.75H5.2a2 2 0 0 0-2 2v6c0 1.85 1.28 3.4 3 3.81V24h4.8zm1-5c0 .55-.45 1-1 1s-1-.45-1-1v-5a1 1 0 1 1 2 0v5zm3-2c0 .55-.45 1-1 1s-1-.45-1-1v-5a1 1 0 1 1 2 0v5zm3-1c0 .55-.45 1-1 1s-1-.45-1-1v-5a1 1 0 1 1 2 0v5zm3-2c0 .55-.45 1-1 1s-1-.45-1-1v-4a1 1 0 1 1 2 0v4z"
-								/>
-							</svg>
-							<span>Right</span>
-						</button>
-					</div>
-				</div>
-
-				<div class="setting-group">
-					<h3>Chord Diagrams</h3>
-					<p class="setting-description">Show or hide chord diagrams in the tab visualizer</p>
-					<div class="toggle-control">
-						<label class="switch">
-							<input
-								type="checkbox"
-								checked={$preferences.showChordDiagrams}
-								on:change={() => preferences.setShowChordDiagrams(!$preferences.showChordDiagrams)}
-							/>
-							<span class="slider"></span>
-						</label>
-						<span class="toggle-label">
-							{$preferences.showChordDiagrams ? 'Showing chord diagrams' : 'Hiding chord diagrams'}
-						</span>
-					</div>
-				</div>
-
-				<div class="setting-group">
-					<h3>Guitar Tuner</h3>
-					<p class="setting-description">Use the built-in guitar tuner to tune your instrument</p>
-					<div class="toggle-control">
-						<button
-							class="tuner-btn"
-							on:click={() => (showTuner = !showTuner)}
-							aria-label="Toggle guitar tuner"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-								<path
-									fill="currentColor"
-									d="M12 3a9 9 0 0 0-9 9h3c0-3.31 2.69-6 6-6s6 2.69 6 6h3a9 9 0 0 0-9-9zm3.14 12a3.01 3.01 0 0 1-2.14.9 3 3 0 0 1-3-3 2.97 2.97 0 0 1 .9-2.14L12 8.07l1.14 2.69c.58.59.9 1.35.9 2.14a2.99 2.99 0 0 1-.9 2.1z"
-								/>
-							</svg>
-							<span>
-								{showTuner ? 'Hide Tuner' : 'Show Tuner'}
-							</span>
-						</button>
-					</div>
-
-					{#if showTuner}
-						<div class="tuner-container" transition:fade={{ duration: 200 }}>
-							<GuitarTuner showTuner={true} />
+					<div class="font-size-info">
+						<div class="font-size-value">{$preferences.fontSize}px</div>
+						<div class="font-size-preview" style="font-size: {$preferences.fontSize}px">
+							{`e|--3--2--0--|
+B|--0--3--1--|
+G|--0--2--0--|
+D|--0--0--2--|
+A|--2--x--3--|
+E|--3--x--x--|`}
 						</div>
-					{/if}
+					</div>
 				</div>
 
-				<!-- Additional settings groups can be added here in the future -->
+				<!-- Settings Section -->
+				<div class="setting-section">
+					<div class="setting-row">
+						<div class="setting-info">
+							<span class="setting-label">Handedness</span>
+							<span class="setting-description">Choose your dominant hand for chord diagrams</span>
+						</div>
+						<div class="hand-toggle">
+							<button
+								class="hand-btn left-hand"
+								class:active={$preferences.isLeftHanded}
+								onclick={() => preferences.setLeftHanded(true)}
+								aria-label="Left-handed"
+								aria-pressed={$preferences.isLeftHanded}
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+									<path
+										fill="currentColor"
+										d="M13 24c-3.26 0-6.19-1.99-7.4-5.02l-3.03-7.61a2 2 0 0 1 2.56-2.56l.17.07a.8.8 0 0 0 .72-.07l1.88-1.17a2 2 0 0 1 2.74.65l.62 1.03c.29.48.87.7 1.4.56l.68-.19a2 2 0 0 1 2.16.8l.69 1.04c.31.47.84.75 1.4.75h1.21a2 2 0 0 1 2 2v6c0 1.85-1.28 3.4-3 3.81V24H13zm-1-5c0 .55.45 1 1 1s1-.45 1-1v-5a1 1 0 1 0-2 0v5zm-3-2c0 .55.45 1 1 1s1-.45 1-1v-5a1 1 0 1 0-2 0v5zm-3-1c0 .55.45 1 1 1s1-.45 1-1v-5a1 1 0 1 0-2 0v5zm-3-2c0 .55.45 1 1 1s1-.45 1-1v-4a1 1 0 1 0-2 0v4z"
+									/>
+								</svg>
+								<span>Left</span>
+							</button>
+							<button
+								class="hand-btn right-hand"
+								class:active={!$preferences.isLeftHanded}
+								onclick={() => preferences.setLeftHanded(false)}
+								aria-label="Right-handed"
+								aria-pressed={!$preferences.isLeftHanded}
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+									<path
+										fill="currentColor"
+										d="M11 24c3.26 0 6.19-1.99 7.4-5.02l3.03-7.61a2 2 0 0 0-2.56-2.56l-.17.07a.8.8 0 0 1-.72-.07l-1.88-1.17a2 2 0 0 0-2.74.65l-.62 1.03c-.29.48-.87.7-1.4.56l-.68-.19a2 2 0 0 0-2.16.8l-.69 1.04c-.31.47-.84.75-1.4.75H5.2a2 2 0 0 0-2 2v6c0 1.85 1.28 3.4 3 3.81V24h4.8zm1-5c0 .55-.45 1-1 1s-1-.45-1-1v-5a1 1 0 1 1 2 0v5zm3-2c0 .55-.45 1-1 1s-1-.45-1-1v-5a1 1 0 1 1 2 0v5zm3-1c0 .55-.45 1-1 1s-1-.45-1-1v-5a1 1 0 1 1 2 0v5zm3-2c0 .55-.45 1-1 1s-1-.45-1-1v-4a1 1 0 1 1 2 0v4z"
+									/>
+								</svg>
+								<span>Right</span>
+							</button>
+						</div>
+					</div>
+
+					<div class="setting-row">
+						<div class="setting-info">
+							<span class="setting-label">Chord Diagrams</span>
+							<span class="setting-description">Show visual chord diagrams above tabs</span>
+						</div>
+						<div class="toggle-control">
+							<label class="switch">
+								<input
+									type="checkbox"
+									checked={$preferences.showChordDiagrams}
+									onchange={() => preferences.setShowChordDiagrams(!$preferences.showChordDiagrams)}
+								/>
+								<span class="slider"></span>
+							</label>
+						</div>
+					</div>
+
+					<div class="setting-row">
+						<TuningSelector />
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -243,105 +298,196 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-color: rgba(0, 0, 0, 0.5);
+		background-color: var(--color-modal-backdrop, rgba(0, 0, 0, 0.5));
 		backdrop-filter: blur(4px);
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 1000;
-		padding: 1rem;
+		z-index: var(--z-modal-backdrop);
+		padding: var(--spacing-md);
 	}
 
 	.modal {
-		background-color: #fff;
-		border-radius: 12px;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		background: rgba(255, 255, 255, 0.85);
+		backdrop-filter: blur(20px) saturate(180%);
+		-webkit-backdrop-filter: blur(20px) saturate(180%);
+		border-radius: var(--radius-xl);
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.1),
+			0 0 0 1px rgba(255, 255, 255, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
+		border: 1px solid rgba(255, 255, 255, 0.18);
 		width: 100%;
 		max-width: 500px;
 		max-height: 90vh;
 		overflow-y: auto;
 		padding: 0;
+		transition: var(--transition-colors);
+	}
+
+	:global([data-theme='dark']) .modal {
+		background: rgba(45, 45, 45, 0.85);
+		backdrop-filter: blur(20px) saturate(180%);
+		-webkit-backdrop-filter: blur(20px) saturate(180%);
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.3),
+			0 0 0 1px rgba(255, 255, 255, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.modal-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 1.5rem;
-		border-bottom: 1px solid #eee;
+		padding: var(--spacing-lg);
+		border-bottom: 1px solid var(--color-border);
+		transition: var(--transition-colors);
 	}
 
 	.modal-header h2 {
 		margin: 0;
-		font-size: 1.5rem;
+		font-size: var(--font-size-xl);
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-semibold);
 	}
 
 	.close-btn {
 		background: none;
 		border: none;
-		font-size: 1.5rem;
+		font-size: var(--font-size-xl);
+		color: var(--color-text-secondary);
 		cursor: pointer;
 		width: 2rem;
 		height: 2rem;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: background-color 0.2s;
+		transition: var(--transition-colors);
 	}
 
 	.close-btn:hover {
-		background-color: rgba(0, 0, 0, 0.1);
+		background-color: var(--color-hover);
+		color: var(--color-text-primary);
 	}
 
 	.modal-body {
-		padding: 1.5rem;
+		padding: var(--spacing-xl);
 	}
 
-	.setting-group {
-		margin-bottom: 2rem;
+	/* Setting Section Structure */
+	.setting-section {
+		margin-bottom: var(--spacing-2xl);
 	}
 
-	.setting-group h3 {
-		margin: 0 0 0.5rem;
-		font-size: 1.2rem;
+	.setting-section:last-child {
+		margin-bottom: 0;
+	}
+
+	.setting-row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--spacing-lg);
+		min-height: 40px;
+	}
+
+	.setting-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+	}
+
+	.setting-label {
+		font-size: var(--font-size-base);
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.setting-description {
-		margin: 0 0 1rem;
-		color: #666;
-		font-size: 0.9rem;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		line-height: var(--line-height-normal);
 	}
 
-	/* New font size control styles */
+	/* Theme Options */
+	.theme-options {
+		display: flex;
+		gap: var(--spacing-xs);
+		flex-shrink: 0;
+	}
+
+	.theme-option-btn {
+		width: 36px;
+		height: 36px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 6px;
+		border: 2px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background-color: var(--color-surface);
+		color: var(--color-text-tertiary);
+		cursor: pointer;
+		transition: var(--transition-all);
+	}
+
+	.theme-option-btn.active {
+		border-color: var(--color-primary);
+		background-color: var(--color-primary);
+		color: var(--color-text-inverse);
+		transform: scale(1.05);
+		box-shadow: var(--shadow-md);
+	}
+
+	.theme-option-btn:hover:not(.active) {
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		transform: scale(1.02);
+		background-color: var(--color-hover);
+	}
+
+	.theme-option-btn svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	/* Font size control styles */
 	.font-size-control {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
+		gap: var(--spacing-sm);
+		flex-shrink: 0;
 	}
 
 	.control-btn {
 		width: 2rem;
 		height: 2rem;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		border: none;
-		background-color: #4caf50;
-		color: white;
+		background-color: var(--color-primary);
+		color: var(--color-text-inverse);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: var(--transition-all);
+		flex-shrink: 0;
 	}
 
 	.control-btn:hover {
-		background-color: #45a049;
+		background-color: var(--color-primary-hover);
 		transform: translateY(-1px);
 	}
 
+	.control-btn:active {
+		background-color: var(--color-primary-active);
+	}
+
 	.control-btn:disabled {
-		background-color: #cccccc;
+		background-color: var(--color-disabled);
 		cursor: not-allowed;
 		transform: none;
 	}
@@ -352,94 +498,114 @@
 		fill: currentColor;
 	}
 
-	.slider-container {
+	.font-slider {
 		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
+		min-width: 120px;
 	}
 
-	.slider-container input {
-		width: 100%;
+	.font-size-info {
+		margin-top: var(--spacing-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-sm);
 	}
 
 	.font-size-value {
 		text-align: center;
-		font-size: 0.875rem;
-		color: #555;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.font-size-preview {
-		font-family: 'Courier New', monospace;
-		white-space: pre;
-		background-color: #f5f5f5;
-		padding: 0.75rem;
-		border-radius: 4px;
+		font-family: 'Courier New', 'Monaco', 'Menlo', monospace;
+		white-space: pre-line;
+		background-color: var(--color-surface-variant);
+		color: var(--color-text-primary);
+		padding: var(--spacing-md);
+		border-radius: var(--radius-md);
 		overflow-x: auto;
-		max-width: 100%;
-		border: 1px solid #ddd;
+		border: 1px solid var(--color-border);
+		transition: var(--transition-colors);
+		margin-top: var(--spacing-sm);
+		text-align: left;
+		line-height: 1.2;
 	}
 
+	/* Hand Toggle */
 	.hand-toggle {
 		display: flex;
-		gap: 1rem;
+		gap: var(--spacing-sm);
+		flex-shrink: 0;
 	}
 
 	.hand-btn {
-		flex: 1;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 1rem;
-		border: 2px solid #ddd;
-		border-radius: 8px;
-		background-color: #f5f5f5;
+		gap: var(--spacing-xs);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border: 2px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background-color: var(--color-surface);
+		color: var(--color-text-secondary);
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: var(--transition-all);
+		min-width: 80px;
 	}
 
 	.left-hand {
-		color: #1565c0;
+		border-color: var(--color-info);
 	}
 
 	.right-hand {
-		color: #c62828;
+		border-color: var(--color-error);
 	}
 
-	.hand-btn.active {
-		border-color: currentColor;
-		background-color: #fff;
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	.left-hand.active {
+		background-color: var(--color-info);
+		color: var(--color-text-inverse);
+		border-color: var(--color-info);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
+	}
+
+	.right-hand.active {
+		background-color: var(--color-error);
+		color: var(--color-text-inverse);
+		border-color: var(--color-error);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-md);
+	}
+
+	.hand-btn:not(.active):hover {
+		background-color: var(--color-hover);
+		transform: translateY(-1px);
 	}
 
 	.hand-btn span {
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
+		font-size: var(--font-size-sm);
 	}
 
 	.hand-btn svg {
-		width: 48px;
-		height: 48px;
-		transition: transform 0.3s ease;
-	}
-
-	.hand-btn:hover svg {
-		transform: translateY(-4px);
+		width: 24px;
+		height: 24px;
+		transition: var(--transition-transform);
 	}
 
 	/* Toggle switch styles */
 	.toggle-control {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		flex-shrink: 0;
 	}
 
 	.switch {
 		position: relative;
 		display: inline-block;
-		width: 50px;
-		height: 24px;
+		width: 52px;
+		height: 28px;
 	}
 
 	.switch input {
@@ -455,130 +621,61 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: #ccc;
-		transition: 0.4s;
-		border-radius: 24px;
+		background-color: var(--color-border-dark);
+		transition: var(--transition-all);
+		border-radius: 28px;
 	}
 
 	.slider:before {
 		position: absolute;
 		content: '';
-		height: 18px;
-		width: 18px;
+		height: 22px;
+		width: 22px;
 		left: 3px;
 		bottom: 3px;
-		background-color: white;
-		transition: 0.4s;
+		background-color: var(--color-surface);
+		transition: var(--transition-all);
 		border-radius: 50%;
+		box-shadow: var(--shadow-sm);
 	}
 
 	input:checked + .slider {
-		background-color: #4caf50;
+		background-color: var(--color-primary);
 	}
 
 	input:focus + .slider {
-		box-shadow: 0 0 1px #4caf50;
+		box-shadow: 0 0 0 2px var(--color-focus);
 	}
 
 	input:checked + .slider:before {
-		transform: translateX(26px);
+		transform: translateX(24px);
 	}
 
-	.toggle-label {
-		font-size: 0.95rem;
-	}
-
-	.tuner-btn {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		background-color: #4caf50;
-		color: white;
-		border: none;
-		border-radius: 4px;
-		padding: 0.75rem 1rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.tuner-btn:hover {
-		background-color: #45a049;
-		transform: translateY(-1px);
-	}
-
-	.tuner-btn svg {
-		width: 1.5rem;
-		height: 1.5rem;
-	}
-
-	.tuner-container {
-		margin-top: 1rem;
-		max-height: 500px;
-	}
-
-	@media (prefers-color-scheme: dark) {
+	/* Responsive Design */
+	@media (max-width: 600px) {
 		.modal {
-			background-color: #222;
-			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+			margin: var(--spacing-md);
+			max-width: calc(100vw - 2rem);
 		}
 
-		.modal-header {
-			border-bottom-color: #333;
+		.modal-body {
+			padding: var(--spacing-lg);
 		}
 
-		.close-btn:hover {
-			background-color: rgba(255, 255, 255, 0.1);
+		.setting-row {
+			flex-direction: column;
+			align-items: stretch;
+			gap: var(--spacing-md);
 		}
 
-		.setting-description {
-			color: #aaa;
+		.setting-info {
+			margin-bottom: var(--spacing-xs);
 		}
 
-		.font-size-value {
-			color: #aaa;
-		}
-
-		.font-size-preview {
-			background-color: #2a2a2a;
-			border-color: #444;
-		}
-
-		.control-btn {
-			background-color: #388e3c;
-		}
-
-		.control-btn:hover {
-			background-color: #2e7d32;
-		}
-
-		.control-btn:disabled {
-			background-color: #424242;
-		}
-
-		.hand-btn {
-			background-color: #333;
-			border-color: #555;
-		}
-
-		.hand-btn.active {
-			background-color: #2d2d2d;
-		}
-
-		.switch .slider {
-			background-color: #444;
-		}
-
-		.toggle-label {
-			color: #aaa;
-		}
-
-		.tuner-btn {
-			background-color: #388e3c;
-		}
-
-		.tuner-btn:hover {
-			background-color: #2e7d32;
+		.theme-options,
+		.hand-toggle,
+		.toggle-control {
+			align-self: flex-start;
 		}
 	}
 </style>

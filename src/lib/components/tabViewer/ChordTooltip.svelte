@@ -3,14 +3,29 @@
 	import ChordDiagram from '../ChordDiagram.svelte';
 	import type { ProcessedChord } from '../../utils/chordUtils';
 
-	export let visible: boolean = false;
-	export let chord: ProcessedChord | null = null;
-	export let x: number = 0;
-	export let y: number = 0;
-	export let placement: 'above' | 'below' = 'below';
-	export let isMobile: boolean = false;
+	interface Props {
+		visible?: boolean;
+		chord?: ProcessedChord | null;
+		x?: number;
+		y?: number;
+		placement?: 'above' | 'below';
+		isMobile?: boolean;
+		onmouseenter?: (event: MouseEvent) => void;
+		onmouseleave?: (event: MouseEvent) => void;
+	}
 
-	let element: HTMLDivElement;
+	let {
+		visible = false,
+		chord = null,
+		x = 0,
+		y = 0,
+		placement = 'below',
+		isMobile = false,
+		onmouseenter,
+		onmouseleave
+	}: Props = $props();
+
+	let element = $state<HTMLDivElement>();
 
 	// Expose the element for positioning calculations
 	export function getElement() {
@@ -29,8 +44,8 @@
 		role="tooltip"
 		aria-hidden={!visible}
 		transition:fade={{ duration: 150 }}
-		on:mouseenter
-		on:mouseleave
+		{onmouseenter}
+		{onmouseleave}
 	>
 		<ChordDiagram
 			name={chord.name}

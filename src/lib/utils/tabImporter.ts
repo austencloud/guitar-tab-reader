@@ -103,7 +103,7 @@ function extractTabFromHtml(html: string, url: string): string {
 			try {
 				const data = JSON.parse(match[1]);
 				return data.data?.tab_view?.wiki_tab?.content || data.data?.tab?.wiki_tab?.content || '';
-			} catch (e) {
+			} catch {
 				// Fallback to regular extraction if JSON parsing fails
 			}
 		}

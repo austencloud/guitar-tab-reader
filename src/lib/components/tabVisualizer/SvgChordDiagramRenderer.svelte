@@ -9,19 +9,23 @@
 		chordDiagramStrokeColor
 	} from '$lib/utils/visualizationConstants';
 
-	export let chordDiagramData: ChordDefinition;
-	export let x: number;
-	export let y: number;
-	export let fontSize: number;
+	interface Props {
+		chordDiagramData: ChordDefinition;
+		x: number;
+		y: number;
+		fontSize: number;
+	}
 
-	$: diagramWidth = fontSize * 5;
-	$: diagramHeight = fontSize * 6;
-	$: fretSpacing = diagramHeight / 5;
-	$: stringSpacingDiagram = diagramWidth / 5;
-	$: dotRadius = fontSize / 3;
-	$: mutedMarkSize = fontSize / 4;
-	$: barreHeight = fontSize / 2;
-	$: barreRadius = fontSize / 5; // Smaller radius for narrower barre appearance
+	let { chordDiagramData, x, y, fontSize }: Props = $props();
+
+	const diagramWidth = $derived(fontSize * 5);
+	const diagramHeight = $derived(fontSize * 6);
+	const fretSpacing = $derived(diagramHeight / 5);
+	const stringSpacingDiagram = $derived(diagramWidth / 5);
+	const dotRadius = $derived(fontSize / 3);
+	const mutedMarkSize = $derived(fontSize / 4);
+	const barreHeight = $derived(fontSize / 2);
+	const barreRadius = $derived(fontSize / 5);
 </script>
 
 <g class="chord-diagram">

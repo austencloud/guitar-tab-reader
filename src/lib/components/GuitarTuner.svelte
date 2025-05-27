@@ -1,18 +1,17 @@
 <!-- src/lib/components/GuitarTuner.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import TunerModal from './tuner/TunerModal.svelte';
 
-	export let showTuner = false;
-	
-	const dispatch = createEventDispatcher<{
-		close: void;
-	}>();
+	interface Props {
+		showTuner?: boolean;
+		onclose?: () => void;
+	}
+
+	let { showTuner = false, onclose }: Props = $props();
 
 	function closeModal() {
-		showTuner = false;
-		dispatch('close');
+		onclose?.();
 	}
 </script>
 
-<TunerModal open={showTuner} on:close={closeModal} />
+<TunerModal open={showTuner} onclose={closeModal} />

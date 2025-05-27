@@ -3,22 +3,16 @@
 	import { fade } from 'svelte/transition';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import SettingsButton from '$lib/components/SettingsButton.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import ImportTabModal from '$lib/components/ImportTabModal.svelte';
 	import type { Tab } from '$lib/stores/tabs';
 
-	let searchTerm = '';
 	let sortBy = 'updatedAt'; // 'updatedAt', 'title', 'artist'
 	let sortOrder = 'desc'; // 'asc', 'desc'
 	let isSettingsModalOpen = false;
 	let isImportModalOpen = false;
 	let searchQuery = '';
 	let appVersion = '1.0.0';
-
-	// Extract unique values for filtering
-	$: artists = [...new Set($tabs.map((tab) => tab.artist).filter(Boolean))];
-	$: albums = [...new Set($tabs.map((tab) => tab.album).filter(Boolean))];
 
 	// Filter and sort tabs
 	$: sortedAndFilteredTabs = [...$tabs]
@@ -34,21 +28,24 @@
 		.sort((a, b) => {
 			let comparison = 0;
 			switch (sortBy) {
-				case 'title':
+				case 'title': {
 					comparison = a.title.localeCompare(b.title);
 					break;
-				case 'artist':
+				}
+				case 'artist': {
 					// Handle potential undefined artists
 					const artistA = a.artist || '';
 					const artistB = b.artist || '';
 					comparison = artistA.localeCompare(artistB);
 					break;
-				case 'updatedAt':
+				}
+				case 'updatedAt': {
 					// Provide a default value (e.g., 0) if updatedAt is undefined
 					const dateA = new Date(a.updatedAt ?? 0).getTime();
 					const dateB = new Date(b.updatedAt ?? 0).getTime();
 					comparison = dateA - dateB;
 					break;
+				}
 			}
 			return sortOrder === 'asc' ? comparison : -comparison;
 		});
@@ -74,8 +71,7 @@
 		isImportModalOpen = true;
 	}
 
-	function handleImportSubmit(event: CustomEvent<Tab>) {
-		const newTab = event.detail;
+	function handleImportSubmit(newTab: Tab) {
 		tabs.add(newTab);
 		isImportModalOpen = false;
 
@@ -85,17 +81,17 @@
 		}, 100);
 	}
 
+	function closeSettingsModal() {
+		isSettingsModalOpen = false;
+	}
+
+	function closeImportModal() {
+		isImportModalOpen = false;
+	}
+
 	onMount(async () => {
-		try {
-			// Try to get version from package.json
-			const response = await fetch('/package.json');
-			if (response.ok) {
-				const pkg = await response.json();
-				appVersion = pkg.version || '1.0.0';
-			}
-		} catch (error) {
-			console.error('Failed to load version:', error);
-		}
+		// Set a static version instead of fetching package.json
+		appVersion = '1.0.0';
 	});
 </script>
 
@@ -106,10 +102,9 @@
 <main class="container">
 	<header>
 		<div class="title-container">
-			<h1>TabScroll</h1>
+			<h1>Tab Scroll</h1>
 			<span class="version">{appVersion}</span>
 		</div>
-		<SettingsButton on:click={() => (isSettingsModalOpen = true)} />
 	</header>
 
 	<div class="tabs-container">
@@ -276,8 +271,12 @@
 	</div>
 </main>
 
-<SettingsModal bind:open={isSettingsModalOpen} />
-<ImportTabModal bind:visible={isImportModalOpen} on:import={handleImportSubmit} />
+<SettingsModal open={isSettingsModalOpen} onclose={closeSettingsModal} />
+<ImportTabModal
+	visible={isImportModalOpen}
+	onclose={closeImportModal}
+	onimport={handleImportSubmit}
+/>
 
 <style>
 	.container {
@@ -304,34 +303,37 @@
 
 	h1 {
 		margin: 0;
-		font-size: 2rem;
-		color: var(--color-text-primary, #333);
-		font-weight: 600;
+		font-size: var(--font-size-2xl);
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-semibold);
 	}
 
 	.version {
-		color: var(--color-text-secondary, #666);
-		font-size: 0.9rem;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-sm);
 	}
 
 	.tabs-container {
-		background-color: var(--color-surface, #fff);
-		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		background-color: var(--color-surface);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-md);
 		flex: 1;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
+		transition: var(--transition-colors);
 	}
 
 	.controls-row {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 1rem;
-		border-bottom: 1px solid var(--color-border, #eee);
-		gap: 1rem;
+		padding: var(--spacing-md);
+		border-bottom: 1px solid var(--color-border);
+		gap: var(--spacing-md);
 		flex-wrap: wrap;
+		background-color: var(--color-surface);
+		transition: var(--transition-colors);
 	}
 
 	.search-container {
@@ -342,17 +344,19 @@
 
 	input[type='search'] {
 		width: 100%;
-		padding: 0.5rem 0.5rem 0.5rem 2.5rem;
-		border: 1px solid var(--color-border, #eee);
-		border-radius: 4px;
-		font-size: 1rem;
-		background-color: var(--color-background, #fff);
-		color: var(--color-text-primary, #333);
+		padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 2.5rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-base);
+		background-color: var(--color-background);
+		color: var(--color-text-primary);
+		transition: var(--transition-colors);
 	}
 
 	input[type='search']:focus {
-		border-color: var(--color-primary, #4caf50);
+		border-color: var(--color-primary);
 		outline: none;
+		box-shadow: 0 0 0 2px var(--color-primary);
 	}
 
 	.search-icon {
@@ -360,46 +364,54 @@
 		left: 0.75rem;
 		top: 50%;
 		transform: translateY(-50%);
-		fill: var(--color-text-secondary, #666);
+		fill: var(--color-text-secondary);
+		transition: var(--transition-colors);
 	}
 
 	.action-buttons {
 		display: flex;
-		gap: 0.75rem;
+		gap: var(--spacing-sm);
 	}
 
 	.new-tab-button,
 	.import-button {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-sm) var(--spacing-md);
 		border: none;
-		border-radius: 4px;
-		font-weight: 600;
+		border-radius: var(--radius-sm);
+		font-weight: var(--font-weight-semibold);
+		font-size: var(--font-size-sm);
 		cursor: pointer;
-		transition:
-			background-color 0.2s,
-			transform 0.1s;
+		transition: var(--transition-all);
 	}
 
 	.new-tab-button {
-		background-color: var(--color-primary, #4caf50);
-		color: white;
+		background-color: var(--color-primary);
+		color: var(--color-text-inverse);
 	}
 
 	.import-button {
-		background-color: var(--color-secondary, #3f51b5);
-		color: white;
+		background-color: var(--color-secondary);
+		color: var(--color-text-inverse);
 	}
 
-	.new-tab-button:hover,
+	.new-tab-button:hover {
+		background-color: var(--color-primary-hover);
+	}
+
 	.import-button:hover {
-		opacity: 0.9;
+		background-color: var(--color-secondary-hover);
 	}
 
-	.new-tab-button:active,
+	.new-tab-button:active {
+		background-color: var(--color-primary-active);
+		transform: scale(0.98);
+	}
+
 	.import-button:active {
+		background-color: var(--color-secondary-active);
 		transform: scale(0.98);
 	}
 
@@ -413,26 +425,30 @@
 	.tabs-header {
 		display: grid;
 		grid-template-columns: 3fr 2fr 2fr;
-		padding: 0.75rem 1rem;
-		background-color: var(--color-surface-variant, #f5f5f5);
-		border-bottom: 1px solid var(--color-border, #eee);
+		padding: var(--spacing-sm) var(--spacing-md);
+		background-color: var(--color-surface-variant);
+		border-bottom: 1px solid var(--color-border);
+		transition: var(--transition-colors);
 	}
 
 	.sort-button {
 		background: none;
 		border: none;
-		padding: 0.25rem 0.5rem;
-		font-weight: 600;
-		color: var(--color-text-secondary, #666);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-secondary);
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--spacing-xs);
 		cursor: pointer;
 		text-align: left;
+		transition: var(--transition-colors);
+		border-radius: var(--radius-sm);
 	}
 
 	.sort-button:hover {
-		color: var(--color-text-primary, #333);
+		color: var(--color-text-primary);
+		background-color: var(--color-hover);
 	}
 
 	.sort-indicator {
@@ -452,38 +468,38 @@
 	.tab-item {
 		display: grid;
 		grid-template-columns: 3fr 2fr 2fr;
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid var(--color-border, #eee);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-bottom: 1px solid var(--color-border);
 		cursor: pointer;
-		transition: background-color 0.2s;
+		transition: var(--transition-colors);
 		animation: fadeIn 0.3s ease forwards;
 		animation-delay: var(--delay);
 		opacity: 0;
 	}
 
 	.tab-item:hover {
-		background-color: var(--color-hover, #f9f9f9);
+		background-color: var(--color-hover);
 	}
 
 	.tab-title {
-		font-weight: 500;
-		color: var(--color-text-primary, #333);
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-primary);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
 	.tab-artist {
-		color: var(--color-text-secondary, #666);
+		color: var(--color-text-secondary);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
 	.tab-date {
-		color: var(--color-text-secondary, #666);
+		color: var(--color-text-secondary);
 		text-align: right;
-		font-size: 0.9rem;
+		font-size: var(--font-size-sm);
 	}
 
 	.empty-state,
@@ -492,22 +508,24 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 3rem 1rem;
+		padding: var(--spacing-2xl) var(--spacing-md);
 		text-align: center;
 		flex: 1;
-		color: var(--color-text-secondary, #666);
+		color: var(--color-text-secondary);
+		background-color: var(--color-surface);
+		transition: var(--transition-colors);
 	}
 
 	.empty-state h2,
 	.no-results h3 {
-		margin-bottom: 0.5rem;
-		color: var(--color-text-primary, #333);
+		margin-bottom: var(--spacing-sm);
+		color: var(--color-text-primary);
 	}
 
 	.empty-actions {
-		margin-top: 2rem;
+		margin-top: var(--spacing-xl);
 		display: flex;
-		gap: 1rem;
+		gap: var(--spacing-md);
 		flex-wrap: wrap;
 		justify-content: center;
 	}
@@ -516,29 +534,37 @@
 	.empty-import-btn {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 1.5rem;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-sm) var(--spacing-lg);
 		border: none;
-		border-radius: 6px;
-		font-weight: 600;
-		font-size: 1.1rem;
+		border-radius: var(--radius-md);
+		font-weight: var(--font-weight-semibold);
+		font-size: var(--font-size-lg);
 		cursor: pointer;
-		transition: transform 0.2s;
+		transition: var(--transition-all);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.empty-create-btn {
-		background-color: var(--color-primary, #4caf50);
-		color: white;
+		background-color: var(--color-primary);
+		color: var(--color-text-inverse);
 	}
 
 	.empty-import-btn {
-		background-color: var(--color-secondary, #3f51b5);
-		color: white;
+		background-color: var(--color-secondary);
+		color: var(--color-text-inverse);
 	}
 
-	.empty-create-btn:hover,
-	.empty-import-btn:hover {
+	.empty-create-btn:hover {
+		background-color: var(--color-primary-hover);
 		transform: translateY(-2px);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.empty-import-btn:hover {
+		background-color: var(--color-secondary-hover);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-lg);
 	}
 
 	@keyframes fadeIn {
@@ -577,29 +603,7 @@
 	@media (max-width: 480px) {
 		.empty-actions {
 			flex-direction: column;
-			gap: 1rem;
-		}
-	}
-
-	@media (prefers-color-scheme: dark) {
-		input[type='search'] {
-			background-color: #333;
-			color: #e0e0e0;
-			border-color: #555;
-		}
-
-		.empty-state {
-			background-color: #333;
-			color: #bbb;
-		}
-
-		.tab-item {
-			background-color: #2d2d2d;
-			border-color: #444;
-		}
-
-		.tab-item:hover {
-			background-color: #3a3a3a;
+			gap: var(--spacing-md);
 		}
 	}
 </style>

@@ -1,3 +1,203 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+/* ===== GLOBAL CSS VARIABLES SYSTEM ===== */
+
+/* Light Theme (Default) */
+:root {
+	/* Primary Colors */
+	--color-primary: #4caf50;
+	--color-primary-hover: #45a049;
+	--color-primary-active: #3d8b40;
+	--color-secondary: #3f51b5;
+	--color-secondary-hover: #3949ab;
+	--color-secondary-active: #303f9f;
+
+	/* Background Colors */
+	--color-background: #ffffff;
+	--color-background-secondary: #f9f9f9;
+	--color-surface: #ffffff;
+	--color-surface-variant: #f5f5f5;
+	--color-surface-elevated: #ffffff;
+
+	/* Text Colors */
+	--color-text-primary: #333333;
+	--color-text-secondary: #666666;
+	--color-text-tertiary: #999999;
+	--color-text-inverse: #ffffff;
+
+	/* Border Colors */
+	--color-border: #e0e0e0;
+	--color-border-light: #f0f0f0;
+	--color-border-dark: #d0d0d0;
+
+	/* State Colors */
+	--color-success: #4caf50;
+	--color-warning: #ff9800;
+	--color-error: #f44336;
+	--color-info: #2196f3;
+
+	/* Interactive States */
+	--color-hover: #f5f5f5;
+	--color-active: #e8e8e8;
+	--color-focus: #4caf50;
+	--color-disabled: #cccccc;
+
+	/* Shadows */
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+	--shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+	--shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.15);
+	--shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.2);
+
+	/* Spacing */
+	--spacing-xs: 0.25rem;
+	--spacing-sm: 0.5rem;
+	--spacing-md: 1rem;
+	--spacing-lg: 1.5rem;
+	--spacing-xl: 2rem;
+	--spacing-2xl: 3rem;
+
+	/* Border Radius */
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+	--radius-xl: 12px;
+	--radius-full: 50%;
+
+	/* Typography */
+	--font-size-xs: 0.75rem;
+	--font-size-sm: 0.875rem;
+	--font-size-base: 1rem;
+	--font-size-lg: 1.125rem;
+	--font-size-xl: 1.25rem;
+	--font-size-2xl: 1.5rem;
+	--font-size-3xl: 2rem;
+
+	--font-weight-normal: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+
+	--line-height-tight: 1.25;
+	--line-height-normal: 1.5;
+	--line-height-relaxed: 1.75;
+
+	/* Transitions */
+	--transition-fast: 0.15s ease;
+	--transition-normal: 0.2s ease;
+	--transition-slow: 0.3s ease;
+	--transition-colors: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+	--transition-transform: transform 0.2s ease;
+	--transition-all: all 0.2s ease;
+
+	/* Z-Index Scale */
+	--z-dropdown: 1000;
+	--z-sticky: 1020;
+	--z-fixed: 1030;
+	--z-modal-backdrop: 1040;
+	--z-modal: 1050;
+	--z-popover: 1060;
+	--z-tooltip: 1070;
+	--z-toast: 1080;
+}
+
+/* Dark Theme Overrides */
+[data-theme='dark'] {
+	/* Primary Colors */
+	--color-primary: #66bb6a;
+	--color-primary-hover: #5cb85c;
+	--color-primary-active: #4caf50;
+
+	/* Background Colors */
+	--color-background: #1a1a1a;
+	--color-background-secondary: #2d2d2d;
+	--color-surface: #2d2d2d;
+	--color-surface-variant: #3d3d3d;
+	--color-surface-elevated: #404040;
+
+	/* Text Colors */
+	--color-text-primary: #e0e0e0;
+	--color-text-secondary: #b0b0b0;
+	--color-text-tertiary: #808080;
+	--color-text-inverse: #1a1a1a;
+
+	/* Border Colors */
+	--color-border: #404040;
+	--color-border-light: #353535;
+	--color-border-dark: #4d4d4d;
+
+	/* Interactive States */
+	--color-hover: #353535;
+	--color-active: #404040;
+	--color-focus: #66bb6a;
+	--color-disabled: #555555;
+
+	/* Shadows (darker for dark theme) */
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4);
+	--shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.5);
+	--shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== GLOBAL STYLES ===== */
+
+/* Smooth theme transitions for all elements */
+*,
+*::before,
+*::after {
+	transition: var(--transition-colors);
+}
+
+/* Base body styling */
+body {
+	background-color: var(--color-background);
+	color: var(--color-text-primary);
+	transition: var(--transition-colors);
+}
+
+/* Utility Classes */
+.theme-transition {
+	transition: var(--transition-colors);
+}
+
+.surface {
+	background-color: var(--color-surface);
+	color: var(--color-text-primary);
+}
+
+.surface-variant {
+	background-color: var(--color-surface-variant);
+	color: var(--color-text-primary);
+}
+
+.surface-elevated {
+	background-color: var(--color-surface-elevated);
+	color: var(--color-text-primary);
+	box-shadow: var(--shadow-md);
+}
+
+.text-primary {
+	color: var(--color-text-primary);
+}
+
+.text-secondary {
+	color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+	color: var(--color-text-tertiary);
+}
+
+.border-default {
+	border-color: var(--color-border);
+}
+
+.hover-surface:hover {
+	background-color: var(--color-hover);
+}
+
+.focus-ring:focus {
+	outline: 2px solid var(--color-focus);
+	outline-offset: 2px;
+}

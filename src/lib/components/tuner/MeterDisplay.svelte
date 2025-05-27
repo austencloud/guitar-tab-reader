@@ -1,11 +1,14 @@
 <script lang="ts">
-	import { tweened } from 'svelte/motion';
-	import { cubicOut } from 'svelte/easing';
 	import { derived } from 'svelte/store';
+	import type { Tweened } from 'svelte/motion';
 
-	export let detectedCents: number = 0;
-	export let isCurrentlyTuned: boolean = false;
-	export let needleRotationStore: ReturnType<typeof tweened<number>>; // Pass the tweened store
+	interface Props {
+		detectedCents?: number;
+		isCurrentlyTuned?: boolean;
+		needleRotationStore: Tweened<number>;
+	}
+
+	let { detectedCents = 0, isCurrentlyTuned = false, needleRotationStore }: Props = $props();
 
 	// Derive rotation value from the store for use in template
 	const needleRotation = derived(
@@ -79,10 +82,12 @@
 		display: flex;
 		width: 100%;
 		height: 16px;
-		margin-bottom: 8px;
-		border-radius: 8px;
+		margin-bottom: var(--spacing-sm);
+		border-radius: var(--radius-lg);
 		overflow: hidden;
-		background: rgba(0, 0, 0, 0.05);
+		background: var(--color-surface-variant);
+		border: 1px solid var(--color-border);
+		box-shadow: inset var(--shadow-sm);
 	}
 
 	.segments {

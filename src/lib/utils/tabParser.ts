@@ -105,11 +105,13 @@ function convertNotesToPositions(section: NewTabSection): TabPosition[] {
 	}
 
 	// Group notes by position
-	for (const note of section.notes) {
-		if (!notesByPosition[note.position]) {
-			notesByPosition[note.position] = [];
+	for (const position of section.positions) {
+		for (const note of position.notes) {
+			if (!notesByPosition[note.position]) {
+				notesByPosition[note.position] = [];
+			}
+			notesByPosition[note.position].push(note);
 		}
-		notesByPosition[note.position].push(note);
 	}
 
 	// Convert to positions

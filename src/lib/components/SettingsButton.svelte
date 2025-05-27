@@ -1,34 +1,37 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { spring } from 'svelte/motion';
 
-	const dispatch = createEventDispatcher<{
-		click: void;
-	}>();
+	interface Props {
+		onclick?: () => void;
+	}
 
-	let hovered = false;
+	let { onclick }: Props = $props();
+
+	let hovered = $state(false);
 
 	const rotation = spring(0, {
 		stiffness: 0.1,
 		damping: 0.25
 	});
 
-	$: if (hovered) {
-		rotation.set(45);
-	} else {
-		rotation.set(0);
-	}
+	$effect(() => {
+		if (hovered) {
+			rotation.set(45);
+		} else {
+			rotation.set(0);
+		}
+	});
 
 	function handleClick() {
-		dispatch('click');
+		onclick?.();
 	}
 </script>
 
 <button
 	class="settings-button"
-	on:click={handleClick}
-	on:mouseenter={() => (hovered = true)}
-	on:mouseleave={() => (hovered = false)}
+	onclick={handleClick}
+	onmouseenter={() => (hovered = true)}
+	onmouseleave={() => (hovered = false)}
 	aria-label="Settings"
 >
 	<svg
@@ -45,30 +48,36 @@
 
 <style>
 	.settings-button {
-		background-color: #4caf50;
+		background-color: var(--color-primary);
 		border: none;
-		color: white;
+		color: var(--color-text-inverse);
 		cursor: pointer;
-		padding: 0.5rem;
-		border-radius: 50%;
+		padding: var(--spacing-sm);
+		border-radius: var(--radius-full);
 		width: 2.5rem;
 		height: 2.5rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		transition: all 0.2s;
+		box-shadow: var(--shadow-sm);
+		transition: var(--transition-all);
 	}
 
 	.settings-button:hover {
-		background-color: #45a049;
+		background-color: var(--color-primary-hover);
 		transform: translateY(-2px);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.settings-button:active {
+		background-color: var(--color-primary-active);
 		transform: translateY(0);
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.settings-button:focus {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	svg {
@@ -76,22 +85,12 @@
 		height: 1.25rem;
 	}
 
-	@media (prefers-color-scheme: dark) {
-		.settings-button {
-			background-color: #388e3c;
-		}
-
-		.settings-button:hover {
-			background-color: #2e7d32;
-		}
-	}
-
 	/* Mobile optimization */
 	@media (max-width: 600px) {
 		.settings-button {
 			width: 2.25rem;
 			height: 2.25rem;
-			padding: 0.4rem;
+			padding: var(--spacing-xs);
 		}
 	}
 </style>

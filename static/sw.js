@@ -1,13 +1,5 @@
 const CACHE_NAME = 'tabscroll-cache-v1';
-const APP_SHELL = [
-	'/',
-	'/manifest.webmanifest',
-	'/favicon.png',
-	'/icon-512.png',
-	'/apple-touch-icon.png',
-	'/apple-touch-icon-152x152.png',
-	'/apple-touch-icon-180x180.png'
-];
+const APP_SHELL = ['/', '/manifest.webmanifest', '/favicon.png'];
 
 const TAB_DATA_CACHE = 'tabscroll-data-v1';
 

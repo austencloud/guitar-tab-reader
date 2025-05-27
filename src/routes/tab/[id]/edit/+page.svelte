@@ -1,17 +1,14 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
 	import TabEditor from '$lib/components/TabEditor.svelte';
 
-	let currentTab = null;
+	const id = $derived(page.params.id);
+	const currentTab = $derived($tabs.find((tab) => tab.id === id));
 
-	$: id = $page.params.id;
-	$: currentTab = $tabs.find((tab) => tab.id === id);
-
-	function handleSaved(event: CustomEvent<{ id: string }>) {
-		goto(`/tab/${event.detail.id}`);
+	function handleSaved(event: { id: string }) {
+		goto(`/tab/${event.id}`);
 	}
 
 	function handleCanceled() {
@@ -33,15 +30,15 @@
 			content={currentTab.content}
 			artist={currentTab.artist || ''}
 			album={currentTab.album || ''}
-			on:saved={handleSaved}
-			on:canceled={handleCanceled}
+			onsaved={handleSaved}
+			oncanceled={handleCanceled}
 		/>
 	</div>
 {:else}
 	<div class="not-found">
 		<h1>Tab Not Found</h1>
 		<p>Sorry, the tab you're looking for doesn't exist or has been deleted.</p>
-		<button on:click={() => goto('/')}>Back to Home</button>
+		<button onclick={() => goto('/')}>Back to Home</button>
 	</div>
 {/if}
 

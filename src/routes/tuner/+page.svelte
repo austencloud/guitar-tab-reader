@@ -8,7 +8,7 @@
 
 <div class="tuner-page" in:fly={{ y: 20, duration: 300 }}>
 	<div class="tuner-header">
-		<button class="back-button" on:click={() => goto('/')} aria-label="Go back to home">
+		<button class="back-button" onclick={() => goto('/')} aria-label="Go back to home">
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
 				<path
 					fill="currentColor"

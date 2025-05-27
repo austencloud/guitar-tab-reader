@@ -1,53 +1,52 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import TuningMeter from './TuningMeter.svelte';
 	import {
 		startTuner,
 		stopTuner,
 		tunerStatus,
 		isListening,
-		detectedFrequency,
-		detectedCents,
-		detectedNote
+		detectedCents
 	} from '../../utils/tuner/AudioProcessor';
 	import {
 		tunings,
+		selectedTuning as globalSelectedTuning,
 		getClosestString,
 		calculateCents,
 		addCustomTuning
 	} from '../../utils/tuner/TuningDefinitions';
 	import type { StringDefinition } from '../../utils/tuner/types';
 
-	// Create event dispatcher for the close event
-	const dispatch = createEventDispatcher<{
-		close: void;
-	}>();
+	interface Props {
+		open?: boolean;
+		customTuning?: StringDefinition[] | null;
+		onclose?: () => void;
+	}
 
-	export let open = true; // Changed from false to true to ensure it shows up
-	export let customTuning: StringDefinition[] | null = null;
-	export let initialTuning = 'Standard';
+	let { open = true, customTuning = null, onclose }: Props = $props();
 
-	let selectedTuning = initialTuning;
-	let activeStrings: StringDefinition[] = [];
-	let closestString: StringDefinition | null = null;
+	let activeStrings = $state<StringDefinition[]>([]);
+	let closestString = $state<StringDefinition | null>(null);
 
-	$: if (customTuning && customTuning.length) {
-		if (!$tunings['Custom']) {
-			addCustomTuning('Custom', customTuning);
-			selectedTuning = 'Custom';
+	// Initialize with custom tuning if provided
+	$effect(() => {
+		if (customTuning && customTuning.length) {
+			if (!$tunings['Custom']) {
+				addCustomTuning('Custom', customTuning);
+				globalSelectedTuning.set('Custom');
+			}
 		}
-	}
+	});
 
-	// Update selectedTuning when initialTuning changes
-	$: if (initialTuning && initialTuning !== selectedTuning && $tunings[initialTuning]) {
-		selectedTuning = initialTuning;
-	}
-
-	$: if (selectedTuning && $tunings[selectedTuning]) {
-		activeStrings = $tunings[selectedTuning];
-	}
+	// Update activeStrings when global tuning changes
+	$effect(() => {
+		const currentTuning = $globalSelectedTuning;
+		if (currentTuning && $tunings[currentTuning]) {
+			activeStrings = $tunings[currentTuning];
+		}
+	});
 
 	function handlePitch(frequency: number) {
 		closestString = getClosestString(frequency, activeStrings);
@@ -70,7 +69,7 @@
 
 	function handleTuningChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
-		selectedTuning = target.value;
+		globalSelectedTuning.set(target.value);
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -79,25 +78,19 @@
 		}
 	}
 
-	function handleModalBackdropKeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
-			event.preventDefault();
-			close();
-		}
-	}
-
 	function close() {
 		if ($isListening) {
 			stopTuner();
 		}
-		open = false;
-		dispatch('close');
+		onclose?.();
 	}
 
 	// Automatically start tuner when modal opens
-	$: if (open) {
-		startTuner(handlePitch);
-	}
+	$effect(() => {
+		if (open) {
+			startTuner(handlePitch);
+		}
+	});
 
 	onMount(() => {
 		// If the modal is already open on mount, start the tuner
@@ -118,7 +111,7 @@
 {#if open}
 	<div class="modal-wrapper" transition:fade={{ duration: 200 }}>
 		<!-- Use button for backdrop to handle both click and keyboard events properly -->
-		<button class="modal-backdrop" aria-label="Close tuner" on:click={close}></button>
+		<button class="modal-backdrop" aria-label="Close tuner" onclick={close}></button>
 
 		<div
 			class="modal-content"
@@ -127,13 +120,13 @@
 			aria-labelledby="tuner-title"
 			transition:scale={{ duration: 200, start: 0.95, opacity: 0, easing: quintOut }}
 		>
-			<button class="close-button" on:click={close} aria-label="Close tuner">×</button>
+			<button class="close-button" onclick={close} aria-label="Close tuner">×</button>
 
 			<div class="tuner-container">
 				<!-- Add Tuning Selector Dropdown -->
 				<div class="tuning-selector-container">
 					<label for="tuning-select">Tuning:</label>
-					<select id="tuning-select" bind:value={selectedTuning} on:change={handleTuningChange}>
+					<select id="tuning-select" value={$globalSelectedTuning} onchange={handleTuningChange}>
 						{#each Object.keys($tunings) as tuningName}
 							<option value={tuningName}>{tuningName}</option>
 						{/each}

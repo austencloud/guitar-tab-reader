@@ -1,18 +1,19 @@
 <script lang="ts">
 	import { onMount, setContext } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
 	import ScrollControls from '$lib/components/ScrollControls.svelte';
 	import GuitarTuner from '$lib/components/GuitarTuner.svelte';
+	import TuningDisplay from '$lib/components/TuningDisplay.svelte';
 	import preferences from '$lib/stores/preferences';
 	import TabViewer from '$lib/components/TabViewer.svelte';
 
 	let tabContainer = $state<HTMLDivElement | undefined>(undefined);
-	let currentPosition = $state(0);
+	// let currentPosition = $state(0); // TODO: Use for scroll position tracking
 	let tunerOpen = $state(false);
 
-	const id = $derived($page.params.id);
+	const id = $derived(page.params.id);
 	const currentTab = $derived($tabs.find((tab) => tab.id === id));
 
 	function goBack() {
@@ -23,13 +24,14 @@
 		goto(`/tab/${id}/edit`);
 	}
 
-	function handleScrollChange(event: CustomEvent<boolean>) {
+	function handleScrollChange(isScrolling: boolean) {
 		// If scrolling is active, update current position based on scroll
-		if (event.detail && tabContainer) {
+		if (isScrolling && tabContainer) {
 			const updatePositionInterval = setInterval(() => {
 				// Calculate position based on scroll position
 				if (tabContainer) {
-					currentPosition = tabContainer.scrollTop;
+					// TODO: Use currentPosition for scroll position tracking
+					// currentPosition = tabContainer.scrollTop;
 				}
 			}, 100);
 
@@ -78,6 +80,9 @@
 						{#if currentTab.album}<span class="album">{currentTab.album}</span>{/if}
 					</div>
 				{/if}
+				<div class="tuning-info">
+					<TuningDisplay compact={true} showStrings={false} />
+				</div>
 			</div>
 			<div class="action-buttons">
 				<button class="edit-btn" onclick={editTab} aria-label="Edit tab">
@@ -105,19 +110,19 @@
 					content={currentTab.content}
 					fontSize={$preferences.fontSize}
 					showChordDiagrams={true}
-					on:openTuner={handleOpenTuner}
+					onopenTuner={handleOpenTuner}
 				/>
 			{/if}
 		</div>
 
 		<div class="controls-container">
 			{#if tabContainer}
-				<ScrollControls container={tabContainer} on:scrollStateChange={handleScrollChange} />
+				<ScrollControls container={tabContainer} onscrollStateChange={handleScrollChange} />
 			{/if}
 		</div>
 
 		<!-- Add GuitarTuner component here -->
-		<GuitarTuner bind:showTuner={tunerOpen} on:close={handleCloseTuner} />
+		<GuitarTuner showTuner={tunerOpen} onclose={handleCloseTuner} />
 	</div>
 {:else}
 	<div class="not-found">
@@ -164,6 +169,11 @@
 	.tab-metadata {
 		font-size: 0.9rem;
 		color: #666;
+	}
+
+	.tuning-info {
+		margin-top: 0.25rem;
+		opacity: 0.8;
 	}
 
 	.artist,

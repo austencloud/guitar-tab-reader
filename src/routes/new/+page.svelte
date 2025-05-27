@@ -2,9 +2,9 @@
 	import TabEditor from '$lib/components/TabEditor.svelte';
 	import { goto } from '$app/navigation';
 
-	function handleSaved(event: CustomEvent<{ id: string }>) {
+	function handleSaved(event: { id: string }) {
 		// Navigate to the newly created tab
-		goto(`/tab/${event.detail.id}`);
+		goto(`/tab/${event.id}`);
 	}
 
 	function handleCanceled() {
@@ -20,7 +20,7 @@
 <div class="container">
 	<h1>Create New Tab</h1>
 
-	<TabEditor on:saved={handleSaved} on:canceled={handleCanceled} />
+	<TabEditor onsaved={handleSaved} oncanceled={handleCanceled} />
 </div>
 
 <style>
