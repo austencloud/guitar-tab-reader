@@ -1,6 +1,60 @@
-# Guitar Tab Reader Refactoring Plan
+# TabScroll - Comprehensive Development Roadmap
 
-After analyzing the codebase, I've identified several areas that need improvement to enhance maintainability, modularity, and clarity. This refactoring plan builds on your initial proposal and includes additional recommendations.
+## Project Overview
+
+**TabScroll** is an advanced guitar tab scrolling application designed to provide a "bullshit-free" interface for viewing, editing, and practicing guitar tablature. This document outlines the comprehensive long-term development strategy for transforming the current basic tab reader into a feature-rich, professional-grade guitar learning platform.
+
+## Current State Analysis
+
+### Existing Foundation ✅
+
+- **Framework**: Svelte 5 + SvelteKit with TypeScript
+- **Styling**: TailwindCSS 4.0 + Custom CSS
+- **Core Features**: Tab viewing, basic parsing, auto-scroll, chord diagrams, guitar tuner
+- **Architecture**: Component-based with Svelte stores for state management
+- **Testing**: Vitest setup with basic test coverage
+- **PWA**: Service worker and manifest configured
+
+### Technology Stack
+
+- **Frontend**: Svelte 5, SvelteKit, TypeScript
+- **Styling**: TailwindCSS 4.0
+- **Audio**: Pitchy library for tuner functionality
+- **Testing**: Vitest, Testing Library
+- **Build**: Vite, ESBuild
+- **Package Management**: npm
+
+---
+
+# DEVELOPMENT ROADMAP OVERVIEW
+
+## Phase 1: Foundation & Core Improvements (Months 1-3)
+
+**Focus**: Refactoring, architecture improvements, and enhanced parsing
+
+## Phase 2: Advanced Tab Features (Months 4-6)
+
+**Focus**: Custom chord formations, advanced editing, and data structures
+
+## Phase 3: Integration & Automation (Months 7-9)
+
+**Focus**: YouTube integration, Ultimate Guitar import, and LLM-powered features
+
+## Phase 4: Advanced Practice Features (Months 10-12)
+
+**Focus**: Timestamping, section playback, and advanced practice tools
+
+## Phase 5: Professional Features (Months 13-18)
+
+**Focus**: Tab creation tools, collaboration, and advanced audio features
+
+---
+
+# DETAILED DOCUMENTATION PLANS
+
+## 1. ARCHITECTURE & REFACTORING PLAN
+
+### Current Issues Analysis
 
 ## 1. Tab Parser Module Refactoring
 

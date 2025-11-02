@@ -5,10 +5,30 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "🎸 Start Tab Scroll Dev Server",
+			"type": "node",
+			"request": "launch",
+			"cwd": "${workspaceFolder}",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "dev"],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"serverReadyAction": {
+				"pattern": "Local:\\s+(https?://localhost:\\d+)",
+				"uriFormat": "%s",
+				"action": "openExternally"
+			},
+			"presentation": {
+				"hidden": false,
+				"group": "Tab Scroll",
+				"order": 1
+			}
+		},
+		{
 			"type": "chrome",
 			"request": "launch",
 			"name": "Launch Chrome against localhost",
-			"url": "http://localhost:5173",
+			"url": "http://localhost:5001",
 			"webRoot": "${workspaceFolder}"
 		}
 	]

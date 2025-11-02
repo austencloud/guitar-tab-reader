@@ -1,10 +1,12 @@
 <script lang="ts">
 	import '../app.css';
-	import SettingsButton from '$lib/components/SettingsButton.svelte';
-	import SettingsModal from '$lib/components/SettingsModal.svelte';
-	import GuitarTuner from '$lib/components/GuitarTuner.svelte';
-	import Footer from '$lib/components/Footer.svelte';
-	import { setContext, getContext } from 'svelte';
+	import { SettingsButton, SettingsModal, Footer } from '$features/shared/components';
+	import { GuitarTuner } from '$features/tuner/components';
+	import { setContext, getContext, onMount } from 'svelte';
+	import { initializeApp } from '$lib/app';
+	import { useService } from '$lib/useService.svelte';
+	import { TYPES } from '$core/di';
+	import type { UIState, UserState } from '$features/shared/services';
 
 	interface TunerState {
 		open: boolean;
@@ -12,21 +14,40 @@
 	}
 
 	let { children } = $props();
-	let settingsOpen = $state(false);
-	let tunerOpen = $state(false);
 	let childTunerState: TunerState | null = $state(null);
+
+	// Get services from DI container (stored in $state to maintain reactivity)
+	let uiState = $state<UIState | undefined>(undefined);
+	let userState = $state<UserState | undefined>(undefined);
+
+	// Initialize application on mount
+	onMount(async () => {
+		await initializeApp();
+
+		// Get services after initialization
+		uiState = useService<UIState>(TYPES.UIState);
+		userState = useService<UserState>(TYPES.UserState);
+	});
 
 	// Create a global tuner context
 	setContext('tuner', {
-		open: () => (tunerOpen = true),
-		close: () => (tunerOpen = false),
-		toggle: () => (tunerOpen = !tunerOpen)
+		open: () => uiState?.openModal('tuner'),
+		close: () => uiState?.closeModal('tuner'),
+		toggle: () => {
+			if (uiState) {
+				if (uiState.tunerModalOpen) {
+					uiState.closeModal('tuner');
+				} else {
+					uiState.openModal('tuner');
+				}
+			}
+		}
 	});
 
 	// Handle state synchronization between parent and child
 	$effect(() => {
-		if (childTunerState && childTunerState.open !== tunerOpen) {
-			childTunerState.setOpen(tunerOpen);
+		if (childTunerState && uiState && childTunerState.open !== uiState.tunerModalOpen) {
+			childTunerState.setOpen(uiState.tunerModalOpen);
 		}
 	});
 
@@ -35,8 +56,8 @@
 		try {
 			// Try to get tuner state from a child route
 			childTunerState = getContext<TunerState>('tunerState');
-			if (childTunerState) {
-				tunerOpen = childTunerState.open;
+			if (childTunerState && uiState) {
+				uiState.tunerModalOpen = childTunerState.open;
 			}
 		} catch {
 			// Context not available, no problem
@@ -50,20 +71,36 @@
 	}
 
 	function toggleSettings() {
-		settingsOpen = !settingsOpen;
+		uiState?.openModal('settings');
 	}
 
 	function closeSettings() {
-		settingsOpen = false;
+		uiState?.closeModal('settings');
 	}
 
 	function closeTuner() {
-		tunerOpen = false;
+		uiState?.closeModal('tuner');
 	}
 
 	function toggleTuner() {
-		tunerOpen = !tunerOpen;
+		if (uiState) {
+			if (uiState.tunerModalOpen) {
+				uiState.closeModal('tuner');
+			} else {
+				uiState.openModal('tuner');
+			}
+		}
 	}
+
+	// Apply theme based on user preferences
+	$effect(() => {
+		if (typeof window !== 'undefined' && userState) {
+			document.documentElement.setAttribute(
+				'data-theme',
+				userState.isDarkMode() ? 'dark' : 'light'
+			);
+		}
+	});
 </script>
 
 <svelte:head>
@@ -104,8 +141,10 @@
 	<Footer />
 </div>
 
-<SettingsModal open={settingsOpen} onclose={closeSettings} />
-<GuitarTuner showTuner={tunerOpen} onclose={closeTuner} />
+{#if uiState}
+	<SettingsModal open={uiState.settingsModalOpen} onclose={closeSettings} />
+	<GuitarTuner showTuner={uiState.tunerModalOpen} onclose={closeTuner} />
+{/if}
 
 <style>
 	:global(body) {

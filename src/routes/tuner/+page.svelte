@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
-	import GuitarTuner from '$lib/components/GuitarTuner.svelte';
+	import { GuitarTuner } from '$features/tuner/components';
 
 	let showTuner = true;
 </script>

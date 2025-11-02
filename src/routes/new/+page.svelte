@@ -1,5 +1,5 @@
 <script lang="ts">
-	import TabEditor from '$lib/components/TabEditor.svelte';
+	import { TabEditor } from '$features/tabs/components';
 	import { goto } from '$app/navigation';
 
 	function handleSaved(event: { id: string }) {

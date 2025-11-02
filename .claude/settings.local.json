@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)",
+      "Bash(python:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(1)",
+      "Bash(for file in ./shared/components/HandednessToggle.svelte ./shared/components/SettingsModal.svelte ./tabs/components/ChordDiagram.svelte ./tabs/components/TabEditor.svelte)",
+      "Bash(do sed -i \"s|''/stores/|''$lib/stores/|g\" \"$file\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path src/features -Recurse -Filter *.svelte | ForEach-Object { (Get-Content $_FullName -Raw) -replace \"\"from ''/utils/\"\", \"\"from ''$lib/utils/\"\" -replace \"\"from ''/stores/\"\", \"\"from ''$lib/stores/\"\" | Set-Content $_FullName -NoNewline }\")",
+      "Bash(npm install:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

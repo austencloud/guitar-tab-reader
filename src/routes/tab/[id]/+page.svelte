@@ -3,11 +3,9 @@
 	import { page } from '$app/state';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import ScrollControls from '$lib/components/ScrollControls.svelte';
-	import GuitarTuner from '$lib/components/GuitarTuner.svelte';
-	import TuningDisplay from '$lib/components/TuningDisplay.svelte';
+	import { ScrollControls, TabViewer, TuningDisplay } from '$features/tabs/components';
+	import { GuitarTuner } from '$features/tuner/components';
 	import preferences from '$lib/stores/preferences';
-	import TabViewer from '$lib/components/TabViewer.svelte';
 
 	let tabContainer = $state<HTMLDivElement | undefined>(undefined);
 	// let currentPosition = $state(0); // TODO: Use for scroll position tracking

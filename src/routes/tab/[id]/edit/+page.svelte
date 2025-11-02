@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import TabEditor from '$lib/components/TabEditor.svelte';
+	import { TabEditor } from '$features/tabs/components';
 
 	const id = $derived(page.params.id);
 	const currentTab = $derived($tabs.find((tab) => tab.id === id));

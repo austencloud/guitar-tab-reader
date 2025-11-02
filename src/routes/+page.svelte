@@ -3,14 +3,15 @@
 	import { fade } from 'svelte/transition';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import SettingsModal from '$lib/components/SettingsModal.svelte';
-	import ImportTabModal from '$lib/components/ImportTabModal.svelte';
+	import { SettingsModal } from '$features/shared/components';
+	import { ImportTabModal, AITabGeneratorModal } from '$features/tabs/components';
 	import type { Tab } from '$lib/stores/tabs';
 
 	let sortBy = 'updatedAt'; // 'updatedAt', 'title', 'artist'
 	let sortOrder = 'desc'; // 'asc', 'desc'
 	let isSettingsModalOpen = false;
 	let isImportModalOpen = false;
+	let isAIGeneratorOpen = false;
 	let searchQuery = '';
 	let appVersion = '1.0.0';
 
@@ -89,6 +90,24 @@
 		isImportModalOpen = false;
 	}
 
+	function handleAIGenerator() {
+		isAIGeneratorOpen = true;
+	}
+
+	function closeAIGenerator() {
+		isAIGeneratorOpen = false;
+	}
+
+	function handleAIGeneratedTab(newTab: Tab) {
+		tabs.add(newTab);
+		isAIGeneratorOpen = false;
+
+		// Navigate to the newly generated tab
+		setTimeout(() => {
+			goto(`/tab/${newTab.id}`, {});
+		}, 100);
+	}
+
 	onMount(async () => {
 		// Set a static version instead of fetching package.json
 		appVersion = '1.0.0';
@@ -130,6 +149,23 @@
 			</div>
 
 			<div class="action-buttons">
+				<button class="ai-generate-button" on:click={handleAIGenerator}>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
+					</svg>
+					<span>AI Generate</span>
+				</button>
+
 				<button class="import-button" on:click={handleImportTab}>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -173,8 +209,25 @@
 			{#if $tabs.length === 0}
 				<div class="empty-state">
 					<h2>No tabs yet</h2>
-					<p>Create a new tab or import one to get started</p>
+					<p>Generate with AI, import, or create a tab to get started</p>
 					<div class="empty-actions">
+						<button class="empty-ai-btn" on:click={handleAIGenerator}>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
+							</svg>
+							<span>Generate with AI</span>
+						</button>
+
 						<button class="empty-import-btn" on:click={handleImportTab}>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -277,6 +330,11 @@
 	onclose={closeImportModal}
 	onimport={handleImportSubmit}
 />
+<AITabGeneratorModal
+	visible={isAIGeneratorOpen}
+	onclose={closeAIGenerator}
+	onimport={handleAIGeneratedTab}
+/>
 
 <style>
 	.container {
@@ -374,7 +432,8 @@
 	}
 
 	.new-tab-button,
-	.import-button {
+	.import-button,
+	.ai-generate-button {
 		display: flex;
 		align-items: center;
 		gap: var(--spacing-sm);
@@ -397,12 +456,40 @@
 		color: var(--color-text-inverse);
 	}
 
+	.ai-generate-button {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.ai-generate-button::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+		transition: left 0.5s;
+	}
+
+	.ai-generate-button:hover::before {
+		left: 100%;
+	}
+
 	.new-tab-button:hover {
 		background-color: var(--color-primary-hover);
 	}
 
 	.import-button:hover {
 		background-color: var(--color-secondary-hover);
+	}
+
+	.ai-generate-button:hover {
+		background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 	}
 
 	.new-tab-button:active {
@@ -413,6 +500,10 @@
 	.import-button:active {
 		background-color: var(--color-secondary-active);
 		transform: scale(0.98);
+	}
+
+	.ai-generate-button:active {
+		transform: scale(0.98) translateY(0);
 	}
 
 	.tabs-list {
@@ -531,7 +622,8 @@
 	}
 
 	.empty-create-btn,
-	.empty-import-btn {
+	.empty-import-btn,
+	.empty-ai-btn {
 		display: flex;
 		align-items: center;
 		gap: var(--spacing-sm);
@@ -555,6 +647,28 @@
 		color: var(--color-text-inverse);
 	}
 
+	.empty-ai-btn {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.empty-ai-btn::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+		transition: left 0.5s;
+	}
+
+	.empty-ai-btn:hover::before {
+		left: 100%;
+	}
+
 	.empty-create-btn:hover {
 		background-color: var(--color-primary-hover);
 		transform: translateY(-2px);
@@ -565,6 +679,12 @@
 		background-color: var(--color-secondary-hover);
 		transform: translateY(-2px);
 		box-shadow: var(--shadow-lg);
+	}
+
+	.empty-ai-btn:hover {
+		background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 	}
 
 	@keyframes fadeIn {
