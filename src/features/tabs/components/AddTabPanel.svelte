@@ -262,8 +262,8 @@
 		align-items: center;
 		gap: var(--spacing-md);
 		padding: var(--spacing-lg);
-		background: var(--color-surface-variant);
-		border: 2px solid var(--color-border-light);
+		background: var(--color-surface-low);
+		border: 1px solid var(--color-border);
 		border-radius: var(--radius-xl);
 		cursor: pointer;
 		transition: var(--transition-all);
@@ -280,8 +280,8 @@
 		left: -100%;
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-		transition: left 0.5s;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+		transition: left var(--transition-slower);
 	}
 
 	.option-card:hover::before {
@@ -289,7 +289,7 @@
 	}
 
 	.option-card:hover {
-		transform: translateY(-2px) scale(1.01);
+		transform: translateY(-3px);
 		box-shadow: var(--shadow-lg);
 		border-color: currentColor;
 	}
@@ -299,34 +299,42 @@
 		box-shadow: var(--shadow-md);
 	}
 
+	.option-card:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
+	}
+
 	.ai-option {
-		background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-		border-color: #667eea;
-		color: #667eea;
+		background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+		border-color: var(--color-secondary);
+		color: var(--color-secondary);
 	}
 
 	.ai-option:hover {
-		background: linear-gradient(135deg, #667eea25 0%, #764ba225 100%);
+		background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+		box-shadow: var(--shadow-lg), var(--glow-secondary);
 	}
 
 	.url-option {
-		background: linear-gradient(135deg, #00b4d815 0%, #0077b615 100%);
+		background: linear-gradient(135deg, rgba(0, 180, 216, 0.08) 0%, rgba(0, 119, 182, 0.08) 100%);
 		border-color: #00b4d8;
 		color: #00b4d8;
 	}
 
 	.url-option:hover {
-		background: linear-gradient(135deg, #00b4d825 0%, #0077b625 100%);
+		background: linear-gradient(135deg, rgba(0, 180, 216, 0.15) 0%, rgba(0, 119, 182, 0.15) 100%);
+		box-shadow: var(--shadow-lg), 0 0 20px rgba(0, 180, 216, 0.3);
 	}
 
 	.paste-option {
-		background: linear-gradient(135deg, #4caf5015 0%, #45a04915 100%);
-		border-color: #4caf50;
-		color: #4caf50;
+		background: linear-gradient(135deg, rgba(74, 222, 128, 0.08) 0%, rgba(34, 197, 94, 0.08) 100%);
+		border-color: var(--color-primary);
+		color: var(--color-primary);
 	}
 
 	.paste-option:hover {
-		background: linear-gradient(135deg, #4caf5025 0%, #45a04925 100%);
+		background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%);
+		box-shadow: var(--shadow-lg), var(--glow-primary);
 	}
 
 	.option-icon {
@@ -465,13 +473,6 @@
 
 		.option-arrow {
 			display: none;
-		}
-	}
-
-	/* Dark mode support */
-	@media (prefers-color-scheme: dark) {
-		.panel-backdrop {
-			background: rgba(0, 0, 0, 0.7);
 		}
 	}
 </style>

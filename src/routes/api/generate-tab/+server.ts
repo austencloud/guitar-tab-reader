@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { ANTHROPIC_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import * as cheerio from 'cheerio';
 
 export const POST: RequestHandler = async ({ request, fetch }) => {
@@ -302,7 +302,7 @@ async function generateTabWithAI(
 	const fullTitle = artist ? `${song} by ${artist}` : song;
 
 	// Check if ANTHROPIC_API_KEY is available
-	const apiKey = ANTHROPIC_API_KEY;
+	const apiKey = env.ANTHROPIC_API_KEY;
 	console.log('API Key loaded:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT FOUND');
 
 	if (apiKey) {

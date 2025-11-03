@@ -234,17 +234,18 @@
 	.scroll-controls {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
-		padding: 0.75rem;
-		background-color: rgba(255, 255, 255, 0.9);
-		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-		margin-top: 1rem;
+		gap: var(--spacing-sm);
+		padding: var(--spacing-md);
+		background-color: var(--color-surface-high);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-lg);
+		margin-top: var(--spacing-md);
+		border: 1px solid var(--color-border);
 	}
 
 	.controls-row {
 		display: flex;
-		gap: 1rem;
+		gap: var(--spacing-md);
 		justify-content: center;
 	}
 
@@ -252,25 +253,32 @@
 		background: none;
 		border: none;
 		cursor: pointer;
-		border-radius: 50%;
-		width: 2.5rem;
-		height: 2.5rem;
+		border-radius: var(--radius-full);
+		width: var(--touch-target-comfortable);
+		height: var(--touch-target-comfortable);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background-color: #4caf50;
-		color: white;
-		transition: all 0.2s;
+		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+		color: var(--color-text-inverse);
+		transition: var(--transition-all);
+		box-shadow: var(--shadow-md);
 	}
 
 	.icon-button:hover {
-		background-color: #45a049;
+		background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
 		transform: translateY(-2px);
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-lg), var(--glow-primary);
 	}
 
 	.icon-button:active {
-		transform: translateY(0);
+		transform: translateY(0) scale(0.95);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.icon-button:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.icon-button svg {
@@ -282,15 +290,15 @@
 	.speed-control {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		margin-top: 0.5rem;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-sm);
 	}
 
 	.speed-slider-container {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--spacing-xs);
 	}
 
 	.slider-with-buttons {
@@ -307,33 +315,34 @@
 	.speed-feedback {
 		display: flex;
 		justify-content: center;
-		font-size: 0.8rem;
-		color: #666;
+		font-size: var(--font-size-xs);
+		color: var(--color-text-secondary);
 	}
 
 	.speed-value {
-		font-weight: bold;
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text-primary);
 	}
 
 	.speed-percentage {
-		margin-left: 0.25rem;
+		margin-left: var(--spacing-xs);
 		opacity: 0.8;
 	}
 
 	.speed-button {
-		width: 1.75rem;
-		height: 1.75rem;
-		border-radius: 50%;
+		width: var(--touch-target-min);
+		height: var(--touch-target-min);
+		border-radius: var(--radius-full);
 		border: none;
-		background-color: #4caf50;
-		color: white;
+		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+		color: var(--color-text-inverse);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: all 0.2s;
-		margin-top: 0;
-		align-self: center; /* Align with the slider */
+		transition: var(--transition-all);
+		box-shadow: var(--shadow-sm);
+		align-self: center;
 	}
 
 	.speed-button svg {
@@ -343,75 +352,68 @@
 	}
 
 	.speed-button:hover {
-		background-color: #45a049;
+		background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
 		transform: translateY(-1px);
+		box-shadow: var(--shadow-md), var(--glow-primary);
+	}
+
+	.speed-button:active {
+		transform: translateY(0) scale(0.95);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.speed-button:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.speed-button:disabled {
-		background-color: #cccccc;
+		background: var(--color-disabled);
 		cursor: not-allowed;
 		transform: none;
+		box-shadow: none;
+		opacity: 0.5;
 	}
 
 	.keyboard-shortcuts {
 		display: flex;
 		justify-content: space-around;
-		font-size: 0.7rem;
-		color: #888;
-		margin-top: 0.25rem;
-	}
-
-	/* Dark mode support */
-	@media (prefers-color-scheme: dark) {
-		.scroll-controls {
-			background-color: rgba(33, 33, 33, 0.9);
-		}
-
-		.icon-button {
-			background-color: #388e3c;
-		}
-
-		.icon-button:hover {
-			background-color: #2e7d32;
-		}
-
-		.speed-feedback {
-			color: #aaa;
-		}
-
-		.keyboard-shortcuts {
-			color: #777;
-		}
-
-		.speed-button {
-			background-color: #388e3c;
-		}
-
-		.speed-button:hover {
-			background-color: #2e7d32;
-		}
-
-		.speed-button:disabled {
-			background-color: #424242;
-		}
+		font-size: var(--font-size-xs);
+		color: var(--color-text-tertiary);
+		margin-top: var(--spacing-xs);
+		gap: var(--spacing-sm);
 	}
 
 	/* Mobile optimization */
 	@media (max-width: 768px) {
 		.scroll-controls {
-			padding: 0.5rem;
+			padding: var(--spacing-sm);
 			width: 100%;
 			box-sizing: border-box;
 		}
 
 		.icon-button {
-			width: 2.25rem;
-			height: 2.25rem;
+			width: var(--touch-target-min);
+			height: var(--touch-target-min);
+		}
+
+		.icon-button svg {
+			width: 1rem;
+			height: 1rem;
 		}
 
 		.speed-button {
-			width: 1.5rem;
-			height: 1.5rem;
+			width: 40px;
+			height: 40px;
+		}
+
+		.speed-button svg {
+			width: 0.875rem;
+			height: 0.875rem;
+		}
+
+		.keyboard-shortcuts {
+			font-size: 0.625rem;
 		}
 	}
 </style>
