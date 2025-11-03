@@ -130,126 +130,17 @@ function parseQuery(query: string): ParsedQuery {
 async function searchForTabsOnline(query: string): Promise<string[]> {
 	const results: string[] = [];
 
-	console.log('🚀 Starting Ultimate Guitar scraping for:', query);
+	console.log('🚀 Starting Ultimate Guitar Mobile API search for:', query);
 
 	try {
-		// Search Ultimate Guitar for the tab
-		const searchUrl = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
-		console.log('🔍 Searching:', searchUrl);
-
-		let searchResponse;
-		try {
-			// Add timeout to prevent hanging (Ultimate Guitar often blocks scraping)
-			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-			searchResponse = await fetch(searchUrl, {
-				headers: {
-					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-				},
-				signal: controller.signal
-			});
-
-			clearTimeout(timeoutId);
-			console.log('🎉 Fetch completed with status:', searchResponse.status);
-		} catch (fetchError) {
-			console.warn('❌ Ultimate Guitar scraping failed (likely blocked):', fetchError instanceof Error ? fetchError.message : 'Unknown error');
-			console.warn('⚠️ Falling back to AI-only generation');
-			return results; // Return empty results, will fall back to AI generation
+		// Try Mobile API approach first (less aggressive anti-bot protection)
+		const mobileApiResults = await searchUltimateGuitarMobileAPI(query);
+		if (mobileApiResults.length > 0) {
+			console.log(`✅ Mobile API returned ${mobileApiResults.length} tabs`);
+			return mobileApiResults;
 		}
 
-		if (!searchResponse.ok) {
-			console.warn(`❌ Search failed with status: ${searchResponse.status}`);
-			return results;
-		}
-
-		console.log('✅ Got search response, parsing HTML...');
-		const searchHtml = await searchResponse.text();
-		console.log(`📄 HTML length: ${searchHtml.length} characters`);
-		const $ = cheerio.load(searchHtml);
-
-		// Ultimate Guitar embeds data in a JS variable
-		console.log('🔎 Looking for script tags...');
-		const allScripts = $('script');
-		console.log(`📜 Found ${allScripts.length} script tags`);
-
-		const scriptContent = $('script').filter((_, el) => {
-			const content = $(el).html() || '';
-			return content.includes('window.UGAPP.store.page');
-		}).html();
-
-		if (!scriptContent) {
-			console.warn('❌ Could not find window.UGAPP.store.page in any script tag');
-			return results;
-		}
-
-		console.log('✅ Found script with window.UGAPP.store.page');
-
-		// Extract the JSON data from the script
-		const dataMatch = scriptContent.match(/window\.UGAPP\.store\.page\s*=\s*({.*?});/s);
-		if (!dataMatch) {
-			console.warn('❌ Could not parse search results with regex');
-			return results;
-		}
-
-		console.log('✅ Successfully extracted JSON data');
-
-		const pageData = JSON.parse(dataMatch[1]);
-		const searchResults = pageData?.data?.results || [];
-
-		console.log(`Found ${searchResults.length} search results`);
-
-		// Get the first few chord/tab results
-		const tabResults = searchResults
-			.filter((result: any) =>
-				result.type === 'Chords' ||
-				result.type === 'Tab' ||
-				result.type === 'Ukulele Chords'
-			)
-			.slice(0, 2); // Get top 2 results
-
-		// Fetch each tab's content
-		for (const result of tabResults) {
-			try {
-				const tabUrl = result.tab_url;
-				console.log(`📄 Fetching tab from: ${tabUrl}`);
-
-				const tabResponse = await fetch(tabUrl, {
-					headers: {
-						'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-					}
-				});
-
-				if (!tabResponse.ok) continue;
-
-				const tabHtml = await tabResponse.text();
-				const tab$ = cheerio.load(tabHtml);
-
-				// Extract tab content from the page
-				const tabScript = tab$('script').filter((_, el) => {
-					const content = tab$(el).html() || '';
-					return content.includes('window.UGAPP.store.page');
-				}).html();
-
-				if (!tabScript) continue;
-
-				const tabDataMatch = tabScript.match(/window\.UGAPP\.store\.page\s*=\s*({.*?});/s);
-				if (!tabDataMatch) continue;
-
-				const tabData = JSON.parse(tabDataMatch[1]);
-				const tabContent = tabData?.data?.tab_view?.wiki_tab?.content;
-
-				if (tabContent) {
-					console.log(`✅ Successfully fetched tab (${tabContent.length} characters)`);
-					results.push(tabContent);
-				}
-			} catch (err) {
-				console.warn('Error fetching individual tab:', err);
-				continue;
-			}
-		}
-
-		console.log(`🎯 Returning ${results.length} scraped tabs`);
+		console.warn('⚠️ Mobile API search returned no results, falling back to AI generation');
 		return results;
 	} catch (error) {
 		console.error('❌ Error searching Ultimate Guitar:', error);
@@ -258,6 +149,148 @@ async function searchForTabsOnline(query: string): Promise<string[]> {
 			console.error('Error stack:', error.stack);
 		}
 		return results;
+	}
+}
+
+async function searchUltimateGuitarMobileAPI(query: string): Promise<string[]> {
+	const results: string[] = [];
+
+	try {
+		// Try multiple possible mobile API endpoints
+		const endpoints = [
+			{
+				url: `https://www.ultimate-guitar.com/api/v1/tab/search`,
+				method: 'POST' as const,
+				body: { query, page: 1, type: ['chords', 'tabs'] }
+			},
+			{
+				url: `https://www.ultimate-guitar.com/api/v1/tab/search?value=${encodeURIComponent(query)}&page=1`,
+				method: 'GET' as const
+			},
+			{
+				url: `https://tabs.ultimate-guitar.com/api/v1/search/tabs`,
+				method: 'POST' as const,
+				body: { search_value: query, page: 1 }
+			}
+		];
+
+		for (const endpoint of endpoints) {
+			try {
+				console.log(`🔍 Trying endpoint: ${endpoint.method} ${endpoint.url}`);
+
+				const controller = new AbortController();
+				const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+				const searchResponse = await fetch(endpoint.url, {
+					method: endpoint.method,
+					headers: {
+						'Content-Type': 'application/json',
+						'User-Agent': 'UGTabs/5.29.0 (Android 11; Mobile)',
+						'Accept': 'application/json',
+						'X-UG-API-KEY': '1' // Some apps use this
+					},
+					body: endpoint.body ? JSON.stringify(endpoint.body) : undefined,
+					signal: controller.signal
+				});
+
+				clearTimeout(timeoutId);
+
+				console.log(`📡 Response status: ${searchResponse.status}`);
+
+				if (!searchResponse.ok) {
+					console.warn(`❌ Endpoint returned ${searchResponse.status}`);
+					continue; // Try next endpoint
+				}
+
+				const searchData = await searchResponse.json();
+				console.log('📊 Mobile API response received');
+
+				// Parse mobile API response
+				const tabs = searchData?.tabs || searchData?.results || searchData?.data?.results || [];
+				console.log(`Found ${tabs.length} tabs in mobile API response`);
+
+				if (tabs.length === 0) {
+					console.warn('No tabs found in response, trying next endpoint');
+					continue;
+				}
+
+				// Get top 2 tabs
+				const topTabs = tabs.slice(0, 2);
+
+				for (const tab of topTabs) {
+					try {
+						// Try to fetch full tab content
+						const tabId = tab.id || tab.tab_id;
+						const tabContent = await fetchTabFromMobileAPI(tabId);
+
+						if (tabContent) {
+							console.log(`✅ Successfully fetched tab ${tabId} (${tabContent.length} chars)`);
+							results.push(tabContent);
+						}
+					} catch (err) {
+						console.warn('Error fetching individual tab:', err);
+						continue;
+					}
+				}
+
+				// If we got results, return them
+				if (results.length > 0) {
+					console.log(`🎉 Mobile API succeeded! Returning ${results.length} tabs`);
+					return results;
+				}
+			} catch (endpointError) {
+				console.warn(`Endpoint failed:`, endpointError);
+				continue; // Try next endpoint
+			}
+		}
+
+		// None of the endpoints worked
+		console.warn('⚠️  All mobile API endpoints failed');
+		return results;
+	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') {
+			console.warn('⏱️ Mobile API request timed out');
+		} else {
+			console.error('❌ Mobile API error:', error);
+		}
+		return results;
+	}
+}
+
+async function fetchTabFromMobileAPI(tabId: string | number): Promise<string | null> {
+	try {
+		// Fetch individual tab content
+		const tabUrl = `https://tabs.ultimate-guitar.com/api/v1/tab/${tabId}`;
+
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+		const response = await fetch(tabUrl, {
+			headers: {
+				'User-Agent': 'UGTabs/5.29.0 (Android 11; Mobile)',
+				'Accept': 'application/json'
+			},
+			signal: controller.signal
+		});
+
+		clearTimeout(timeoutId);
+
+		if (!response.ok) return null;
+
+		const tabData = await response.json();
+
+		// Try different possible content fields from mobile API
+		const content =
+			tabData?.content ||
+			tabData?.tab?.content ||
+			tabData?.data?.tab?.content ||
+			tabData?.data?.tab_view?.wiki_tab?.content ||
+			null;
+
+		return content;
+	} catch (error) {
+		console.warn(`Error fetching tab ${tabId}:`, error);
+		return null;
 	}
 }
 

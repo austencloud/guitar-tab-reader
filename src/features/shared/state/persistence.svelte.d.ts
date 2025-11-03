@@ -16,6 +16,7 @@ export declare class PersistenceManager {
     private readonly STORAGE_KEY;
     private readonly AUTO_SAVE_INTERVAL;
     private autoSaveTimer;
+    private autoSaveIntervalId;
     private isInitialized;
     constructor(tabState: TabState, uiState: UIState, userState: UserState, audioState: AudioState, practiceState: PracticeState);
     /**

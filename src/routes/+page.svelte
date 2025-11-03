@@ -4,7 +4,12 @@
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
 	import { SettingsModal } from '$features/shared/components';
-	import { ImportTabModal, AITabGeneratorModal } from '$features/tabs/components';
+	import {
+		ImportTabModal,
+		AITabGeneratorModal,
+		WebImportModal,
+		AddTabPanel
+	} from '$features/tabs/components';
 	import type { Tab } from '$lib/stores/tabs';
 
 	let sortBy = 'updatedAt'; // 'updatedAt', 'title', 'artist'
@@ -12,6 +17,8 @@
 	let isSettingsModalOpen = false;
 	let isImportModalOpen = false;
 	let isAIGeneratorOpen = false;
+	let isWebImportOpen = false;
+	let isAddTabPanelOpen = false;
 	let searchQuery = '';
 	let appVersion = '1.0.0';
 
@@ -64,11 +71,26 @@
 		goto(`/tab/${id}`, {});
 	}
 
-	function handleCreateNewTab() {
-		goto('/new', {});
+	function handleOpenAddTabPanel() {
+		isAddTabPanelOpen = true;
 	}
 
-	function handleImportTab() {
+	function handleCloseAddTabPanel() {
+		isAddTabPanelOpen = false;
+	}
+
+	function handleAISearch() {
+		isAddTabPanelOpen = false;
+		isAIGeneratorOpen = true;
+	}
+
+	function handleURLImport() {
+		isAddTabPanelOpen = false;
+		isWebImportOpen = true;
+	}
+
+	function handlePasteImport() {
+		isAddTabPanelOpen = false;
 		isImportModalOpen = true;
 	}
 
@@ -90,10 +112,6 @@
 		isImportModalOpen = false;
 	}
 
-	function handleAIGenerator() {
-		isAIGeneratorOpen = true;
-	}
-
 	function closeAIGenerator() {
 		isAIGeneratorOpen = false;
 	}
@@ -103,6 +121,20 @@
 		isAIGeneratorOpen = false;
 
 		// Navigate to the newly generated tab
+		setTimeout(() => {
+			goto(`/tab/${newTab.id}`, {});
+		}, 100);
+	}
+
+	function closeWebImport() {
+		isWebImportOpen = false;
+	}
+
+	function handleWebImportSubmit(newTab: Tab) {
+		tabs.add(newTab);
+		isWebImportOpen = false;
+
+		// Navigate to the newly imported tab
 		setTimeout(() => {
 			goto(`/tab/${newTab.id}`, {});
 		}, 100);
@@ -148,123 +180,47 @@
 				</svg>
 			</div>
 
-			<div class="action-buttons">
-				<button class="ai-generate-button" on:click={handleAIGenerator}>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
-					</svg>
-					<span>AI Generate</span>
-				</button>
-
-				<button class="import-button" on:click={handleImportTab}>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-						<polyline points="17 8 12 3 7 8"></polyline>
-						<line x1="12" y1="3" x2="12" y2="15"></line>
-					</svg>
-					<span>Import Tab</span>
-				</button>
-
-				<button class="new-tab-button" on:click={handleCreateNewTab}>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<line x1="12" y1="5" x2="12" y2="19"></line>
-						<line x1="5" y1="12" x2="19" y2="12"></line>
-					</svg>
-					<span>New Tab</span>
-				</button>
-			</div>
+			<button class="add-tab-button" on:click={handleOpenAddTabPanel}>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<line x1="12" y1="5" x2="12" y2="19"></line>
+					<line x1="5" y1="12" x2="19" y2="12"></line>
+				</svg>
+				<span>Add Tab</span>
+			</button>
 		</div>
 
 		{#if sortedAndFilteredTabs.length === 0}
 			{#if $tabs.length === 0}
 				<div class="empty-state">
 					<h2>No tabs yet</h2>
-					<p>Generate with AI, import, or create a tab to get started</p>
-					<div class="empty-actions">
-						<button class="empty-ai-btn" on:click={handleAIGenerator}>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"></path>
-							</svg>
-							<span>Generate with AI</span>
-						</button>
-
-						<button class="empty-import-btn" on:click={handleImportTab}>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-								<polyline points="17 8 12 3 7 8"></polyline>
-								<line x1="12" y1="3" x2="12" y2="15"></line>
-							</svg>
-							<span>Import a Tab</span>
-						</button>
-
-						<button class="empty-create-btn" on:click={handleCreateNewTab}>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<line x1="12" y1="5" x2="12" y2="19"></line>
-								<line x1="5" y1="12" x2="19" y2="12"></line>
-							</svg>
-							<span>Create New Tab</span>
-						</button>
-					</div>
+					<p>Add your first guitar tab to get started</p>
+					<button class="empty-add-btn" on:click={handleOpenAddTabPanel}>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="28"
+							height="28"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<line x1="12" y1="5" x2="12" y2="19"></line>
+							<line x1="5" y1="12" x2="19" y2="12"></line>
+						</svg>
+						<span>Add Your First Tab</span>
+					</button>
 				</div>
 			{:else}
 				<div class="no-results">
@@ -324,6 +280,14 @@
 	</div>
 </main>
 
+<AddTabPanel
+	visible={isAddTabPanelOpen}
+	onclose={handleCloseAddTabPanel}
+	onAISearch={handleAISearch}
+	onURLImport={handleURLImport}
+	onPasteImport={handlePasteImport}
+/>
+
 <SettingsModal open={isSettingsModalOpen} onclose={closeSettingsModal} />
 <ImportTabModal
 	visible={isImportModalOpen}
@@ -335,175 +299,149 @@
 	onclose={closeAIGenerator}
 	onimport={handleAIGeneratedTab}
 />
+<WebImportModal
+	visible={isWebImportOpen}
+	onclose={closeWebImport}
+	onimport={handleWebImportSubmit}
+/>
 
 <style>
 	.container {
-		max-width: 1200px;
+		max-width: var(--container-lg);
 		margin: 0 auto;
-		padding: 1rem;
+		padding: var(--spacing-md);
 		height: 100%;
 		display: flex;
 		flex-direction: column;
+		gap: var(--spacing-lg);
 	}
 
 	header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 1.5rem;
 	}
 
 	.title-container {
 		display: flex;
 		align-items: baseline;
-		gap: 0.5rem;
+		gap: var(--spacing-sm);
 	}
 
 	h1 {
 		margin: 0;
-		font-size: var(--font-size-2xl);
+		font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-4xl));
 		color: var(--color-text-primary);
-		font-weight: var(--font-weight-semibold);
+		font-weight: var(--font-weight-bold);
+		letter-spacing: var(--letter-spacing-tight);
 	}
 
 	.version {
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-sm);
+		color: var(--color-text-tertiary);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		padding: 0.125rem 0.5rem;
+		background: var(--color-surface-low);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-full);
 	}
 
 	.tabs-container {
 		background-color: var(--color-surface);
-		border-radius: var(--radius-lg);
-		box-shadow: var(--shadow-md);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-lg);
 		flex: 1;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		transition: var(--transition-colors);
+		border: 1px solid var(--color-border);
 	}
 
 	.controls-row {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
-		padding: var(--spacing-md);
-		border-bottom: 1px solid var(--color-border);
 		gap: var(--spacing-md);
-		flex-wrap: wrap;
-		background-color: var(--color-surface);
-		transition: var(--transition-colors);
+		padding: var(--spacing-lg);
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-surface-low);
 	}
 
 	.search-container {
 		position: relative;
 		flex: 1;
-		min-width: 200px;
 	}
 
 	input[type='search'] {
 		width: 100%;
-		padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 2.5rem;
+		padding: 0.75rem 1rem 0.75rem 3rem;
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-lg);
 		font-size: var(--font-size-base);
 		background-color: var(--color-background);
 		color: var(--color-text-primary);
-		transition: var(--transition-colors);
+		transition: var(--transition-all);
+		min-height: var(--touch-target-min);
 	}
 
 	input[type='search']:focus {
 		border-color: var(--color-primary);
 		outline: none;
-		box-shadow: 0 0 0 2px var(--color-primary);
+		box-shadow: 0 0 0 3px var(--color-primary-dim), var(--glow-primary);
+		transform: translateY(-1px);
 	}
 
 	.search-icon {
 		position: absolute;
-		left: 0.75rem;
+		left: 1rem;
 		top: 50%;
 		transform: translateY(-50%);
-		fill: var(--color-text-secondary);
+		fill: var(--color-text-tertiary);
 		transition: var(--transition-colors);
+		pointer-events: none;
 	}
 
-	.action-buttons {
-		display: flex;
-		gap: var(--spacing-sm);
+	input[type='search']:focus + .search-icon {
+		fill: var(--color-primary);
 	}
 
-	.new-tab-button,
-	.import-button,
-	.ai-generate-button {
+	.add-tab-button {
 		display: flex;
 		align-items: center;
+		justify-content: center;
 		gap: var(--spacing-sm);
-		padding: var(--spacing-sm) var(--spacing-md);
+		padding: 0.75rem var(--spacing-lg);
 		border: none;
-		border-radius: var(--radius-sm);
-		font-weight: var(--font-weight-semibold);
-		font-size: var(--font-size-sm);
+		border-radius: var(--radius-lg);
+		font-weight: var(--font-weight-bold);
+		font-size: var(--font-size-base);
 		cursor: pointer;
 		transition: var(--transition-all);
-	}
-
-	.new-tab-button {
-		background-color: var(--color-primary);
+		min-height: var(--touch-target-min);
+		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
 		color: var(--color-text-inverse);
+		box-shadow: var(--shadow-md);
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
-	.import-button {
-		background-color: var(--color-secondary);
-		color: var(--color-text-inverse);
+	.add-tab-button svg {
+		flex-shrink: 0;
 	}
 
-	.ai-generate-button {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: white;
-		position: relative;
-		overflow: hidden;
+	.add-tab-button:hover {
+		background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-lg), var(--glow-primary);
 	}
 
-	.ai-generate-button::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: -100%;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-		transition: left 0.5s;
+	.add-tab-button:active {
+		transform: translateY(0) scale(0.98);
+		box-shadow: var(--shadow-sm);
 	}
 
-	.ai-generate-button:hover::before {
-		left: 100%;
-	}
-
-	.new-tab-button:hover {
-		background-color: var(--color-primary-hover);
-	}
-
-	.import-button:hover {
-		background-color: var(--color-secondary-hover);
-	}
-
-	.ai-generate-button:hover {
-		background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-	}
-
-	.new-tab-button:active {
-		background-color: var(--color-primary-active);
-		transform: scale(0.98);
-	}
-
-	.import-button:active {
-		background-color: var(--color-secondary-active);
-		transform: scale(0.98);
-	}
-
-	.ai-generate-button:active {
-		transform: scale(0.98) translateY(0);
+	.add-tab-button:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.tabs-list {
@@ -516,34 +454,52 @@
 	.tabs-header {
 		display: grid;
 		grid-template-columns: 3fr 2fr 2fr;
-		padding: var(--spacing-sm) var(--spacing-md);
-		background-color: var(--color-surface-variant);
+		padding: var(--spacing-md) var(--spacing-lg);
+		background: var(--color-surface-low);
 		border-bottom: 1px solid var(--color-border);
-		transition: var(--transition-colors);
+		position: sticky;
+		top: 0;
+		z-index: 10;
 	}
 
 	.sort-button {
 		background: none;
 		border: none;
-		padding: var(--spacing-xs) var(--spacing-sm);
-		font-weight: var(--font-weight-semibold);
+		padding: var(--spacing-sm) var(--spacing-md);
+		font-weight: var(--font-weight-bold);
 		color: var(--color-text-secondary);
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-xs);
+		gap: var(--spacing-sm);
 		cursor: pointer;
 		text-align: left;
-		transition: var(--transition-colors);
-		border-radius: var(--radius-sm);
+		transition: var(--transition-all);
+		border-radius: var(--radius-md);
+		min-height: var(--touch-target-min);
+		font-size: var(--font-size-sm);
+		text-transform: uppercase;
+		letter-spacing: var(--letter-spacing-wide);
 	}
 
 	.sort-button:hover {
 		color: var(--color-text-primary);
 		background-color: var(--color-hover);
+		transform: translateY(-1px);
+	}
+
+	.sort-button:active {
+		transform: translateY(0);
+	}
+
+	.sort-button:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.sort-indicator {
-		font-size: 0.8rem;
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-bold);
+		color: var(--color-primary);
 	}
 
 	.last-update {
@@ -554,27 +510,48 @@
 	.tabs-items-container {
 		overflow-y: auto;
 		flex: 1;
+		padding: var(--spacing-sm);
 	}
 
 	.tab-item {
 		display: grid;
 		grid-template-columns: 3fr 2fr 2fr;
-		padding: var(--spacing-sm) var(--spacing-md);
-		border-bottom: 1px solid var(--color-border);
+		padding: var(--spacing-md) var(--spacing-lg);
+		margin-bottom: var(--spacing-sm);
+		background: var(--color-surface-low);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
 		cursor: pointer;
-		transition: var(--transition-colors);
+		transition: var(--transition-all);
 		animation: fadeIn 0.3s ease forwards;
 		animation-delay: var(--delay);
 		opacity: 0;
+		min-height: var(--touch-target-comfortable);
+		align-items: center;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.tab-item:hover {
-		background-color: var(--color-hover);
+		background-color: var(--color-surface-high);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-md);
+		border-color: var(--color-primary);
+	}
+
+	.tab-item:active {
+		transform: translateY(0);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.tab-item:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.tab-title {
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
+		font-size: var(--font-size-base);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -582,15 +559,17 @@
 
 	.tab-artist {
 		color: var(--color-text-secondary);
+		font-size: var(--font-size-sm);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
 	.tab-date {
-		color: var(--color-text-secondary);
+		color: var(--color-text-tertiary);
 		text-align: right;
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.empty-state,
@@ -599,92 +578,63 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: var(--spacing-2xl) var(--spacing-md);
+		padding: var(--spacing-2xl);
 		text-align: center;
 		flex: 1;
 		color: var(--color-text-secondary);
-		background-color: var(--color-surface);
-		transition: var(--transition-colors);
+		background: var(--color-surface);
 	}
 
 	.empty-state h2,
 	.no-results h3 {
-		margin-bottom: var(--spacing-sm);
+		margin: 0 0 var(--spacing-md);
 		color: var(--color-text-primary);
+		font-size: clamp(var(--font-size-2xl), 3vw, var(--font-size-4xl));
+		font-weight: var(--font-weight-bold);
 	}
 
-	.empty-actions {
-		margin-top: var(--spacing-xl);
-		display: flex;
-		gap: var(--spacing-md);
-		flex-wrap: wrap;
-		justify-content: center;
+	.empty-state p,
+	.no-results p {
+		font-size: var(--font-size-base);
+		margin: 0 0 var(--spacing-xl) 0;
 	}
 
-	.empty-create-btn,
-	.empty-import-btn,
-	.empty-ai-btn {
+	.empty-add-btn {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-sm) var(--spacing-lg);
+		justify-content: center;
+		gap: var(--spacing-md);
+		padding: 1.25rem var(--spacing-2xl);
 		border: none;
-		border-radius: var(--radius-md);
-		font-weight: var(--font-weight-semibold);
+		border-radius: var(--radius-xl);
+		font-weight: var(--font-weight-bold);
 		font-size: var(--font-size-lg);
 		cursor: pointer;
 		transition: var(--transition-all);
+		box-shadow: var(--shadow-lg);
+		min-height: var(--touch-target-comfortable);
+		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+		color: var(--color-text-inverse);
+	}
+
+	.empty-add-btn svg {
+		flex-shrink: 0;
+	}
+
+	.empty-add-btn:hover {
+		background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
+		transform: translateY(-3px);
+		box-shadow: var(--shadow-xl), var(--glow-primary);
+	}
+
+	.empty-add-btn:active {
+		transform: translateY(0) scale(0.98);
 		box-shadow: var(--shadow-sm);
 	}
 
-	.empty-create-btn {
-		background-color: var(--color-primary);
-		color: var(--color-text-inverse);
-	}
-
-	.empty-import-btn {
-		background-color: var(--color-secondary);
-		color: var(--color-text-inverse);
-	}
-
-	.empty-ai-btn {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: white;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.empty-ai-btn::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: -100%;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-		transition: left 0.5s;
-	}
-
-	.empty-ai-btn:hover::before {
-		left: 100%;
-	}
-
-	.empty-create-btn:hover {
-		background-color: var(--color-primary-hover);
-		transform: translateY(-2px);
-		box-shadow: var(--shadow-lg);
-	}
-
-	.empty-import-btn:hover {
-		background-color: var(--color-secondary-hover);
-		transform: translateY(-2px);
-		box-shadow: var(--shadow-lg);
-	}
-
-	.empty-ai-btn:hover {
-		background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
-		transform: translateY(-2px);
-		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+	.empty-add-btn:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	@keyframes fadeIn {
@@ -698,17 +648,100 @@
 		}
 	}
 
+	/* Tablet breakpoint - 768px */
 	@media (max-width: 768px) {
-		.action-buttons {
-			width: 100%;
+		.container {
+			padding: var(--spacing-sm);
+			gap: var(--spacing-md);
 		}
 
-		.new-tab-button,
-		.import-button {
-			flex: 1;
-			justify-content: center;
+		h1 {
+			font-size: 1.5rem;
 		}
 
+		.controls-row {
+			padding: var(--spacing-md);
+		}
+
+		.add-tab-button {
+			padding: 0.75rem var(--spacing-md);
+			font-size: var(--font-size-sm);
+		}
+
+		.tabs-header {
+			padding: var(--spacing-sm) var(--spacing-md);
+		}
+
+		.tabs-header,
+		.tab-item {
+			grid-template-columns: 2fr 1.5fr 1fr;
+		}
+
+		.tabs-items-container {
+			padding: var(--spacing-xs);
+		}
+
+		.tab-item {
+			padding: var(--spacing-md);
+		}
+	}
+
+	/* Mobile breakpoint - 480px */
+	@media (max-width: 480px) {
+		.container {
+			padding: var(--spacing-xs);
+		}
+
+		.title-container {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.25rem;
+		}
+
+		h1 {
+			font-size: 1.25rem;
+		}
+
+		.version {
+			font-size: 0.625rem;
+		}
+
+		.tabs-container {
+			border-radius: var(--radius-lg);
+		}
+
+		.controls-row {
+			padding: var(--spacing-sm);
+			gap: var(--spacing-sm);
+		}
+
+		input[type='search'] {
+			padding: 0.75rem 0.875rem 0.75rem 2.5rem;
+			font-size: var(--font-size-sm);
+		}
+
+		.search-icon {
+			left: 0.75rem;
+			width: 18px;
+			height: 18px;
+		}
+
+		/* Hide button text on mobile, show icon only */
+		.add-tab-button span {
+			display: none;
+		}
+
+		.add-tab-button {
+			padding: 0.75rem;
+			min-width: var(--touch-target-min);
+		}
+
+		.add-tab-button svg {
+			width: 22px;
+			height: 22px;
+		}
+
+		/* Hide date column on mobile */
 		.tabs-header,
 		.tab-item {
 			grid-template-columns: 1.5fr 1fr;
@@ -718,12 +751,107 @@
 		.tab-date {
 			display: none;
 		}
+
+		.sort-button {
+			padding: var(--spacing-xs) var(--spacing-sm);
+			font-size: 0.625rem;
+		}
+
+		.tabs-items-container {
+			padding: 0.25rem;
+		}
+
+		.tab-item {
+			padding: var(--spacing-sm) var(--spacing-md);
+			margin-bottom: 0.25rem;
+			border-radius: var(--radius-md);
+		}
+
+		.tab-title {
+			font-size: var(--font-size-sm);
+		}
+
+		.tab-artist {
+			font-size: var(--font-size-xs);
+		}
+
+		/* Empty state mobile optimization */
+		.empty-state,
+		.no-results {
+			padding: var(--spacing-xl) var(--spacing-md);
+		}
+
+		.empty-add-btn {
+			padding: 1rem var(--spacing-xl);
+			font-size: var(--font-size-base);
+		}
 	}
 
-	@media (max-width: 480px) {
-		.empty-actions {
-			flex-direction: column;
-			gap: var(--spacing-md);
+	/* Extra small devices - 360px */
+	@media (max-width: 360px) {
+		h1 {
+			font-size: 1.125rem;
+		}
+
+		.version {
+			font-size: 0.5rem;
+		}
+
+		.controls-row {
+			padding: 0.5rem;
+		}
+
+		.add-tab-button {
+			padding: 0.625rem;
+			min-width: 42px;
+		}
+
+		.add-tab-button svg {
+			width: 20px;
+			height: 20px;
+		}
+
+		.tab-title {
+			font-size: 0.8125rem;
+		}
+
+		.tab-artist {
+			font-size: 0.625rem;
+		}
+
+		.empty-add-btn {
+			padding: 0.875rem var(--spacing-lg);
+			font-size: var(--font-size-sm);
+		}
+
+		.empty-add-btn svg {
+			width: 24px;
+			height: 24px;
+		}
+	}
+
+	/* Landscape mobile optimization */
+	@media (max-height: 600px) and (orientation: landscape) {
+		.container {
+			padding: var(--spacing-xs);
+		}
+
+		.tabs-container {
+			border-radius: var(--radius-md);
+		}
+
+		.controls-row {
+			padding: var(--spacing-sm);
+		}
+
+		.empty-state,
+		.no-results {
+			padding: var(--spacing-md);
+		}
+
+		.empty-add-btn {
+			padding: 0.75rem var(--spacing-lg);
+			font-size: var(--font-size-sm);
 		}
 	}
 </style>

@@ -1,7 +1,7 @@
 {
 	"name": "TabScroll",
 	"short_name": "TabScroll",
-	"description": "A portable guitar tab reader with auto-scrolling",
+	"description": "A portable TabScroll with auto-scrolling",
 	"start_url": "/",
 	"display": "standalone",
 	"background_color": "#ffffff",

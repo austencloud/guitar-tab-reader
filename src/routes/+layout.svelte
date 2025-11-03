@@ -92,15 +92,7 @@
 		}
 	}
 
-	// Apply theme based on user preferences
-	$effect(() => {
-		if (typeof window !== 'undefined' && userState) {
-			document.documentElement.setAttribute(
-				'data-theme',
-				userState.isDarkMode() ? 'dark' : 'light'
-			);
-		}
-	});
+	// Dark mode is always active - no theme switching needed
 </script>
 
 <svelte:head>
@@ -117,7 +109,7 @@
 	<header class="app-header">
 		<div class="logo-area">
 			<a href="/" class="logo-link">
-				<h1 class="app-title">Guitar Tab Reader</h1>
+				<h1 class="app-title">TabScroll</h1>
 			</a>
 		</div>
 		<div class="app-actions">
@@ -147,21 +139,7 @@
 {/if}
 
 <style>
-	:global(body) {
-		margin: 0;
-		padding: 0;
-		font-family:
-			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-			'Helvetica Neue', sans-serif;
-		background-color: var(--color-background);
-		color: var(--color-text-primary);
-		overscroll-behavior: none;
-		transition: var(--transition-colors);
-	}
-
-	:global(*) {
-		box-sizing: border-box;
-	}
+	/* Global body styles are now in app.css */
 
 	.app-container {
 		width: 100%;
@@ -169,24 +147,27 @@
 		display: flex;
 		flex-direction: column;
 		background: var(--color-background);
-		transition: var(--transition-colors);
 	}
 
 	.app-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: var(--spacing-md);
+		padding: var(--spacing-md) var(--spacing-lg);
 		border-bottom: 1px solid var(--color-border);
-		background-color: var(--color-surface);
-		box-shadow: var(--shadow-sm);
-		transition: var(--transition-colors);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-md);
+		position: sticky;
+		top: 0;
+		z-index: var(--z-sticky);
+		backdrop-filter: var(--blur-sm);
 	}
 
 	.logo-area {
 		display: flex;
 		align-items: center;
 		gap: var(--spacing-sm);
+		flex-shrink: 0;
 	}
 
 	.logo-link {
@@ -195,24 +176,38 @@
 		gap: var(--spacing-sm);
 		text-decoration: none;
 		color: var(--color-text-primary);
-		transition: var(--transition-colors);
+		transition: var(--transition-all);
+		padding: var(--spacing-xs);
+		border-radius: var(--radius-md);
 	}
 
 	.logo-link:hover {
 		color: var(--color-primary);
+		background: var(--color-hover);
+	}
+
+	.logo-link:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.app-title {
 		font-size: var(--font-size-xl);
-		font-weight: var(--font-weight-semibold);
+		font-weight: var(--font-weight-bold);
 		margin: 0;
 		color: inherit;
+		letter-spacing: var(--letter-spacing-tight);
+		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
 	}
 
 	.app-actions {
 		display: flex;
 		align-items: center;
 		gap: var(--spacing-sm);
+		flex-shrink: 0;
 	}
 
 	.tuner-button {
@@ -220,17 +215,18 @@
 		align-items: center;
 		gap: var(--spacing-sm);
 		background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-hover));
-		color: var(--color-text-inverse);
+		color: white;
 		border: none;
 		border-radius: var(--radius-lg);
-		padding: var(--spacing-sm) var(--spacing-md);
+		padding: 0.625rem var(--spacing-md);
 		font-weight: var(--font-weight-semibold);
 		font-size: var(--font-size-sm);
 		cursor: pointer;
 		box-shadow: var(--shadow-md);
-		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: var(--transition-all);
 		position: relative;
 		overflow: hidden;
+		min-height: var(--touch-target-min);
 	}
 
 	.tuner-button::before {
@@ -240,18 +236,14 @@
 		left: -100%;
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-		transition: left 0.5s;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+		transition: left var(--transition-slower);
 	}
 
 	.tuner-button:hover {
-		background: linear-gradient(
-			135deg,
-			var(--color-secondary-hover),
-			var(--color-secondary-active)
-		);
-		transform: translateY(-2px) scale(1.02);
-		box-shadow: var(--shadow-xl);
+		background: linear-gradient(135deg, var(--color-secondary-hover), var(--color-secondary-active));
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-lg), var(--glow-secondary);
 	}
 
 	.tuner-button:hover::before {
@@ -259,59 +251,102 @@
 	}
 
 	.tuner-button:hover svg {
-		transform: rotate(15deg) scale(1.1);
+		transform: rotate(12deg) scale(1.05);
 	}
 
 	.tuner-button:active {
 		background: linear-gradient(135deg, var(--color-secondary-active), var(--color-secondary));
-		transform: translateY(-1px) scale(1.01);
-		box-shadow: var(--shadow-lg);
+		transform: translateY(0) scale(0.98);
+		box-shadow: var(--shadow-sm);
 	}
 
-	.tuner-button:focus {
+	.tuner-button:focus-visible {
 		outline: 2px solid var(--color-focus);
 		outline-offset: 2px;
 	}
 
 	.tuner-button svg {
-		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: transform var(--transition-base);
 		flex-shrink: 0;
 	}
 
 	.content-wrapper {
 		width: 100%;
-		max-width: 900px;
-		padding: var(--spacing-md);
+		max-width: var(--container-lg);
+		padding: 0;
+		padding-bottom: 4rem;
 		margin: 0 auto;
 		flex: 1;
 	}
 
-	/* Responsive design improvements */
+	/* ========================================
+	   RESPONSIVE BREAKPOINTS
+	   ======================================== */
 
-	/* Mobile optimization */
-	@media (max-width: 600px) {
+	/* Tablet - 768px */
+	@media (max-width: 768px) {
+		.app-header {
+			padding: var(--spacing-sm) var(--spacing-md);
+		}
+
 		.app-title {
 			font-size: var(--font-size-lg);
 		}
 
+		.tuner-button {
+			padding: 0.5rem var(--spacing-sm);
+			font-size: var(--font-size-xs);
+		}
+	}
+
+	/* Mobile - 480px */
+	@media (max-width: 480px) {
 		.app-header {
-			padding: var(--spacing-sm) var(--spacing-md);
+			padding: var(--spacing-sm) var(--spacing-page-padding-mobile);
+		}
+
+		.logo-link {
+			padding: var(--spacing-xs) 0;
+		}
+
+		.app-title {
+			font-size: var(--font-size-base);
 		}
 
 		.app-actions {
 			gap: var(--spacing-xs);
 		}
-	}
 
-	/* Mobile optimization for tuner button */
-	@media (max-width: 768px) {
-		.tuner-button {
-			padding: var(--spacing-sm);
-			font-size: var(--font-size-xs);
+		/* Hide tuner button text on mobile, show icon only */
+		.tuner-button span {
+			display: none;
 		}
 
-		.content-wrapper {
-			padding: var(--spacing-sm);
+		.tuner-button {
+			padding: 0.625rem;
+			min-width: var(--touch-target-min);
+			width: var(--touch-target-min);
+			justify-content: center;
+		}
+
+		.tuner-button svg {
+			width: 20px;
+			height: 20px;
+		}
+	}
+
+	/* Extra small - 360px */
+	@media (max-width: 360px) {
+		.app-header {
+			padding: var(--spacing-xs) var(--spacing-sm);
+		}
+
+		.app-title {
+			font-size: var(--font-size-sm);
+		}
+
+		.tuner-button {
+			padding: 0.5rem;
 		}
 	}
 </style>

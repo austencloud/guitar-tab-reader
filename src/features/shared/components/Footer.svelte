@@ -1,320 +1,346 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
+	import { page } from '$app/state';
+	import { getContext } from 'svelte';
+	import { fade } from 'svelte/transition';
 
-	let currentYear = $state(new Date().getFullYear());
-	let buildInfo = $state({ version: '1.0.0', buildDate: '' });
+	const version = '1.0.0';
+	let showShortcuts = $state(false);
 
-	onMount(() => {
-		if (browser) {
-			// Get build info from package.json or environment
-			buildInfo = {
-				version: '1.0.0', // This could be imported from package.json
-				buildDate: new Date().toLocaleDateString()
-			};
-		}
-	});
-
-	const links = [
-		{
-			title: 'Features',
-			items: [
-				{ name: 'Tab Viewer', href: '#' },
-				{ name: 'Chord Diagrams', href: '#' },
-				{ name: 'Guitar Tuner', href: '#' },
-				{ name: 'Tab Editor', href: '#' }
-			]
-		},
-		{
-			title: 'Resources',
-			items: [
-				{ name: 'Help & Support', href: '#' },
-				{ name: 'Keyboard Shortcuts', href: '#' },
-				{ name: 'File Formats', href: '#' },
-				{ name: 'User Guide', href: '#' }
-			]
-		},
-		{
-			title: 'Community',
-			items: [
-				{ name: 'GitHub', href: 'https://github.com', external: true },
-				{ name: 'Report Issues', href: '#' },
-				{ name: 'Feature Requests', href: '#' },
-				{ name: 'Contribute', href: '#' }
-			]
-		}
-	];
-
-	function handleLinkClick(href: string, external?: boolean) {
-		if (external && browser) {
-			window.open(href, '_blank', 'noopener,noreferrer');
-		}
-		// For internal links, you could use goto() from $app/navigation
+	// Try to get tuner context if available
+	let tunerContext: any = null;
+	try {
+		tunerContext = getContext('tuner');
+	} catch {
+		// Context not available
 	}
+
+	function toggleShortcuts() {
+		showShortcuts = !showShortcuts;
+	}
+
+	function handleQuickTuner() {
+		if (tunerContext?.toggle) {
+			tunerContext.toggle();
+		}
+	}
+
+	// Define keyboard shortcuts for display
+	const shortcuts = [
+		{ key: 'Space', action: 'Play/Pause auto-scroll' },
+		{ key: '↑/↓', action: 'Adjust scroll speed' },
+		{ key: 'T', action: 'Open tuner' },
+		{ key: 'Esc', action: 'Close modals' }
+	];
 </script>
 
-<footer class="footer">
+<footer class="footer-panel">
 	<div class="footer-content">
-		<div class="footer-main">
-			<!-- Brand Section -->
-			<div class="footer-brand">
-				<div class="brand-info">
-					<h3 class="brand-title">Guitar Tab Reader</h3>
-					<p class="brand-description">
-						A modern, feature-rich guitar tablature reader and editor for musicians of all levels.
-					</p>
-				</div>
-				<div class="app-info">
-					<div class="version-info">
-						<span class="version">v{buildInfo.version}</span>
-						<span class="build-date">Built {buildInfo.buildDate}</span>
-					</div>
-				</div>
-			</div>
+		<!-- App info -->
+		<div class="footer-section app-info">
+			<span class="app-name">TabScroll</span>
+			<span class="version">v{version}</span>
+		</div>
 
-			<!-- Links Sections -->
-			<div class="footer-links">
-				{#each links as section (section.title)}
-					<div class="link-section">
-						<h4 class="section-title">{section.title}</h4>
-						<ul class="link-list">
-							{#each section.items as link (link.name)}
-								<li>
-									<button
-										class="footer-link"
-										onclick={() => handleLinkClick(link.href, link.external)}
-										aria-label={link.name}
-									>
-										{link.name}
-										{#if link.external}
-											<svg
-												class="external-icon"
-												viewBox="0 0 24 24"
-												fill="none"
-												xmlns="http://www.w3.org/2000/svg"
-											>
-												<path
-													d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-													stroke="currentColor"
-													stroke-width="2"
-													stroke-linecap="round"
-													stroke-linejoin="round"
-												/>
-												<polyline
-													points="15,3 21,3 21,9"
-													stroke="currentColor"
-													stroke-width="2"
-													stroke-linecap="round"
-													stroke-linejoin="round"
-												/>
-												<line
-													x1="10"
-													y1="14"
-													x2="21"
-													y2="3"
-													stroke="currentColor"
-													stroke-width="2"
-													stroke-linecap="round"
-													stroke-linejoin="round"
-												/>
-											</svg>
-										{/if}
-									</button>
-								</li>
-							{/each}
-						</ul>
+		<!-- Quick actions -->
+		<div class="footer-section actions">
+			<button class="quick-action" onclick={handleQuickTuner} aria-label="Quick tuner access">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+					<path
+						fill="currentColor"
+						d="M12 3a9 9 0 0 0-9 9h3c0-3.31 2.69-6 6-6s6 2.69 6 6h3a9 9 0 0 0-9-9zm3.14 12a3.01 3.01 0 0 1-2.14.9 3 3 0 0 1-3-3 2.97 2.97 0 0 1 .9-2.14L12 8.07l1.14 2.69c.58.59.9 1.35.9 2.14a2.99 2.99 0 0 1-.9 2.1z"
+					/>
+				</svg>
+				<span class="action-label">Tuner</span>
+			</button>
+
+			<button
+				class="quick-action shortcuts-btn"
+				onclick={toggleShortcuts}
+				aria-label="Keyboard shortcuts"
+				aria-expanded={showShortcuts}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+					<path
+						fill="currentColor"
+						d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"
+					/>
+				</svg>
+				<span class="action-label">Shortcuts</span>
+			</button>
+
+			<a href="/" class="quick-action" aria-label="Back to tabs">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+					<path
+						fill="currentColor"
+						d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"
+					/>
+				</svg>
+				<span class="action-label">My Tabs</span>
+			</a>
+		</div>
+
+		<!-- Made with love -->
+		<div class="footer-section credits">
+			<span class="credit-text">Made for musicians</span>
+		</div>
+	</div>
+
+	<!-- Keyboard shortcuts popup -->
+	{#if showShortcuts}
+		<div class="shortcuts-panel" transition:fade={{ duration: 150 }}>
+			<div class="shortcuts-header">
+				<h3>Keyboard Shortcuts</h3>
+				<button class="close-btn" onclick={toggleShortcuts} aria-label="Close shortcuts">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+						<path
+							fill="currentColor"
+							d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+						/>
+					</svg>
+				</button>
+			</div>
+			<div class="shortcuts-list">
+				{#each shortcuts as shortcut}
+					<div class="shortcut-item">
+						<kbd class="shortcut-key">{shortcut.key}</kbd>
+						<span class="shortcut-action">{shortcut.action}</span>
 					</div>
 				{/each}
 			</div>
 		</div>
-
-		<!-- Footer Bottom -->
-		<div class="footer-bottom">
-			<div class="copyright">
-				<p>&copy; {currentYear} Guitar Tab Reader. Made with ❤️ for musicians.</p>
-			</div>
-			<div class="footer-meta">
-				<span class="tech-stack">Built with SvelteKit</span>
-				<span class="separator">•</span>
-				<span class="open-source">Open Source</span>
-			</div>
-		</div>
-	</div>
+	{/if}
 </footer>
 
 <style>
-	.footer {
-		background-color: var(--color-surface-variant);
+	.footer-panel {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: var(--color-surface);
 		border-top: 1px solid var(--color-border);
-		margin-top: auto;
+		box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+		z-index: 100;
 		transition: var(--transition-colors);
 	}
 
 	.footer-content {
-		max-width: 1200px;
-		margin: 0 auto;
-		padding: var(--spacing-2xl) var(--spacing-md) var(--spacing-md);
-	}
-
-	.footer-main {
-		display: grid;
-		grid-template-columns: 1fr 2fr;
-		gap: var(--spacing-2xl);
-		margin-bottom: var(--spacing-xl);
-	}
-
-	/* Brand Section */
-	.footer-brand {
 		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-lg);
+		align-items: center;
+		justify-content: space-between;
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 0.5rem var(--spacing-md);
+		gap: var(--spacing-md);
 	}
 
-	.brand-title {
-		margin: 0 0 var(--spacing-sm);
-		font-size: var(--font-size-xl);
-		font-weight: var(--font-weight-bold);
+	.footer-section {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	/* App info */
+	.app-info {
+		min-width: 120px;
+	}
+
+	.app-name {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
 	}
 
-	.brand-description {
-		margin: 0;
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-sm);
-		line-height: 1.6;
-		max-width: 300px;
+	.version {
+		font-size: var(--font-size-xs);
+		color: var(--color-text-tertiary);
+		background: var(--color-surface-variant);
+		padding: 0.125rem 0.5rem;
+		border-radius: var(--radius-full);
 	}
 
-	.app-info {
-		padding-top: var(--spacing-md);
-		border-top: 1px solid var(--color-border);
-	}
-
-	.version-info {
-		display: flex;
-		flex-direction: column;
+	/* Quick actions */
+	.actions {
+		flex: 1;
+		justify-content: center;
 		gap: var(--spacing-xs);
 	}
 
-	.version {
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-semibold);
-		color: var(--color-primary);
+	.quick-action {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.75rem;
+		background: var(--color-surface-variant);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		cursor: pointer;
+		transition: all 0.2s ease;
+		text-decoration: none;
+		white-space: nowrap;
 	}
 
-	.build-date {
+	.quick-action:hover {
+		background: var(--color-hover);
+		border-color: var(--color-primary);
+		color: var(--color-primary);
+		transform: translateY(-1px);
+	}
+
+	.quick-action:active {
+		transform: translateY(0);
+	}
+
+	.quick-action svg {
+		flex-shrink: 0;
+	}
+
+	/* Credits */
+	.credits {
+		min-width: 120px;
+		justify-content: flex-end;
+	}
+
+	.credit-text {
 		font-size: var(--font-size-xs);
 		color: var(--color-text-tertiary);
 	}
 
-	/* Links Section */
-	.footer-links {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-		gap: var(--spacing-xl);
+	/* Shortcuts panel */
+	.shortcuts-panel {
+		position: absolute;
+		bottom: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--shadow-xl);
+		padding: var(--spacing-md);
+		margin-bottom: 0.5rem;
+		min-width: 300px;
+		max-width: 90vw;
 	}
 
-	.link-section {
+	.shortcuts-header {
 		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-md);
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--spacing-md);
+		padding-bottom: var(--spacing-sm);
+		border-bottom: 1px solid var(--color-border);
 	}
 
-	.section-title {
+	.shortcuts-header h3 {
 		margin: 0;
 		font-size: var(--font-size-base);
 		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
 	}
 
-	.link-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
+	.close-btn {
+		background: none;
+		border: none;
+		padding: 0.25rem;
+		cursor: pointer;
+		color: var(--color-text-secondary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-sm);
+		transition: var(--transition-colors);
+	}
+
+	.close-btn:hover {
+		background: var(--color-hover);
+		color: var(--color-text-primary);
+	}
+
+	.shortcuts-list {
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-sm);
 	}
 
-	.footer-link {
-		background: none;
-		border: none;
-		padding: 0;
-		font-size: var(--font-size-sm);
-		color: var(--color-text-secondary);
-		cursor: pointer;
-		transition: var(--transition-colors);
-		text-align: left;
+	.shortcut-item {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-xs);
-	}
-
-	.footer-link:hover {
-		color: var(--color-primary);
-	}
-
-	.external-icon {
-		width: 12px;
-		height: 12px;
-		opacity: 0.6;
-	}
-
-	/* Footer Bottom */
-	.footer-bottom {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding-top: var(--spacing-lg);
-		border-top: 1px solid var(--color-border);
-		flex-wrap: wrap;
 		gap: var(--spacing-md);
 	}
 
-	.copyright p {
-		margin: 0;
+	.shortcut-key {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 2.5rem;
+		padding: 0.25rem 0.5rem;
+		background: var(--color-surface-variant);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+		font-family: monospace;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+	}
+
+	.shortcut-action {
 		font-size: var(--font-size-sm);
 		color: var(--color-text-secondary);
 	}
 
-	.footer-meta {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		font-size: var(--font-size-xs);
-		color: var(--color-text-tertiary);
-	}
-
-	.separator {
-		opacity: 0.5;
-	}
-
-	/* Responsive Design */
+	/* Responsive design */
 	@media (max-width: 768px) {
-		.footer-main {
-			grid-template-columns: 1fr;
-			gap: var(--spacing-xl);
-		}
-
-		.footer-links {
-			grid-template-columns: repeat(2, 1fr);
-			gap: var(--spacing-lg);
-		}
-
-		.footer-bottom {
-			flex-direction: column;
-			text-align: center;
+		.footer-content {
+			padding: 0.375rem var(--spacing-sm);
 			gap: var(--spacing-sm);
+		}
+
+		.action-label {
+			display: none;
+		}
+
+		.quick-action {
+			padding: 0.5rem;
+			min-width: 2rem;
+			justify-content: center;
+		}
+
+		.app-info,
+		.credits {
+			min-width: auto;
+		}
+
+		.credit-text {
+			display: none;
+		}
+
+		.shortcuts-panel {
+			left: var(--spacing-sm);
+			right: var(--spacing-sm);
+			transform: none;
+			min-width: auto;
 		}
 	}
 
 	@media (max-width: 480px) {
-		.footer-content {
-			padding: var(--spacing-xl) var(--spacing-sm) var(--spacing-sm);
+		.app-name {
+			display: none;
 		}
 
-		.footer-links {
-			grid-template-columns: 1fr;
+		.actions {
+			gap: 0.25rem;
+		}
+
+		.quick-action {
+			padding: 0.375rem;
+		}
+
+		.quick-action svg {
+			width: 14px;
+			height: 14px;
 		}
 	}
 </style>

@@ -4,7 +4,7 @@
  */
 
 function runDiagnostics() {
-	console.log('🔍 Running Guitar Tab Reader Diagnostics...\n');
+	console.log('🔍 Running TabScroll Diagnostics...\n');
 
 	const issues = [];
 	const warnings = [];

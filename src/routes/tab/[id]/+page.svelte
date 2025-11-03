@@ -136,136 +136,280 @@
 		flex-direction: column;
 		height: 100vh;
 		max-height: 100vh;
+		background: var(--color-background);
 	}
 
 	header {
 		display: flex;
 		align-items: center;
-		padding: 1rem;
-		border-bottom: 1px solid #eee;
+		gap: var(--spacing-md);
+		padding: var(--spacing-md);
+		border-bottom: 2px solid var(--color-border-light);
 		position: sticky;
 		top: 0;
-		background-color: #fff;
-		z-index: 10;
+		background: var(--color-surface);
+		box-shadow: var(--shadow-sm);
+		z-index: var(--z-sticky);
+		transition: var(--transition-colors);
 	}
 
 	h1 {
 		flex: 1;
 		margin: 0;
 		text-align: center;
-		font-size: 1.5rem;
+		font-size: clamp(1.125rem, 3vw, 1.5rem);
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text-primary);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		letter-spacing: -0.01em;
 	}
 
 	.title-container {
 		flex: 1;
 		text-align: center;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		min-width: 0;
 	}
 
 	.tab-metadata {
-		font-size: 0.9rem;
-		color: #666;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
 	}
 
 	.tuning-info {
-		margin-top: 0.25rem;
-		opacity: 0.8;
+		opacity: 0.9;
+		font-size: var(--font-size-xs);
 	}
 
 	.artist,
 	.album {
-		font-weight: bold;
+		font-weight: var(--font-weight-semibold);
 	}
 
 	.separator {
-		margin: 0 0.5rem;
+		color: var(--color-text-tertiary);
 	}
 
 	.back-btn,
 	.edit-btn {
-		padding: 0.5rem;
-		background: none;
-		border: 1px solid #ddd;
-		border-radius: 4px;
-		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		padding: var(--spacing-sm);
+		background: var(--color-surface-variant);
+		border: 2px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		cursor: pointer;
+		color: var(--color-text-primary);
+		transition: var(--transition-all);
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
+		flex-shrink: 0;
+	}
+
+	.back-btn:hover,
+	.edit-btn:hover {
+		background: var(--color-hover);
+		border-color: var(--color-primary);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.back-btn:active,
+	.edit-btn:active {
+		transform: translateY(0);
+		box-shadow: none;
 	}
 
 	.action-buttons {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--spacing-sm);
 		align-items: center;
 	}
 
 	.tab-container {
 		flex: 1;
-		/* Change overflow to allow scrolling */
 		overflow-y: auto;
+		overflow-x: hidden;
 		padding: 0;
+		background: var(--color-background);
 	}
 
 	.controls-container {
-		padding: 0.5rem;
-		border-top: 1px solid #eee;
+		padding: var(--spacing-md);
+		border-top: 2px solid var(--color-border-light);
 		position: sticky;
 		bottom: 0;
-		z-index: 10;
+		background: var(--color-surface);
+		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+		z-index: var(--z-sticky);
+		transition: var(--transition-colors);
 	}
 
 	.not-found {
-		padding: 2rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: var(--spacing-2xl);
 		text-align: center;
-		max-width: 800px;
-		margin: 0 auto;
+		min-height: 100vh;
+		background: var(--color-background);
+	}
+
+	.not-found h1 {
+		font-size: clamp(1.5rem, 4vw, 2rem);
+		color: var(--color-text-primary);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.not-found p {
+		color: var(--color-text-secondary);
+		margin-bottom: var(--spacing-xl);
+		font-size: var(--font-size-base);
 	}
 
 	.not-found button {
-		padding: 0.75rem 1.5rem;
-		background-color: #4caf50;
+		padding: 0.875rem var(--spacing-xl);
+		background: var(--color-primary);
 		color: white;
 		border: none;
-		border-radius: 4px;
-		font-size: 1rem;
+		border-radius: var(--radius-lg);
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-semibold);
 		cursor: pointer;
-		margin-top: 1rem;
+		transition: var(--transition-all);
+		min-height: var(--touch-target-min);
+		box-shadow: var(--shadow-md);
 	}
 
-	/* Dark mode support */
-	@media (prefers-color-scheme: dark) {
+	.not-found button:hover {
+		background: var(--color-primary-hover);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-lg);
+	}
+
+	.not-found button:active {
+		transform: translateY(0);
+		box-shadow: var(--shadow-sm);
+	}
+
+	/* Tablet breakpoint - 768px */
+	@media (max-width: 768px) {
 		header {
-			background-color: #222;
-			border-color: #444;
+			padding: var(--spacing-sm) var(--spacing-md);
+			gap: var(--spacing-sm);
+		}
+
+		h1 {
+			font-size: 1.125rem;
+		}
+
+		.tab-metadata {
+			font-size: var(--font-size-xs);
 		}
 
 		.back-btn,
 		.edit-btn {
-			border-color: #555;
-			color: #eee;
+			padding: var(--spacing-sm);
+			min-width: 40px;
+			min-height: 40px;
 		}
 
 		.controls-container {
-			border-color: #444;
+			padding: var(--spacing-sm);
 		}
 	}
 
-	/* Mobile optimization */
-	@media (max-width: 768px) {
+	/* Mobile breakpoint - 480px */
+	@media (max-width: 480px) {
+		header {
+			padding: var(--spacing-sm);
+			gap: var(--spacing-xs);
+		}
+
+		h1 {
+			font-size: 1rem;
+		}
+
+		.tab-metadata {
+			font-size: 0.625rem;
+			flex-direction: column;
+			gap: 0.125rem;
+		}
+
+		.separator {
+			display: none;
+		}
+
+		.tuning-info {
+			font-size: 0.625rem;
+		}
+
+		.back-btn,
+		.edit-btn {
+			padding: 0.625rem;
+			min-width: var(--touch-target-min);
+			min-height: var(--touch-target-min);
+		}
+
+		.back-btn svg,
+		.edit-btn svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.action-buttons {
+			gap: 0.25rem;
+		}
+
+		.controls-container {
+			padding: var(--spacing-xs) var(--spacing-sm);
+		}
+
+		.not-found {
+			padding: var(--spacing-xl) var(--spacing-md);
+		}
+	}
+
+	/* Extra small devices - 360px */
+	@media (max-width: 360px) {
 		header {
 			padding: 0.5rem;
 		}
 
 		h1 {
-			font-size: 1.2rem;
+			font-size: 0.875rem;
 		}
 
 		.back-btn,
 		.edit-btn {
-			padding: 0.4rem;
-			font-size: 0.9rem;
+			padding: 0.5rem;
+		}
+	}
+
+	/* Landscape mobile optimization */
+	@media (max-height: 600px) and (orientation: landscape) {
+		header {
+			padding: var(--spacing-xs) var(--spacing-sm);
+		}
+
+		.tab-metadata,
+		.tuning-info {
+			display: none;
+		}
+
+		.controls-container {
+			padding: var(--spacing-xs) var(--spacing-sm);
 		}
 	}
 </style>

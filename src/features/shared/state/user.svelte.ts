@@ -6,7 +6,6 @@ import { injectable } from 'inversify';
  */
 
 export interface UserPreferences {
-	theme: 'light' | 'dark' | 'auto';
 	fontSize: number;
 	showChordDiagrams: boolean;
 	autoScroll: boolean;
@@ -36,7 +35,6 @@ export class UserState {
 
 	// User preferences with defaults
 	preferences = $state<UserPreferences>({
-		theme: 'auto',
 		fontSize: 14,
 		showChordDiagrams: true,
 		autoScroll: false,
@@ -54,15 +52,6 @@ export class UserState {
 	lastActivity = $state<number | null>(null);
 
 	// Derived state
-	isDarkMode = $derived(() => {
-		if (this.preferences.theme === 'dark') return true;
-		if (this.preferences.theme === 'light') return false;
-		// Auto mode - check system preference
-		return (
-			typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
-		);
-	});
-
 	isLeftHanded = $derived(() => this.preferences.handedness === 'left');
 	hasProfile = $derived(() => this.profile !== null);
 
@@ -93,11 +82,6 @@ export class UserState {
 	// Preference actions
 	updatePreferences(updates: Partial<UserPreferences>) {
 		this.preferences = { ...this.preferences, ...updates };
-		this.saveToStorage();
-	}
-
-	setTheme(theme: 'light' | 'dark' | 'auto') {
-		this.preferences.theme = theme;
 		this.saveToStorage();
 	}
 
@@ -215,7 +199,6 @@ export class UserState {
 	reset() {
 		this.logout();
 		this.preferences = {
-			theme: 'auto',
 			fontSize: 14,
 			showChordDiagrams: true,
 			autoScroll: false,

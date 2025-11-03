@@ -329,7 +329,7 @@ console.log(`
 ==========================================
 
 To run tests:
-1. Make sure you're on a page with the guitar tab reader
+1. Make sure you're on a page with the TabScroll
 2. Run: const tester = new TuningFunctionalityTester()
 3. Run: await tester.runAllTests()
 

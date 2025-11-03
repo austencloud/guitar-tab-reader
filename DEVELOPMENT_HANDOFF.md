@@ -1,8 +1,8 @@
-# Guitar Tab Reader - Development Handoff Documentation
+# TabScroll - Development Handoff Documentation
 
 ## Project Overview
 
-**Application**: Guitar Tab Reader - A modern web application for viewing and managing guitar tablature
+**Application**: TabScroll - A modern web application for viewing and managing guitar tablature
 **Framework**: Svelte 5 with SvelteKit
 **Styling**: TailwindCSS 4.0 + Custom CSS
 **Current Version**: 0.0.1
@@ -16,7 +16,7 @@
   - Task 1.1: Remove 4K Placeholder Icon ✅
     - Removed unnecessary SVG icon from header logo area
     - Cleaned up unused CSS selectors (.logo-icon)
-    - Header now shows clean "Guitar Tab Reader" text only
+    - Header now shows clean "TabScroll" text only
   - Task 1.2: Consolidate Duplicate Settings Buttons ✅
     - Removed settings button from home page main content area
     - Kept settings button only in main header (layout)
