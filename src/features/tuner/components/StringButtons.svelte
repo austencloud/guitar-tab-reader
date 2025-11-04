@@ -58,6 +58,7 @@
 		letter-spacing: var(--letter-spacing-tight);
 		cursor: pointer;
 		transition: var(--transition-all);
+		user-select: none;
 	}
 
 	.string-button:hover {

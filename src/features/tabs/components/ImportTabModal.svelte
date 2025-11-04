@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { importTab, type TabImportOptions } from '$lib/utils/tabImporter';
 	import type { Tab } from '$lib/stores/tabs';
+	import { BottomSheet } from '$features/shared/components';
 
 	interface Props {
-		visible?: boolean;
+		open?: boolean;
 		onclose?: () => void;
 		onimport?: (tab: Tab) => void;
 	}
 
-	let { visible = false, onclose, onimport }: Props = $props();
+	let { open = $bindable(false), onclose, onimport }: Props = $props();
 
 	let importMethod = $state<'url' | 'paste'>('url');
 	let importUrl = $state('');
@@ -101,21 +102,9 @@
 	}
 </script>
 
-{#if visible}
-	<div class="modal-backdrop">
-		<div class="modal-container">
-			<div class="modal-header">
-				<h2>{isPreviewMode ? 'Preview Imported Tab' : 'Import Guitar Tab'}</h2>
-				<button class="close-btn" onclick={closeModal} aria-label="Close">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-						<path
-							d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
-						></path>
-					</svg>
-				</button>
-			</div>
-
-			<div class="modal-content">
+<BottomSheet bind:open onOpenChange={(newOpen) => !newOpen && closeModal()} title={isPreviewMode ? 'Preview Imported Tab' : 'Import Guitar Tab'}>
+	<div class="import-tab-content">
+		<div class="modal-content">
 				{#if errorMessage}
 					<div class="error-message">
 						<span class="icon">⚠️</span>
@@ -269,144 +258,70 @@
 				{/if}
 			</div>
 		</div>
-	</div>
-{/if}
+</BottomSheet>
 
 <style>
-	.modal-backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.7);
-		backdrop-filter: var(--blur-md);
-		z-index: var(--z-modal);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		padding: var(--spacing-md);
-	}
-
-	.modal-container {
-		background-color: var(--color-surface-high);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-2xl);
-		box-shadow: var(--shadow-2xl);
-		width: 100%;
-		max-width: 700px;
-		max-height: 90vh;
-		overflow: hidden;
+	.import-tab-content {
 		display: flex;
 		flex-direction: column;
-	}
-
-	.modal-header {
-		padding: var(--spacing-lg);
-		border-bottom: 1px solid var(--color-border);
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		background: var(--color-surface-high);
-	}
-
-	.modal-header h2 {
-		margin: 0;
-		font-size: var(--font-size-2xl);
-		font-weight: var(--font-weight-bold);
-		color: var(--color-text-primary);
-		letter-spacing: var(--letter-spacing-tight);
-	}
-
-	.close-btn {
-		background: none;
-		border: 1px solid var(--color-border);
-		cursor: pointer;
-		color: var(--color-text-secondary);
-		padding: var(--spacing-sm);
-		border-radius: var(--radius-full);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: var(--transition-all);
-		min-width: var(--touch-target-min);
-		min-height: var(--touch-target-min);
-	}
-
-	.close-btn:hover {
-		background-color: var(--color-hover);
-		color: var(--color-text-primary);
-	}
-
-	.close-btn:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
-	}
-
-	.close-btn svg {
-		width: 20px;
-		height: 20px;
-		fill: currentColor;
+		gap: 1rem;
 	}
 
 	.modal-content {
-		padding: var(--spacing-lg);
+		padding: 1.5rem;
 		flex: 1;
 		overflow-y: auto;
 	}
 
 	.error-message,
 	.success-message {
-		padding: var(--spacing-md);
-		border-radius: var(--radius-lg);
-		margin-bottom: var(--spacing-md);
+		padding: 0.75rem;
+		border-radius: 4px;
+		margin-bottom: 1rem;
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
-		font-size: var(--font-size-sm);
+		gap: 0.5rem;
 	}
 
 	.error-message {
-		background-color: var(--color-error-bg);
-		border: 1px solid var(--color-error);
-		color: var(--color-error);
+		background-color: rgba(244, 67, 54, 0.1);
+		border: 1px solid rgba(244, 67, 54, 0.3);
+		color: #c62828;
 	}
 
 	.success-message {
-		background-color: var(--color-success-bg);
-		border: 1px solid var(--color-success);
-		color: var(--color-success);
+		background-color: rgba(76, 175, 80, 0.1);
+		border: 1px solid rgba(76, 175, 80, 0.3);
+		color: #2e7d32;
 	}
 
 	.icon {
-		font-size: var(--font-size-lg);
+		font-size: 1.2rem;
 	}
 
 	.option-selector {
 		display: flex;
-		gap: var(--spacing-lg);
-		margin-bottom: var(--spacing-lg);
+		gap: 1.5rem;
+		margin-bottom: 1.5rem;
 	}
 
 	.option-selector label {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
+		gap: 0.5rem;
 		cursor: pointer;
-		color: var(--color-text-primary);
-		font-size: var(--font-size-base);
 	}
 
 	.input-group {
-		margin-bottom: var(--spacing-md);
+		margin-bottom: 1.25rem;
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-xs);
+		gap: 0.35rem;
 	}
 
 	.input-row {
 		display: flex;
-		gap: var(--spacing-md);
+		gap: 1rem;
 	}
 
 	.input-row .input-group {
@@ -414,155 +329,177 @@
 	}
 
 	label {
-		font-weight: var(--font-weight-medium);
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: #555;
+		font-size: 0.9rem;
 	}
 
 	input[type='text'],
 	input[type='url'],
 	textarea,
 	select {
-		padding: var(--spacing-sm) var(--spacing-md);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		font-size: var(--font-size-base);
+		padding: 0.65rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		font-size: 1rem;
 		font-family: inherit;
-		background: var(--color-background);
-		color: var(--color-text-primary);
-		transition: var(--transition-all);
-		min-height: var(--touch-target-min);
+		transition: border-color 0.2s;
 	}
 
 	input[type='text']:focus,
 	input[type='url']:focus,
 	textarea:focus,
 	select:focus {
-		border-color: var(--color-primary);
+		border-color: #4caf50;
 		outline: none;
-		box-shadow: 0 0 0 3px var(--color-primary-dim), var(--glow-primary);
 	}
 
 	.hint {
-		font-size: var(--font-size-xs);
-		color: var(--color-text-tertiary);
-		margin-top: var(--spacing-xs);
+		font-size: 0.8rem;
+		color: #777;
+		margin-top: 0.25rem;
 	}
 
 	.checkbox-group {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
-		margin-bottom: var(--spacing-md);
+		gap: 0.5rem;
+		margin-bottom: 1rem;
 	}
 
 	.ai-settings {
-		margin-top: var(--spacing-sm);
-		padding: var(--spacing-md);
-		background-color: var(--color-surface-low);
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--color-border);
+		margin-top: 0.5rem;
+		padding: 1rem;
+		background-color: #f9f9f9;
+		border-radius: 4px;
 	}
 
 	.preview-content {
-		margin-top: var(--spacing-md);
+		margin-top: 1rem;
 	}
 
 	.preview-content pre {
-		font-family: var(--font-family-mono);
-		background-color: var(--color-surface-low);
-		padding: var(--spacing-md);
-		border-radius: var(--radius-lg);
+		font-family: 'Courier New', monospace;
+		background-color: #f5f5f5;
+		padding: 1rem;
+		border-radius: 4px;
 		overflow-x: auto;
 		white-space: pre-wrap;
-		font-size: var(--font-size-sm);
-		line-height: var(--line-height-relaxed);
+		font-size: 0.9rem;
+		line-height: 1.4;
 		height: 300px;
 		overflow-y: auto;
-		border: 1px solid var(--color-border);
-		color: var(--color-text-primary);
+		border: 1px solid #e0e0e0;
 	}
 
 	.modal-footer {
-		padding: var(--spacing-md) var(--spacing-lg);
-		border-top: 1px solid var(--color-border);
+		padding: 1rem 1.5rem;
+		border-top: 1px solid #e5e5e5;
 		display: flex;
 		justify-content: flex-end;
-		gap: var(--spacing-sm);
-		background: var(--color-surface-high);
+		gap: 0.75rem;
 	}
 
 	.cancel-btn,
 	.back-btn {
-		padding: var(--spacing-sm) var(--spacing-lg);
-		border: 1px solid var(--color-border);
-		background-color: var(--color-surface-low);
-		border-radius: var(--radius-lg);
-		font-size: var(--font-size-base);
-		font-weight: var(--font-weight-medium);
-		color: var(--color-text-primary);
+		padding: 0.65rem 1.25rem;
+		border: 1px solid #ccc;
+		background-color: white;
+		border-radius: 4px;
+		font-size: 1rem;
 		cursor: pointer;
-		transition: var(--transition-all);
-		min-height: var(--touch-target-min);
+		transition: background-color 0.2s;
 	}
 
 	.preview-btn,
 	.save-btn {
-		padding: var(--spacing-sm) var(--spacing-xl);
+		padding: 0.65rem 1.5rem;
 		border: none;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		color: var(--color-text-inverse);
-		border-radius: var(--radius-lg);
-		font-size: var(--font-size-base);
-		font-weight: var(--font-weight-bold);
+		background-color: #4caf50;
+		color: white;
+		border-radius: 4px;
+		font-size: 1rem;
 		cursor: pointer;
-		transition: var(--transition-all);
-		box-shadow: var(--shadow-md);
-		min-height: var(--touch-target-min);
+		transition: background-color 0.2s;
 	}
 
 	.preview-btn:hover,
 	.save-btn:hover {
-		background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-lg), var(--glow-primary);
-	}
-
-	.preview-btn:active,
-	.save-btn:active {
-		transform: translateY(0);
-		box-shadow: var(--shadow-sm);
-	}
-
-	.preview-btn:focus-visible,
-	.save-btn:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
+		background-color: #43a047;
 	}
 
 	.preview-btn:disabled {
-		background: var(--color-disabled);
+		background-color: #a5d6a7;
 		cursor: not-allowed;
-		transform: none;
-		box-shadow: none;
-		opacity: 0.5;
 	}
 
 	.cancel-btn:hover,
 	.back-btn:hover {
-		background-color: var(--color-hover);
-		transform: translateY(-1px);
+		background-color: #f5f5f5;
 	}
 
-	.cancel-btn:active,
-	.back-btn:active {
-		transform: translateY(0);
-	}
+	@media (prefers-color-scheme: dark) {
+		.modal-footer {
+			border-color: #444;
+		}
 
-	.cancel-btn:focus-visible,
-	.back-btn:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
+		input[type='text'],
+		input[type='url'],
+		textarea,
+		select {
+			background-color: #333;
+			border-color: #555;
+			color: #e0e0e0;
+		}
+
+		input[type='text']:focus,
+		input[type='url']:focus,
+		textarea:focus,
+		select:focus {
+			border-color: #66bb6a;
+		}
+
+		label {
+			color: #ccc;
+		}
+
+		.hint {
+			color: #aaa;
+		}
+
+		.preview-content pre {
+			background-color: #333;
+			border-color: #555;
+			color: #e0e0e0;
+		}
+
+		.cancel-btn,
+		.back-btn {
+			background-color: #333;
+			border-color: #555;
+			color: #e0e0e0;
+		}
+
+		.cancel-btn:hover,
+		.back-btn:hover {
+			background-color: #444;
+		}
+
+		.ai-settings {
+			background-color: rgba(255, 255, 255, 0.05);
+		}
+
+		.error-message {
+			background-color: rgba(244, 67, 54, 0.1);
+			border-color: rgba(244, 67, 54, 0.3);
+			color: #ef5350;
+		}
+
+		.success-message {
+			background-color: rgba(76, 175, 80, 0.1);
+			border-color: rgba(76, 175, 80, 0.3);
+			color: #66bb6a;
+		}
 	}
 
 	@media (max-width: 600px) {

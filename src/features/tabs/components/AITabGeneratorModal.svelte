@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { Tab } from '$lib/stores/tabs';
+	import { BottomSheet } from '$features/shared/components';
 
 	interface Props {
-		visible?: boolean;
+		open?: boolean;
 		onclose?: () => void;
 		onimport?: (tab: Tab) => void;
 	}
 
-	let { visible = false, onclose, onimport }: Props = $props();
+	let { open = $bindable(false), onclose, onimport }: Props = $props();
 
 	type Message = {
 		role: 'user' | 'assistant';
@@ -20,7 +21,7 @@
 		{
 			role: 'assistant',
 			content:
-				'Hi! I can help you generate guitar tabs. Just tell me the song name and artist, and I\'ll create a tab for you with verification from existing tabs online. For example: "Wonderwall by Oasis"'
+				'Hi! I can help you find and format guitar tabs. Just tell me the song name and artist, and I\'ll search for existing tabs online and format them nicely for you. For example: "Wonderwall by Oasis"'
 		}
 	]);
 	let isLoading = $state(false);
@@ -32,7 +33,7 @@
 			{
 				role: 'assistant',
 				content:
-					'Hi! I can help you generate guitar tabs. Just tell me the song name and artist, and I\'ll create a tab for you with verification from existing tabs online. For example: "Wonderwall by Oasis"'
+					'Hi! I can help you find and format guitar tabs. Just tell me the song name and artist, and I\'ll search for existing tabs online and format them nicely for you. For example: "Wonderwall by Oasis"'
 			}
 		];
 		isLoading = false;
@@ -60,53 +61,98 @@
 		songQuery = '';
 		isLoading = true;
 
-		// Add loading message
+		// Add initial loading message
 		messages = [
 			...messages,
 			{
 				role: 'assistant',
-				content: 'Generating tab with AI and verifying against online sources...',
+				content: 'Starting search...',
 				isGenerating: true
 			}
 		];
 
 		try {
-			const response = await fetch('/api/generate-tab', {
+			// Use Server-Sent Events for real-time progress
+			const response = await fetch('/api/generate-tab-stream', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ query: currentQuery })
 			});
 
-			const data = await response.json();
-
-			// Remove loading message
-			messages = messages.filter((m) => !m.isGenerating);
-
-			if (data.success && data.tab) {
-				generatedTab = data.tab;
-				messages = [
-					...messages,
-					{
-						role: 'assistant',
-						content: `Great! I've generated a tab for "${data.tab.title}"${data.tab.artist ? ` by ${data.tab.artist}` : ''}.\n\n${data.sources ? `Verified against:\n${data.sources.map((s: string) => `- ${s}`).join('\n')}` : ''}\n\nYou can preview it below and save it to your collection!`
-					}
-				];
-			} else {
-				messages = [
-					...messages,
-					{
-						role: 'assistant',
-						content: `Sorry, I couldn't generate a tab. ${data.error || 'Please try rephrasing your request with the format: "Song Name by Artist Name"'}`
-					}
-				];
+			if (!response.ok || !response.body) {
+				throw new Error('Failed to start streaming');
 			}
+
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
+
+			let buffer = '';
+
+			while (true) {
+				const { done, value } = await reader.read();
+
+				if (done) break;
+
+				buffer += decoder.decode(value, { stream: true });
+
+				// Process complete messages (separated by \n\n)
+				const lines = buffer.split('\n\n');
+				buffer = lines.pop() || ''; // Keep incomplete message in buffer
+
+				for (const line of lines) {
+					if (!line.trim() || !line.startsWith('data: ')) continue;
+
+					const data = JSON.parse(line.substring(6)); // Remove 'data: ' prefix
+
+					// Remove old generating message
+					messages = messages.filter((m) => !m.isGenerating);
+
+					if (data.error) {
+						// Error occurred
+						messages = [
+							...messages,
+							{
+								role: 'assistant',
+								content: `Sorry, I couldn't find a tab for that song. ${data.error}`
+							}
+						];
+					} else if (data.success && data.tab) {
+						// Success - final result
+						generatedTab = data.tab;
+						messages = [
+							...messages,
+							{
+								role: 'assistant',
+								content: `Great! I found and formatted a tab for "${data.tab.title}"${data.tab.artist ? ` by ${data.tab.artist}` : ''}.\n\n${data.sources ? `Sources:\n${data.sources.map((s: string) => `- ${s}`).join('\n')}` : ''}\n\nYou can preview it below and save it to your collection!`
+							}
+						];
+					} else if (data.step) {
+						// Progress update - show live status
+						const progressMsg = data.details
+							? `${data.step}: ${data.details}`
+							: data.step;
+
+						messages = [
+							...messages,
+							{
+								role: 'assistant',
+								content: progressMsg,
+								isGenerating: true
+							}
+						];
+					}
+				}
+			}
+
+			// Remove any remaining generating message
+			messages = messages.filter((m) => !m.isGenerating);
 		} catch (error) {
 			messages = messages.filter((m) => !m.isGenerating);
 			messages = [
 				...messages,
 				{
 					role: 'assistant',
-					content: `Error: ${error instanceof Error ? error.message : 'Failed to generate tab. Please try again.'}`
+					content: `Error: ${error instanceof Error ? error.message : 'Failed to find and format tab. Please try again.'}`
 				}
 			];
 		} finally {
@@ -129,28 +175,9 @@
 	}
 </script>
 
-{#if visible}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="panel-backdrop" onclick={closeModal}>
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="panel-container" onclick={(e) => e.stopPropagation()}>
-			<div class="panel-handle">
-				<div class="handle-bar"></div>
-			</div>
-
-			<div class="panel-header">
-				<h2>AI Tab Generator</h2>
-				<button class="close-btn" onclick={closeModal} aria-label="Close">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-						<line x1="18" y1="6" x2="6" y2="18"></line>
-						<line x1="6" y1="6" x2="18" y2="18"></line>
-					</svg>
-				</button>
-			</div>
-
-			<div class="panel-content">
+<BottomSheet bind:open onOpenChange={(newOpen) => !newOpen && closeModal()} title="AI Tab Generator">
+	<div class="ai-generator-content">
+		<div class="panel-content">
 				<div class="chat-container">
 					{#each messages as message}
 						<div class="message {message.role}">
@@ -182,137 +209,39 @@
 						</div>
 					</div>
 				{/if}
-			</div>
 
-			<div class="panel-footer">
-				{#if !generatedTab}
-					<div class="input-container">
-						<input
-							type="text"
-							bind:value={songQuery}
-							onkeypress={handleKeyPress}
-							placeholder='Enter song and artist (e.g., "Wonderwall by Oasis")'
-							disabled={isLoading}
-						/>
-						<button onclick={handleGenerate} disabled={isLoading || !songQuery.trim()}>
-							{isLoading ? 'Generating...' : 'Generate'}
-						</button>
-					</div>
-				{:else}
-					<div class="action-buttons">
-						<button class="back-btn" onclick={() => (generatedTab = null)}>Generate Another</button
-						>
-						<button class="save-btn" onclick={handleSaveTab}>Save to My Tabs</button>
-					</div>
-				{/if}
+				<div class="panel-footer">
+					{#if !generatedTab}
+						<div class="input-container">
+							<input
+								type="text"
+								bind:value={songQuery}
+								onkeypress={handleKeyPress}
+								placeholder='Enter song and artist (e.g., "Wonderwall by Oasis")'
+								disabled={isLoading}
+							/>
+							<button onclick={handleGenerate} disabled={isLoading || !songQuery.trim()}>
+								{isLoading ? 'Generating...' : 'Generate'}
+							</button>
+						</div>
+					{:else}
+						<div class="action-buttons">
+							<button class="back-btn" onclick={() => (generatedTab = null)}>Generate Another</button
+							>
+							<button class="save-btn" onclick={handleSaveTab}>Save to My Tabs</button>
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
-	</div>
-{/if}
+</BottomSheet>
 
 <style>
-	.panel-backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.7);
-		backdrop-filter: var(--blur-md);
-		z-index: var(--z-modal);
-		animation: fadeIn 0.2s ease;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-
-	.panel-container {
-		position: fixed;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: var(--color-surface-high);
-		border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
-		box-shadow: var(--shadow-2xl);
-		max-height: 85vh;
+	.ai-generator-content {
 		display: flex;
 		flex-direction: column;
-		animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		z-index: calc(var(--z-modal) + 1);
-	}
-
-	@keyframes slideUp {
-		from {
-			transform: translateY(100%);
-		}
-		to {
-			transform: translateY(0);
-		}
-	}
-
-	.panel-handle {
-		padding: var(--spacing-md);
-		display: flex;
-		justify-content: center;
-		cursor: pointer;
-	}
-
-	.handle-bar {
-		width: 40px;
-		height: 4px;
-		background-color: var(--color-border);
-		border-radius: var(--radius-sm);
-	}
-
-	.panel-header {
-		padding: 0 var(--spacing-xl) var(--spacing-lg);
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		border-bottom: 1px solid var(--color-border);
-	}
-
-	.panel-header h2 {
-		margin: 0;
-		font-size: var(--font-size-xl);
-		color: var(--color-text-primary);
-		font-weight: var(--font-weight-semibold);
-	}
-
-	.close-btn {
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: var(--color-text-secondary);
-		padding: var(--spacing-sm);
-		min-height: var(--touch-target-min);
-		min-width: var(--touch-target-min);
-		border-radius: var(--radius-full);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: var(--transition-all);
-	}
-
-	.close-btn:hover {
-		background-color: var(--color-hover);
-		color: var(--color-text-primary);
-	}
-
-	.close-btn:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
-	}
-
-	.close-btn svg {
-		width: 20px;
-		height: 20px;
+		gap: 1rem;
+		height: 100%;
 	}
 
 	.panel-content {
@@ -325,10 +254,10 @@
 
 	.chat-container {
 		flex: 1;
-		padding: var(--spacing-xl);
+		padding: 1.5rem;
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-lg);
+		gap: 1rem;
 		overflow-y: auto;
 	}
 
@@ -343,37 +272,37 @@
 
 	.message-content {
 		max-width: 80%;
-		padding: var(--spacing-md) var(--spacing-lg);
-		border-radius: var(--radius-xl);
+		padding: 0.85rem 1.15rem;
+		border-radius: 16px;
 		white-space: pre-wrap;
 		line-height: 1.5;
-		box-shadow: var(--shadow-sm);
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 	}
 
 	.message.user .message-content {
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		color: var(--color-text-inverse);
-		border-bottom-right-radius: var(--radius-sm);
+		background-color: #4caf50;
+		color: white;
+		border-bottom-right-radius: 4px;
 	}
 
 	.message.assistant .message-content {
-		background-color: var(--color-surface-low);
-		color: var(--color-text-primary);
-		border-bottom-left-radius: var(--radius-sm);
+		background-color: #f0f0f0;
+		color: #333;
+		border-bottom-left-radius: 4px;
 	}
 
 	.generating {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
+		gap: 0.5rem;
 	}
 
 	.spinner {
 		width: 16px;
 		height: 16px;
-		border: 2px solid var(--color-border);
-		border-top-color: var(--color-primary);
-		border-radius: var(--radius-full);
+		border: 2px solid #ddd;
+		border-top-color: #4caf50;
+		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
 
@@ -384,110 +313,91 @@
 	}
 
 	.preview-section {
-		padding: 0 var(--spacing-xl) var(--spacing-xl);
-		border-top: 1px solid var(--color-border);
+		padding: 0 1.5rem 1.5rem;
+		border-top: 1px solid #e5e5e5;
 	}
 
 	.preview-section h3 {
-		margin: var(--spacing-lg) 0 var(--spacing-sm);
-		font-size: var(--font-size-lg);
-		color: var(--color-text-primary);
-		font-weight: var(--font-weight-semibold);
+		margin: 1rem 0 0.5rem;
+		font-size: 1.1rem;
+		color: #333;
 	}
 
 	.tab-info {
-		margin-bottom: var(--spacing-md);
-	}
-
-	.tab-info strong {
-		color: var(--color-text-primary);
+		margin-bottom: 0.75rem;
 	}
 
 	.tab-info .artist {
-		color: var(--color-text-secondary);
-		margin-left: var(--spacing-sm);
+		color: #666;
+		margin-left: 0.5rem;
 	}
 
 	.tab-preview {
-		background-color: var(--color-surface-low);
-		border-radius: var(--radius-md);
-		border: 1px solid var(--color-border);
+		background-color: #f5f5f5;
+		border-radius: 4px;
+		border: 1px solid #e0e0e0;
 		max-height: 250px;
 		overflow-y: auto;
 	}
 
 	.tab-preview pre {
 		font-family: 'Courier New', monospace;
-		padding: var(--spacing-lg);
+		padding: 1rem;
 		margin: 0;
-		font-size: var(--font-size-sm);
+		font-size: 0.9rem;
 		line-height: 1.4;
 		white-space: pre-wrap;
-		color: var(--color-text-primary);
 	}
 
 	.panel-footer {
-		padding: var(--spacing-lg) var(--spacing-xl);
-		border-top: 1px solid var(--color-border);
-		background-color: var(--color-surface-low);
+		padding: 1.25rem 1.5rem;
+		border-top: 1px solid #e5e5e5;
+		background-color: #fafafa;
 	}
 
 	.input-container {
 		display: flex;
-		gap: var(--spacing-md);
+		gap: 0.75rem;
 		align-items: center;
 	}
 
 	.input-container input {
 		flex: 1;
-		padding: var(--spacing-md) var(--spacing-lg);
-		min-height: var(--touch-target-min);
-		border: 2px solid var(--color-border);
-		border-radius: var(--radius-xl);
-		font-size: var(--font-size-base);
-		background-color: var(--color-surface-low);
-		color: var(--color-text-primary);
-		transition: var(--transition-all);
+		padding: 0.75rem 1rem;
+		border: 1px solid #ddd;
+		border-radius: 12px;
+		font-size: 1rem;
+		transition: all 0.2s;
 	}
 
 	.input-container input:focus {
-		border-color: var(--color-primary);
+		border-color: #4caf50;
 		outline: none;
-		box-shadow: var(--glow-primary);
-	}
-
-	.input-container input:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
+		box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
 	}
 
 	.input-container button,
 	.save-btn,
 	.back-btn {
-		padding: var(--spacing-md) var(--spacing-xl);
-		min-height: var(--touch-target-min);
+		padding: 0.75rem 1.5rem;
 		border: none;
-		border-radius: var(--radius-xl);
-		font-size: var(--font-size-base);
-		font-weight: var(--font-weight-semibold);
+		border-radius: 12px;
+		font-size: 1rem;
+		font-weight: 600;
 		cursor: pointer;
-		transition: var(--transition-all);
+		transition: all 0.2s;
 	}
 
 	.input-container button {
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		color: var(--color-text-inverse);
+		background-color: #4caf50;
+		color: white;
 		min-width: 100px;
 	}
 
 	.input-container button:hover:not(:disabled) {
+		background-color: #43a047;
 		transform: translateY(-1px);
-		box-shadow: var(--glow-primary);
-	}
-
-	.input-container button:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
+		box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 	}
 
 	.input-container button:active:not(:disabled) {
@@ -495,45 +405,34 @@
 	}
 
 	.input-container button:disabled {
-		background: var(--color-disabled);
+		background-color: #a5d6a7;
 		cursor: not-allowed;
-		opacity: 0.5;
+		opacity: 0.6;
 	}
 
 	.action-buttons {
 		display: flex;
-		gap: var(--spacing-md);
+		gap: 0.75rem;
 		justify-content: flex-end;
 	}
 
 	.save-btn {
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		color: var(--color-text-inverse);
+		background-color: #4caf50;
+		color: white;
 	}
 
 	.save-btn:hover {
-		transform: translateY(-1px);
-		box-shadow: var(--glow-primary);
-	}
-
-	.save-btn:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
+		background-color: #43a047;
 	}
 
 	.back-btn {
-		background-color: var(--color-surface-low);
-		color: var(--color-text-primary);
-		border: 2px solid var(--color-border);
+		background-color: #f5f5f5;
+		color: #333;
+		border: 1px solid #ccc;
 	}
 
 	.back-btn:hover {
-		background-color: var(--color-hover);
-	}
-
-	.back-btn:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
+		background-color: #e0e0e0;
 	}
 
 	@keyframes fadeInMessage {
@@ -547,6 +446,55 @@
 		}
 	}
 
+	@media (prefers-color-scheme: dark) {
+		.message.assistant .message-content {
+			background-color: #333;
+			color: #e0e0e0;
+		}
+
+		.tab-preview {
+			background-color: #333;
+			border-color: #555;
+		}
+
+		.tab-preview pre {
+			color: #e0e0e0;
+		}
+
+		.preview-section {
+			border-color: #444;
+		}
+
+		.preview-section h3,
+		.tab-info strong {
+			color: #e0e0e0;
+		}
+
+		.tab-info .artist {
+			color: #aaa;
+		}
+
+		.input-container input {
+			background-color: #333;
+			border-color: #555;
+			color: #e0e0e0;
+		}
+
+		.back-btn {
+			background-color: #2a2a2a;
+			border: 1px solid #444;
+			color: #e0e0e0;
+		}
+
+		.back-btn:hover {
+			background-color: #333;
+		}
+
+		.panel-footer {
+			border-color: #333;
+			background-color: #1a1a1a;
+		}
+	}
 
 	@media (max-width: 600px) {
 		.panel-container {

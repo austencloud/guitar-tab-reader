@@ -1,6 +1,6 @@
 <!-- src/features/tuner/components/GuitarTuner.svelte -->
 <script lang="ts">
-	import TunerModal from './TunerModal.svelte';
+	import TunerBottomSheet from './TunerBottomSheet.svelte';
 
 	interface Props {
 		showTuner?: boolean;
@@ -14,4 +14,4 @@
 	}
 </script>
 
-<TunerModal open={showTuner} onclose={closeModal} />
+<TunerBottomSheet open={showTuner} onclose={closeModal} />

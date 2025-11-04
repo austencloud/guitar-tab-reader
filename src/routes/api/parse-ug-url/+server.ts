@@ -74,17 +74,32 @@ async function fetchTabWithPlaywright(url: string): Promise<TabData | null> {
 		console.log(`🌐 Navigating to ${url}...`);
 
 		// Navigate to the page
-		await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+		await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
 
-		// Wait for the tab content to load
+		// Wait reactively for tab content - no fixed timeout, just wait for element
 		console.log(`⏳ Waiting for tab content to load...`);
-		await page.waitForSelector('code, pre.js-tab-content', { timeout: 10000 });
+
+		// Use Promise.race to wait for any of these selectors to appear
+		await Promise.race([
+			page.waitForSelector('code', { state: 'attached' }),
+			page.waitForSelector('pre.js-tab-content', { state: 'attached' }),
+			page.waitForSelector('pre[class*="tab"]', { state: 'attached' })
+		]).catch(() => {
+			// If none appear within Playwright's default timeout (30s), that's fine
+			// We'll handle it in the evaluation step
+		});
 
 		// Extract tab data from the page
 		console.log(`📄 Extracting tab data...`);
 		const tabData = await page.evaluate(() => {
-			// Extract tab content from code/pre element
-			const codeElement = document.querySelector('code, pre.js-tab-content');
+			// Extract tab content from code/pre element - try multiple possible selectors
+			let codeElement = document.querySelector('code');
+			if (!codeElement) {
+				codeElement = document.querySelector('pre.js-tab-content');
+			}
+			if (!codeElement) {
+				codeElement = document.querySelector('pre[class*="tab"]');
+			}
 			const content = codeElement?.textContent?.trim() || null;
 
 			// Extract title from h1
