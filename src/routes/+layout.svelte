@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { SettingsButton, SettingsBottomSheet, PrimaryNavigation } from '$features/shared/components';
+	import { SettingsBottomSheet, PrimaryNavigation } from '$features/shared/components';
 	import { GuitarTuner } from '$features/tuner/components';
 	import { AddTabBottomSheet, ImportTabModal, WebImportModal } from '$features/tabs/components';
 	import { setContext, getContext, onMount } from 'svelte';
@@ -163,18 +163,6 @@
 				<h1 class="app-title">TabScroll</h1>
 			</a>
 		</div>
-		<div class="app-actions">
-			<button class="tuner-button" onclick={toggleTuner} aria-label="Open Guitar Tuner">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
-					<path
-						fill="currentColor"
-						d="M12 3a9 9 0 0 0-9 9h3c0-3.31 2.69-6 6-6s6 2.69 6 6h3a9 9 0 0 0-9-9zm3.14 12a3.01 3.01 0 0 1-2.14.9 3 3 0 0 1-3-3 2.97 2.97 0 0 1 .9-2.14L12 8.07l1.14 2.69c.58.59.9 1.35.9 2.14a2.99 2.99 0 0 1-.9 2.1z"
-					/>
-				</svg>
-				<span>Tune Guitar</span>
-			</button>
-			<SettingsButton onclick={toggleSettings} />
-		</div>
 	</header>
 
 	<div class="content-wrapper" use:handleContextMount>
@@ -270,73 +258,6 @@
 		background-clip: text;
 	}
 
-	.app-actions {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		flex-shrink: 0;
-	}
-
-	.tuner-button {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-hover));
-		color: white;
-		border: none;
-		border-radius: var(--radius-lg);
-		padding: 0.625rem var(--spacing-md);
-		font-weight: var(--font-weight-semibold);
-		font-size: var(--font-size-sm);
-		cursor: pointer;
-		box-shadow: var(--shadow-md);
-		transition: var(--transition-all);
-		position: relative;
-		overflow: hidden;
-		min-height: var(--touch-target-min);
-	}
-
-	.tuner-button::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: -100%;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-		transition: left var(--transition-slower);
-	}
-
-	.tuner-button:hover {
-		background: linear-gradient(135deg, var(--color-secondary-hover), var(--color-secondary-active));
-		transform: translateY(-2px);
-		box-shadow: var(--shadow-lg), var(--glow-secondary);
-	}
-
-	.tuner-button:hover::before {
-		left: 100%;
-	}
-
-	.tuner-button:hover svg {
-		transform: rotate(12deg) scale(1.05);
-	}
-
-	.tuner-button:active {
-		background: linear-gradient(135deg, var(--color-secondary-active), var(--color-secondary));
-		transform: translateY(0) scale(0.98);
-		box-shadow: var(--shadow-sm);
-	}
-
-	.tuner-button:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
-	}
-
-	.tuner-button svg {
-		transition: transform var(--transition-base);
-		flex-shrink: 0;
-	}
-
 	.content-wrapper {
 		width: 100%;
 		max-width: var(--container-lg);
@@ -367,11 +288,6 @@
 		.app-title {
 			font-size: var(--font-size-lg);
 		}
-
-		.tuner-button {
-			padding: 0.5rem var(--spacing-sm);
-			font-size: var(--font-size-xs);
-		}
 	}
 
 	/* Mobile - 480px */
@@ -387,27 +303,6 @@
 		.app-title {
 			font-size: var(--font-size-base);
 		}
-
-		.app-actions {
-			gap: var(--spacing-xs);
-		}
-
-		/* Hide tuner button text on mobile, show icon only */
-		.tuner-button span {
-			display: none;
-		}
-
-		.tuner-button {
-			padding: 0.625rem;
-			min-width: var(--touch-target-min);
-			width: var(--touch-target-min);
-			justify-content: center;
-		}
-
-		.tuner-button svg {
-			width: 20px;
-			height: 20px;
-		}
 	}
 
 	/* Extra small - 360px */
@@ -418,10 +313,6 @@
 
 		.app-title {
 			font-size: var(--font-size-sm);
-		}
-
-		.tuner-button {
-			padding: 0.5rem;
 		}
 	}
 </style>

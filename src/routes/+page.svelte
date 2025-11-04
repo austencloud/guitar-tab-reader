@@ -140,11 +140,10 @@
 		<ControlsRow
 			bind:searchQuery
 			onsearchchange={handleSearchChange}
-			onaddtab={handleOpenAddTabPanel}
 		/>
 
 		{#if sortedAndFilteredTabs.length === 0}
-			<EmptyState hasAnyTabs={$tabs.length > 0} onaddtab={handleOpenAddTabPanel} />
+			<EmptyState hasAnyTabs={$tabs.length > 0} />
 		{:else}
 			<TabsList
 				tabs={sortedAndFilteredTabs}
