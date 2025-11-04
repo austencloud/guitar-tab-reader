@@ -112,7 +112,7 @@
 	class:layout-side={isLandscape}
 	bind:this={navElement}
 >
-	<!-- Navigation Sections -->
+	<!-- Navigation Sections (includes settings at the right) -->
 	<div class="sections">
 		{#each sections as section}
 			<button
@@ -128,24 +128,24 @@
 				<span class="nav-label nav-label-compact">{section.compactLabel}</span>
 			</button>
 		{/each}
-	</div>
 
-	<!-- Settings Button (Right) -->
-	<button
-		class="nav-button settings-button"
-		onclick={handleSettingsTap}
-		aria-label="Settings"
-	>
-		<span class="nav-icon">
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-				<path
-					d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
-				/>
-			</svg>
-		</span>
-		<span class="nav-label nav-label-full">Settings</span>
-		<span class="nav-label nav-label-compact">Set</span>
-	</button>
+		<!-- Settings Button (Right side) -->
+		<button
+			class="nav-button settings-button"
+			onclick={handleSettingsTap}
+			aria-label="Settings"
+		>
+			<span class="nav-icon">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+					<path
+						d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"
+					/>
+				</svg>
+			</span>
+			<span class="nav-label nav-label-full">Settings</span>
+			<span class="nav-label nav-label-compact">Set</span>
+		</button>
+	</div>
 </nav>
 
 <style>
@@ -155,7 +155,6 @@
 	.primary-navigation {
 		position: fixed;
 		display: flex;
-		gap: 6px;
 		background: rgba(30, 30, 30, 0.95);
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
@@ -203,25 +202,15 @@
 	/* ============================================================================
 	   SECTIONS CONTAINER
 	   ============================================================================ */
-	/* Bottom layout - horizontal sections */
+	/* Bottom layout - horizontal sections with settings at right */
 	.layout-bottom .sections {
 		display: flex;
 		flex-direction: row;
 		gap: 6px;
 		flex: 1;
-		justify-content: center;
+		justify-content: space-between;
 		align-items: center;
-		min-width: 0;
-		/* Allow sections to take up equal space for centering */
-		position: absolute;
-		left: 0;
-		right: 0;
-		pointer-events: none;
-	}
-
-	/* Re-enable pointer events on buttons */
-	.layout-bottom .sections .nav-button {
-		pointer-events: auto;
+		width: 100%;
 	}
 
 	/* Side layout - vertical sections */
@@ -265,27 +254,19 @@
 		-webkit-user-select: none;
 	}
 
-	/* Bottom layout - horizontal buttons with labels */
+	/* Bottom layout - flexible sizing based on available space */
 	.layout-bottom .nav-button {
-		padding: 8px 10px;
+		padding: 8px;
 		min-width: 44px;
 		min-height: 44px;
-		flex: 1 1 auto;
-		max-width: 90px;
+		flex: 1 1 0;
 		border-radius: 14px;
 	}
 
-	/* Settings button circular style */
+	/* Settings button in bottom layout - positioned at right */
 	.layout-bottom .settings-button {
-		flex: 0 0 auto;
-		width: 48px;
-		height: 48px;
-		min-width: 48px;
-		min-height: 48px;
-		padding: 0;
-		border-radius: 50%;
-		position: relative;
-		z-index: 1;
+		flex: 0 1 auto;
+		max-width: 64px;
 	}
 
 	/* Side layout - icon-only buttons */
@@ -387,7 +368,7 @@
 	   LABEL SYSTEM
 	   ============================================================================ */
 	.nav-label {
-		font-size: 12px;
+		font-size: 11px;
 		font-weight: 600;
 		text-align: center;
 		white-space: nowrap;
@@ -408,34 +389,36 @@
 
 	/*
 	  Bottom Layout Container Query Breakpoints:
-	  - >= 500px: Full labels
-	  - All sizes: Always show compact labels for better UX on small devices
+	  Intelligent responsive sizing based on available space
 	*/
 
-	/* Full labels mode (spacious - 500px+) */
-	@container primary-nav (min-width: 500px) {
+	/* Full labels mode (spacious - 450px+) */
+	@container primary-nav (min-width: 450px) {
 		.layout-bottom .nav-label-full {
 			display: block;
 		}
 
 		.layout-bottom .nav-button {
-			max-width: 100px;
 			gap: 4px;
+			padding: 8px 12px;
+		}
+
+		.layout-bottom .nav-label {
+			font-size: 12px;
 		}
 
 		.layout-bottom .settings-button {
-			max-width: 90px;
+			max-width: 80px;
 		}
 	}
 
-	/* Compact labels mode (always visible for better accessibility) */
-	@container primary-nav (max-width: 499px) {
+	/* Compact labels mode (medium - 350px to 449px) */
+	@container primary-nav (min-width: 350px) and (max-width: 449px) {
 		.layout-bottom .nav-label-compact {
 			display: block;
 		}
 
 		.layout-bottom .nav-button {
-			max-width: 85px;
 			gap: 3px;
 			padding: 8px 6px;
 		}
@@ -449,6 +432,29 @@
 			width: 24px;
 			height: 24px;
 		}
+
+		.layout-bottom .settings-button {
+			max-width: 60px;
+		}
+	}
+
+	/* Icon-only mode (compact - below 350px) */
+	@container primary-nav (max-width: 349px) {
+		.layout-bottom .nav-button {
+			gap: 2px;
+			padding: 6px;
+			min-width: 48px;
+		}
+
+		.layout-bottom .nav-icon {
+			font-size: 22px;
+			width: 24px;
+			height: 24px;
+		}
+
+		.layout-bottom .settings-button {
+			max-width: 52px;
+		}
 	}
 
 	/* Fallback for browsers without container query support */
@@ -456,20 +462,29 @@
 		/* Use viewport-based media queries as fallback */
 
 		/* Full labels */
-		@media (min-width: 500px) {
+		@media (min-width: 450px) {
 			.layout-bottom .nav-label-full {
 				display: block;
 			}
+
+			.layout-bottom .nav-button {
+				gap: 4px;
+				padding: 8px 12px;
+			}
+
+			.layout-bottom .settings-button {
+				max-width: 80px;
+			}
 		}
 
-		/* Compact labels - always visible on mobile */
-		@media (max-width: 499px) {
+		/* Compact labels */
+		@media (min-width: 350px) and (max-width: 449px) {
 			.layout-bottom .nav-label-compact {
 				display: block;
 			}
 
 			.layout-bottom .nav-button {
-				max-width: 85px;
+				gap: 3px;
 				padding: 8px 6px;
 			}
 
@@ -479,6 +494,26 @@
 
 			.layout-bottom .nav-icon {
 				font-size: 22px;
+			}
+
+			.layout-bottom .settings-button {
+				max-width: 60px;
+			}
+		}
+
+		/* Icon-only */
+		@media (max-width: 349px) {
+			.layout-bottom .nav-button {
+				padding: 6px;
+				min-width: 48px;
+			}
+
+			.layout-bottom .nav-icon {
+				font-size: 22px;
+			}
+
+			.layout-bottom .settings-button {
+				max-width: 52px;
 			}
 		}
 	}
