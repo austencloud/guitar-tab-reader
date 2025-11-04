@@ -298,42 +298,28 @@ E|--3--x--x--|`}
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-color: var(--color-modal-backdrop, rgba(0, 0, 0, 0.5));
-		backdrop-filter: blur(4px);
+		background-color: rgba(0, 0, 0, 0.7);
+		backdrop-filter: var(--blur-md);
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: var(--z-modal-backdrop);
+		z-index: var(--z-modal);
 		padding: var(--spacing-md);
 	}
 
 	.modal {
-		background: rgba(255, 255, 255, 0.85);
-		backdrop-filter: blur(20px) saturate(180%);
-		-webkit-backdrop-filter: blur(20px) saturate(180%);
-		border-radius: var(--radius-xl);
-		box-shadow:
-			0 8px 32px rgba(0, 0, 0, 0.1),
-			0 0 0 1px rgba(255, 255, 255, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		border: 1px solid rgba(255, 255, 255, 0.18);
+		background: var(--color-surface-high);
+		backdrop-filter: var(--blur-md);
+		-webkit-backdrop-filter: var(--blur-md);
+		border-radius: var(--radius-2xl);
+		box-shadow: var(--shadow-2xl);
+		border: 1px solid var(--color-border);
 		width: 100%;
 		max-width: 500px;
 		max-height: 90vh;
 		overflow-y: auto;
 		padding: 0;
 		transition: var(--transition-colors);
-	}
-
-	:global([data-theme='dark']) .modal {
-		background: rgba(45, 45, 45, 0.85);
-		backdrop-filter: blur(20px) saturate(180%);
-		-webkit-backdrop-filter: blur(20px) saturate(180%);
-		box-shadow:
-			0 8px 32px rgba(0, 0, 0, 0.3),
-			0 0 0 1px rgba(255, 255, 255, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.modal-header {
@@ -358,18 +344,23 @@ E|--3--x--x--|`}
 		font-size: var(--font-size-xl);
 		color: var(--color-text-secondary);
 		cursor: pointer;
-		width: 2rem;
-		height: 2rem;
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
 		border-radius: var(--radius-full);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: var(--transition-colors);
+		transition: var(--transition-all);
 	}
 
 	.close-btn:hover {
 		background-color: var(--color-hover);
 		color: var(--color-text-primary);
+	}
+
+	.close-btn:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.modal-body {
@@ -420,15 +411,15 @@ E|--3--x--x--|`}
 	}
 
 	.theme-option-btn {
-		width: 36px;
-		height: 36px;
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 6px;
+		padding: var(--spacing-sm);
 		border: 2px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background-color: var(--color-surface);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-surface-low);
 		color: var(--color-text-tertiary);
 		cursor: pointer;
 		transition: var(--transition-all);
@@ -436,10 +427,10 @@ E|--3--x--x--|`}
 
 	.theme-option-btn.active {
 		border-color: var(--color-primary);
-		background-color: var(--color-primary);
+		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
 		color: var(--color-text-inverse);
 		transform: scale(1.05);
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--glow-primary);
 	}
 
 	.theme-option-btn:hover:not(.active) {
@@ -447,6 +438,11 @@ E|--3--x--x--|`}
 		color: var(--color-primary);
 		transform: scale(1.02);
 		background-color: var(--color-hover);
+	}
+
+	.theme-option-btn:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.theme-option-btn svg {
@@ -463,11 +459,11 @@ E|--3--x--x--|`}
 	}
 
 	.control-btn {
-		width: 2rem;
-		height: 2rem;
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
 		border-radius: var(--radius-full);
 		border: none;
-		background-color: var(--color-primary);
+		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
 		color: var(--color-text-inverse);
 		display: flex;
 		align-items: center;
@@ -477,19 +473,25 @@ E|--3--x--x--|`}
 		flex-shrink: 0;
 	}
 
-	.control-btn:hover {
-		background-color: var(--color-primary-hover);
+	.control-btn:hover:not(:disabled) {
 		transform: translateY(-1px);
+		box-shadow: var(--glow-primary);
 	}
 
-	.control-btn:active {
-		background-color: var(--color-primary-active);
+	.control-btn:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
+	}
+
+	.control-btn:active:not(:disabled) {
+		transform: translateY(0);
 	}
 
 	.control-btn:disabled {
-		background-color: var(--color-disabled);
+		background: var(--color-disabled);
 		cursor: not-allowed;
 		transform: none;
+		opacity: 0.5;
 	}
 
 	.control-btn svg {
@@ -545,9 +547,10 @@ E|--3--x--x--|`}
 		align-items: center;
 		gap: var(--spacing-xs);
 		padding: var(--spacing-sm) var(--spacing-md);
+		min-height: var(--touch-target-min);
 		border: 2px solid var(--color-border);
-		border-radius: var(--radius-md);
-		background-color: var(--color-surface);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-surface-low);
 		color: var(--color-text-secondary);
 		cursor: pointer;
 		transition: var(--transition-all);
@@ -563,24 +566,29 @@ E|--3--x--x--|`}
 	}
 
 	.left-hand.active {
-		background-color: var(--color-info);
+		background: linear-gradient(135deg, var(--color-info), var(--color-info));
 		color: var(--color-text-inverse);
 		border-color: var(--color-info);
 		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.right-hand.active {
-		background-color: var(--color-error);
+		background: linear-gradient(135deg, var(--color-error), var(--color-error));
 		color: var(--color-text-inverse);
 		border-color: var(--color-error);
 		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.hand-btn:not(.active):hover {
 		background-color: var(--color-hover);
 		transform: translateY(-1px);
+	}
+
+	.hand-btn:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.hand-btn span {
@@ -640,11 +648,12 @@ E|--3--x--x--|`}
 	}
 
 	input:checked + .slider {
-		background-color: var(--color-primary);
+		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
 	}
 
-	input:focus + .slider {
-		box-shadow: 0 0 0 2px var(--color-focus);
+	input:focus-visible + .slider {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	input:checked + .slider:before {

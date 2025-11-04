@@ -88,16 +88,18 @@
 	}
 
 	.tuner-toggle {
+		min-height: var(--touch-target-min);
 		padding: var(--spacing-md) var(--spacing-lg);
-		background: var(--color-success);
-		color: var(--color-text-on-primary);
+		background: linear-gradient(135deg, var(--color-success), var(--color-primary-hover));
+		color: var(--color-text-inverse);
 		border: none;
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		cursor: pointer;
 		transition: var(--transition-all);
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--letter-spacing-tight);
 		font-size: var(--font-size-base);
-		box-shadow: var(--shadow-sm);
+		box-shadow: var(--shadow-md);
 		position: relative;
 		overflow: hidden;
 	}
@@ -124,23 +126,27 @@
 	}
 
 	.tuner-toggle:hover {
-		background: color-mix(in srgb, var(--color-success) 85%, black);
 		transform: translateY(-1px);
-		box-shadow: var(--shadow-md);
+		box-shadow: var(--shadow-lg), var(--glow-primary);
 	}
 
 	.tuner-toggle:active {
 		transform: translateY(0);
-		box-shadow: var(--shadow-sm);
+		box-shadow: var(--shadow-md);
+	}
+
+	.tuner-toggle:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.tuner-toggle.active {
-		background: var(--color-error);
+		background: linear-gradient(135deg, var(--color-error), #dc2626);
 		animation: pulse-error 2s infinite ease-in-out;
 	}
 
 	.tuner-toggle.active:hover {
-		background: color-mix(in srgb, var(--color-error) 85%, black);
+		box-shadow: var(--shadow-lg), 0 0 20px rgba(248, 113, 113, 0.3);
 	}
 
 	@keyframes pulse-error {
@@ -174,9 +180,8 @@
 		box-shadow: var(--shadow-sm);
 	}
 
-	select:focus {
-		outline: none;
-		border-color: var(--color-primary);
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+	select:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 </style>

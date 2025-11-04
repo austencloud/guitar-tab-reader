@@ -162,7 +162,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 1000;
+		z-index: var(--z-modal);
 	}
 
 	.modal-backdrop {
@@ -172,49 +172,57 @@
 		width: 100%;
 		height: 100%;
 		background-color: rgba(0, 0, 0, 0.7);
+		backdrop-filter: var(--blur-md);
 		border: none;
 		padding: 0;
 		margin: 0;
 		cursor: pointer;
-		z-index: 1000;
+		z-index: var(--z-modal-backdrop);
 	}
 
 	.modal-content {
 		position: relative;
-		background-color: #f5f5f5;
-		border-radius: 8px;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+		background-color: var(--color-surface-high);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-2xl);
 		width: 90%;
 		max-width: 600px;
 		max-height: 90vh;
 		overflow-y: auto;
-		z-index: 1001;
+		z-index: var(--z-modal);
+		border: 1px solid var(--color-border);
 	}
 
 	.close-button {
 		position: absolute;
-		top: 10px;
-		right: 10px;
-		width: 30px;
-		height: 30px;
+		top: var(--spacing-md);
+		right: var(--spacing-md);
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
 		background: none;
 		border: none;
-		font-size: 24px;
+		font-size: var(--font-size-2xl);
 		cursor: pointer;
-		color: #666;
-		border-radius: 50%;
+		color: var(--color-text-secondary);
+		border-radius: var(--radius-full);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		transition: background-color 0.2s;
+		transition: var(--transition-all);
 	}
 
 	.close-button:hover {
-		background-color: rgba(0, 0, 0, 0.1);
+		background-color: var(--color-hover);
+		color: var(--color-text-primary);
+	}
+
+	.close-button:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.tuner-container {
-		padding: 1.5rem;
+		padding: var(--spacing-modal-padding);
 		width: 100%;
 	}
 
@@ -222,59 +230,59 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 1.5rem;
-		margin: 1.5rem 0;
+		gap: var(--spacing-lg);
+		margin: var(--spacing-lg) 0;
 	}
 
 	.tuner-error {
-		background-color: #ffebee;
-		color: #c62828;
-		padding: 0.5rem 1rem;
-		border-radius: 4px;
-		margin: 1rem 0;
+		background-color: var(--color-error-bg);
+		color: var(--color-error);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--color-error);
+		margin: var(--spacing-md) 0;
+		font-weight: var(--font-weight-medium);
 	}
 
 	.tuning-selector-container {
 		display: flex;
 		align-items: center;
-		justify-content: center; /* Center the selector */
-		gap: 0.5rem;
-		margin-bottom: 1rem; /* Add some space below */
+		justify-content: center;
+		gap: var(--spacing-sm);
+		margin-bottom: var(--spacing-md);
 	}
 
 	.tuning-selector-container label {
-		font-weight: 500;
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-primary);
+		font-size: var(--font-size-base);
 	}
 
 	.tuning-selector-container select {
-		padding: 0.3rem 0.6rem;
-		border-radius: 4px;
-		border: 1px solid #ccc;
-		background-color: #fff;
+		min-height: var(--touch-target-min);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--color-border);
+		background-color: var(--color-surface);
+		color: var(--color-text-primary);
+		font-size: var(--font-size-base);
+		cursor: pointer;
+		transition: var(--transition-all);
 	}
 
-	@media (prefers-color-scheme: dark) {
-		.modal-content {
-			background-color: #1e1e1e;
-			color: #e0e0e0;
-		}
+	.tuning-selector-container select:hover {
+		border-color: var(--color-primary);
+		box-shadow: var(--shadow-sm);
+	}
 
-		.close-button {
-			color: #aaa;
-		}
+	.tuning-selector-container select:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
+	}
 
-		.close-button:hover {
-			background-color: rgba(255, 255, 255, 0.1);
-		}
-
-		.tuning-selector-container select {
-			background-color: #333;
-			color: #e0e0e0;
-			border-color: #555;
-		}
-
-		.tuner-error {
-			background-color: rgba(244, 67, 54, 0.2);
+	@media (max-width: 768px) {
+		.tuner-container {
+			padding: var(--spacing-modal-padding-mobile);
 		}
 	}
 </style>

@@ -38,50 +38,43 @@
 		display: flex;
 		flex-wrap: nowrap;
 		overflow-x: auto;
-		padding-bottom: 5px;
+		padding-bottom: var(--spacing-xs);
 		justify-content: center;
-		gap: 8px;
-		margin-top: 20px;
+		gap: var(--spacing-sm);
+		margin-top: var(--spacing-lg);
 		width: 100%;
 	}
 
 	.string-button {
 		position: relative;
 		flex-shrink: 0;
-		padding: 8px 12px;
-		background: rgba(0, 0, 0, 0.05);
-		border: none;
-		border-radius: 8px;
-		color: #424242;
-		font-weight: 600;
+		min-height: var(--touch-target-min);
+		padding: var(--spacing-sm) var(--spacing-md);
+		background: var(--color-surface-high);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--letter-spacing-tight);
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: var(--transition-all);
 	}
 
 	.string-button:hover {
-		background: rgba(0, 0, 0, 0.1);
+		background: var(--color-hover);
 		transform: translateY(-2px);
+		box-shadow: var(--shadow-md);
+	}
+
+	.string-button:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.string-button.active {
-		background: rgba(76, 175, 80, 0.15);
-		color: #2e7d32;
-		box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.string-button {
-			background: rgba(255, 255, 255, 0.1);
-			color: #e0e0e0;
-		}
-
-		.string-button:hover {
-			background: rgba(255, 255, 255, 0.15);
-		}
-
-		.string-button.active {
-			background: rgba(76, 175, 80, 0.3);
-			color: #a5d6a7;
-		}
+		background: var(--color-success-bg);
+		color: var(--color-success);
+		border-color: var(--color-success);
+		box-shadow: var(--glow-primary);
 	}
 </style>

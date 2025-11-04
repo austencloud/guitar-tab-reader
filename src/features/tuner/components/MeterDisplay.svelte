@@ -85,7 +85,7 @@
 		margin-bottom: var(--spacing-sm);
 		border-radius: var(--radius-lg);
 		overflow: hidden;
-		background: var(--color-surface-variant);
+		background: var(--color-surface-low);
 		border: 1px solid var(--color-border);
 		box-shadow: inset var(--shadow-sm);
 	}
@@ -108,7 +108,7 @@
 		flex: 1;
 		height: 100%;
 		opacity: 0.3;
-		transition: all 0.2s ease;
+		transition: var(--transition-all);
 	}
 
 	.segment.active {
@@ -127,23 +127,23 @@
 	.center-segment {
 		width: 20px;
 		height: 100%;
-		background: rgba(76, 175, 80, 0.3);
-		transition: all 0.2s ease;
+		background: var(--color-success-bg);
+		transition: var(--transition-all);
 	}
 
 	.center-segment.active {
 		background: var(--in-tune-color);
-		box-shadow: 0 0 10px var(--in-tune-color);
+		box-shadow: var(--glow-primary);
 	}
 
 	.indicator-labels {
 		display: flex;
 		justify-content: space-between;
 		width: 100%;
-		margin-top: 4px;
-		padding: 0 2px;
-		font-size: 0.75rem;
-		font-weight: 500;
+		margin-top: var(--spacing-xs);
+		padding: 0 var(--spacing-xs);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.flat-label {
@@ -151,7 +151,7 @@
 	}
 
 	.in-tune-label {
-		color: var(--in-tune-color); /* Corrected variable name */
+		color: var(--in-tune-color);
 	}
 
 	.sharp-label {
@@ -162,7 +162,7 @@
 		position: relative;
 		width: 100%;
 		height: 80px;
-		margin-top: 16px;
+		margin-top: var(--spacing-md);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -172,19 +172,19 @@
 		position: absolute;
 		height: 80px;
 		width: 2px;
-		background: #333;
+		background: var(--color-text-secondary);
 		transform-origin: bottom center;
 		transition:
 			transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-			background 0.2s ease;
-		border-radius: 1px;
+			background var(--transition-base);
+		border-radius: var(--radius-sm);
 		z-index: 1;
 	}
 
 	/* Use :global() to target parent class state */
 	:global(.tuning-meter.perfect) .needle {
 		background: var(--in-tune-color);
-		box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+		box-shadow: var(--glow-primary);
 	}
 
 	:global(.tuning-meter.flat) .needle {
@@ -199,61 +199,39 @@
 		position: absolute;
 		width: 10px;
 		height: 10px;
-		border-radius: 50%;
-		background: #333;
+		border-radius: var(--radius-full);
+		background: var(--color-text-secondary);
 		bottom: 0;
 		z-index: 2;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+		box-shadow: var(--shadow-md);
 	}
 
 	:global(.tuning-meter.perfect) .needle-center {
 		background: var(--in-tune-color);
-		box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+		box-shadow: var(--glow-primary);
 	}
 
 	.cents-display {
-		margin-top: 16px;
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: #607d8b;
-		padding: 0.5rem 1rem;
-		border-radius: 20px;
-		background: rgba(0, 0, 0, 0.03);
-		transition:
-			color 0.2s ease,
-			background-color 0.2s ease;
+		margin-top: var(--spacing-md);
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text-secondary);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-radius: var(--radius-full);
+		background: var(--color-surface-low);
+		transition: var(--transition-colors);
 	}
 
 	.cents-display.perfect {
-		color: var(--in-tune-color);
-		background: rgba(76, 175, 80, 0.15);
-		font-weight: 700;
+		color: var(--color-success);
+		background: var(--color-success-bg);
+		font-weight: var(--font-weight-bold);
 	}
 
 	.units {
-		font-size: 0.8rem;
-		font-weight: 500;
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
 		opacity: 0.7;
-		margin-left: 0.2rem;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.segments-container {
-			background: rgba(255, 255, 255, 0.1);
-		}
-
-		.needle,
-		.needle-center {
-			background: #e0e0e0;
-		}
-
-		.cents-display {
-			color: #b0bec5;
-			background: rgba(255, 255, 255, 0.05);
-		}
-
-		.indicator-labels {
-			opacity: 0.9;
-		}
+		margin-left: var(--spacing-xs);
 	}
 </style>

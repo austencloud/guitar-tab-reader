@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { ANTHROPIC_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 export const POST: RequestHandler = async ({ request, fetch }) => {
 	try {
@@ -184,7 +184,7 @@ interface Intent {
 }
 
 async function analyzeIntent(query: string): Promise<Intent | null> {
-	const apiKey = ANTHROPIC_API_KEY;
+	const apiKey = env.ANTHROPIC_API_KEY;
 
 	if (!apiKey) {
 		// Fallback: Simple heuristics
@@ -302,6 +302,10 @@ Ambiguous cases:
 - Single word that could be band OR song (e.g., "Oasis" - could be the band Oasis, or a song called Oasis)
 - Queries with potential typos (e.g., "Beatels" instead of "Beatles")
 - Vague queries without clear artist or song indicators
+- **Common song titles with multiple artists**: If the query is just a song title that you know multiple artists have recorded (e.g., "Candy Shop" - recorded by both 50 Cent AND Andrew Bird), mark as AMBIGUOUS and provide suggestions for ALL known artists who recorded that song
+  * For these cases, suggestions should list each artist version separately: ["50 Cent - Candy Shop", "Andrew Bird - Candy Shop", "Search for: Candy Shop"]
+  * This applies to cover songs, songs with common titles, or any song you know has been recorded by multiple artists
+  * Always prioritize showing the user ALL possible artist matches rather than assuming the most popular one
 
 Examples:
 "Fish in a Birdcage" → {"type": "ARTIST_BULK_IMPORT", "artist": "Fish in a Birdcage", "confidence": "high"}
@@ -312,6 +316,7 @@ Examples:
 "Beatels" → {"type": "AMBIGUOUS", "ambiguityReason": "Possible typo detected", "suggestions": ["Did you mean: The Beatles"], "artist": "The Beatles", "confidence": "low"}
 "Stairway to Heaven" → {"type": "SINGLE_TAB_IMPORT", "song": "Stairway to Heaven", "confidence": "medium"}
 "im so tired" → {"type": "AMBIGUOUS", "ambiguityReason": "Incomplete or unclear query", "suggestions": ["The Beatles - I'm So Tired", "Search for: I'm So Tired"], "song": "I'm So Tired", "artist": "The Beatles", "confidence": "medium"}
+"Candy Shop" → {"type": "AMBIGUOUS", "ambiguityReason": "Multiple artists have songs with this title", "suggestions": ["50 Cent - Candy Shop", "Andrew Bird - Candy Shop", "Search for: Candy Shop"], "song": "Candy Shop", "confidence": "low"}
 
 Edge case examples:
 "RHCP Californication" → {"type": "SINGLE_TAB_IMPORT", "song": "Californication", "artist": "Red Hot Chili Peppers", "confidence": "high"}

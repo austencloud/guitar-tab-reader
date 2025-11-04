@@ -111,9 +111,9 @@
 
 <style>
 	.tuning-meter {
-		--flat-color: #2196f3;
-		--in-tune-color: #4caf50;
-		--sharp-color: #f44336;
+		--flat-color: var(--color-info);
+		--in-tune-color: var(--color-success);
+		--sharp-color: var(--color-error);
 
 		display: flex;
 		flex-direction: column;
@@ -121,21 +121,19 @@
 		width: 100%;
 		max-width: 400px;
 		margin: 0 auto;
-		padding: 1.5rem;
-		border-radius: 16px;
-		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-		transition: all 0.3s ease;
+		padding: var(--spacing-lg);
+		border-radius: var(--radius-2xl);
+		background: linear-gradient(
+			to bottom,
+			var(--color-surface),
+			var(--color-surface-low)
+		);
+		box-shadow: var(--shadow-lg);
+		transition: var(--transition-all);
+		border: 1px solid var(--color-border);
 	}
 
 	.tuning-meter.perfect {
-		box-shadow: 0 4px 24px rgba(76, 175, 80, 0.2);
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.tuning-meter {
-			background: linear-gradient(to bottom, rgba(30, 30, 30, 0.8), rgba(20, 20, 20, 0.8));
-			box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-		}
+		box-shadow: var(--shadow-lg), var(--glow-primary);
 	}
 </style>

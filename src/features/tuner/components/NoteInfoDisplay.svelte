@@ -34,17 +34,17 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		margin-bottom: 1.5rem;
+		margin-bottom: var(--spacing-lg);
 		height: 160px; /* Fixed height to prevent layout shifts */
 		justify-content: center;
 	}
 
 	.string-label {
-		font-size: 0.875rem;
-		color: #78909c;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
 		text-transform: uppercase;
-		letter-spacing: 1px;
-		font-weight: 500;
+		letter-spacing: var(--letter-spacing-wide);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.note-name-wrapper {
@@ -55,30 +55,30 @@
 	}
 
 	.note-name {
-		font-size: 4rem;
-		font-weight: 700;
-		line-height: 1;
-		margin: 0.5rem 0;
-		color: #4caf50; /* Use solid color */
-		transition: color 0.2s ease; /* Add transition */
-		text-shadow: 0 2px 10px rgba(76, 175, 80, 0.2);
+		font-size: var(--font-size-4xl);
+		font-weight: var(--font-weight-bold);
+		line-height: var(--line-height-tight);
+		margin: var(--spacing-sm) 0;
+		color: var(--color-success);
+		transition: var(--transition-colors);
+		text-shadow: var(--glow-primary);
 	}
 
 	/* Inherit perfect state styling from parent */
 	:global(.tuning-meter.perfect) .note-name {
-		color: var(--in-tune-color); /* Ensure it stays green */
-		text-shadow: 0 2px 15px rgba(76, 175, 80, 0.4); /* Slightly stronger shadow */
+		color: var(--in-tune-color);
+		text-shadow: var(--glow-primary);
 	}
 
 	.note-name.empty {
-		color: #9e9e9e;
+		color: var(--color-text-tertiary);
 		text-shadow: none;
 	}
 
 	.frequency {
-		font-size: 1rem;
-		color: #607d8b;
-		margin-bottom: 0.5rem;
+		font-size: var(--font-size-base);
+		color: var(--color-text-secondary);
+		margin-bottom: var(--spacing-sm);
 	}
 
 	.perfect-indicator-wrapper {
@@ -90,30 +90,16 @@
 
 	.perfect-indicator {
 		color: var(--in-tune-color);
-		font-weight: 600;
-		font-size: 0.9rem;
+		font-weight: var(--font-weight-semibold);
+		font-size: var(--font-size-sm);
 		opacity: 0;
 		transform: scale(0);
-		transition: all 0.3s ease;
+		transition: var(--transition-all);
 	}
 
 	.perfect-indicator.active {
 		opacity: 1;
 		transform: scale(1);
-		animation: pulse 1.5s infinite ease-in-out; /* Smoother pulse */
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.string-label {
-			color: #b0bec5;
-		}
-
-		.note-name {
-			color: #66bb6a;
-		}
-
-		.frequency {
-			color: #90a4ae;
-		}
+		animation: pulse 1.5s infinite ease-in-out;
 	}
 </style>

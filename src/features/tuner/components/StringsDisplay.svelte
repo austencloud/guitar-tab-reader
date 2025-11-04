@@ -70,7 +70,7 @@
 		border-radius: var(--radius-md);
 		font-weight: var(--font-weight-bold);
 		border: 2px solid var(--color-border);
-		background-color: var(--color-surface-variant);
+		background-color: var(--color-surface-low);
 		color: var(--color-text-primary);
 		width: 40px;
 		text-align: center;
@@ -81,7 +81,7 @@
 
 	.string-indicator.active {
 		border-color: var(--color-text-primary);
-		background-color: var(--color-surface-elevated);
+		background-color: var(--color-surface-high);
 		transform: scale(1.05);
 		box-shadow: var(--shadow-md);
 	}
