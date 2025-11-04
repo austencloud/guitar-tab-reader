@@ -14,10 +14,21 @@
       "Bash(npm run check:*)",
       "Bash(npm run build:*)",
       "Bash(node test-navigation-accessibility.js:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "playwright",
+    "sequential-thinking",
+    "tractatus-thinking",
+    "filesystem",
+    "memory",
+    "fetch",
+    "everything",
+    "time"
+  ]
 }
