@@ -106,46 +106,78 @@ async function scrapeTitleSearch(song: string, artist?: string): Promise<TabInfo
 		// Extract tabs from search results
 		console.log(`📄 Extracting tabs from search results...`);
 		const tabs = await page.evaluate(() => {
-			const tabLinks = document.querySelectorAll('a[href*="/tab/"]');
 			const results: TabInfo[] = [];
 			const seenUrls = new Set<string>();
 
-			tabLinks.forEach((linkElement) => {
-				const url = (linkElement as HTMLAnchorElement).href;
+			// Find all rows in the search results table (each row is a tab)
+			const rows = document.querySelectorAll('article .dyhP1:not(.oStLJ)');
+			console.log(`Found ${rows.length} result rows`);
 
-				// Skip if URL is just "#" or already seen
+			rows.forEach((row) => {
+				// Each row has 4 cells: Artist | Song | Rating | Type
+				const cells = row.querySelectorAll('.qNp1Q');
+				if (cells.length < 4) return;
+
+				// Cell 0: Artist
+				const artistCell = cells[0];
+				const artistLink = artistCell.querySelector('a[href*="/artist/"]');
+				const artist = artistLink?.textContent?.trim() || '';
+
+				// Cell 1: Song title and URL
+				const songCell = cells[1];
+				const songLink = songCell.querySelector('a[href*="/tab/"]') as HTMLAnchorElement;
+				if (!songLink) return;
+
+				const url = songLink.href;
 				if (!url || url.endsWith('#') || seenUrls.has(url)) return;
 				seenUrls.add(url);
 
-				// Get title from link text
-				let title = linkElement.textContent?.trim() || '';
+				let title = songLink.textContent?.trim() || '';
 				title = title.replace(/\s*\*\s*$/, '').trim();
-
-				// Skip if empty
 				if (!title) return;
 
-				// Try to extract artist from page context (usually in parent elements)
-				const parent = linkElement.closest('article, div, section');
-				const artistElement = parent?.querySelector('[class*="artist"], a[href*="/artist/"]');
-				const artist = artistElement?.textContent?.trim() || '';
+				// Cell 2: Rating (stars and vote count)
+				const ratingCell = cells[2];
+				const stars = ratingCell.querySelectorAll('.STM0m');
+				let rating = 0;
+				stars.forEach((star) => {
+					// Count filled stars (N3Nzv without cr1d0 or t4iet = filled)
+					if (
+						star.classList.contains('N3Nzv') &&
+						!star.classList.contains('cr1d0') &&
+						!star.classList.contains('t4iet')
+					) {
+						rating++;
+					}
+				});
 
-				// Determine type from URL
-				let type = 'Tab';
-				if (url.includes('-chords-')) type = 'Chords';
-				else if (url.includes('-bass-')) type = 'Bass';
-				else if (url.includes('-tabs-')) type = 'Tab';
-				else if (url.includes('-ukulele-')) type = 'Ukulele';
-				else if (url.includes('-guitar-pro-')) type = 'Guitar Pro';
-				else if (url.includes('-power-')) type = 'Power';
-				else if (url.includes('-drums-')) type = 'Drums';
+				const voteDiv = ratingCell.querySelector('.fxXfx');
+				const votesText = voteDiv?.textContent?.trim() || '0';
+				// Parse vote count, handling commas (e.g., "4,307" -> 4307)
+				const votes = parseInt(votesText.replace(/,/g, ''), 10) || 0;
+
+				// Cell 3: Type
+				const typeCell = cells[3];
+				let type = typeCell.textContent?.trim() || 'Tab';
+
+				// If type is not set or is generic, try to determine from URL
+				if (!type || type === 'Tab') {
+					if (url.includes('-chords-')) type = 'Chords';
+					else if (url.includes('-bass-')) type = 'Bass';
+					else if (url.includes('-tabs-')) type = 'Tab';
+					else if (url.includes('-ukulele-')) type = 'Ukulele';
+					else if (url.includes('-guitar-pro-')) type = 'Guitar Pro';
+					else if (url.includes('-power-')) type = 'Power';
+					else if (url.includes('-drums-')) type = 'Drums';
+				}
 
 				results.push({
 					title,
 					artist,
 					url,
 					type,
-					rating: undefined,
-					votes: undefined
+					rating: rating > 0 ? rating : undefined,
+					votes: votes > 0 ? votes : undefined
 				});
 			});
 

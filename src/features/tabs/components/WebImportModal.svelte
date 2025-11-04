@@ -1,18 +1,20 @@
 <script lang="ts">
 	import type { Tab } from '$lib/stores/tabs';
 	import { browser } from '$app/environment';
+	import { groupTabVersions, type TabGroup } from '$lib/utils/tabVersions';
+	import { BottomSheet } from '$features/shared/components';
 
 	interface Props {
-		visible?: boolean;
+		open?: boolean;
 		onclose?: () => void;
 		onimport?: (tab: Tab) => void;
 	}
 
-	let { visible = false, onclose, onimport }: Props = $props();
+	let { open = $bindable(false), onclose, onimport }: Props = $props();
 
 	let currentView = $state<
-		'menu' | 'url' | 'smart' | 'disambiguation' | 'bulk-results' | 'preview'
-	>('menu');
+		'menu' | 'url' | 'smart' | 'paste' | 'disambiguation' | 'bulk-results' | 'preview'
+	>('smart');
 	let tabUrl = $state('');
 	let smartQuery = $state('');
 	let disambiguationData = $state<{
@@ -23,6 +25,8 @@
 		possibleSong?: string;
 	} | null>(null);
 	let bulkResults = $state<any[]>([]);
+	let groupedResults = $state<Map<string, TabGroup>>(new Map());
+	let expandedGroups = $state<Set<string>>(new Set());
 	let pastedContent = $state('');
 	let tabTitle = $state('');
 	let tabArtist = $state('');
@@ -44,6 +48,14 @@
 	function showSmartView() {
 		currentView = 'smart';
 		smartQuery = '';
+		errorMessage = '';
+	}
+
+	function showPasteView() {
+		currentView = 'paste';
+		pastedContent = '';
+		tabTitle = '';
+		tabArtist = '';
 		errorMessage = '';
 	}
 
@@ -118,6 +130,7 @@
 				} else if (data.type === 'artist_bulk') {
 					// Show bulk results for user to choose from
 					bulkResults = data.tabs || [];
+					groupedResults = groupTabVersions(bulkResults);
 					currentView = 'bulk-results';
 				} else if (data.type === 'single_tab' || data.type === 'ai_generated') {
 					// Direct import of single tab
@@ -162,6 +175,31 @@
 		} finally {
 			isLoading = false;
 		}
+	}
+
+	function toggleGroupExpansion(groupKey: string) {
+		if (expandedGroups.has(groupKey)) {
+			expandedGroups.delete(groupKey);
+		} else {
+			expandedGroups.add(groupKey);
+		}
+		// Trigger reactivity
+		expandedGroups = new Set(expandedGroups);
+	}
+
+	function formatVotes(votes?: number): string {
+		if (!votes) return '';
+		if (votes >= 1000) {
+			return `${(votes / 1000).toFixed(1)}k`;
+		}
+		return votes.toString();
+	}
+
+	function renderStars(rating?: number): string {
+		if (!rating) return '';
+		const filled = '★'.repeat(rating);
+		const empty = '☆'.repeat(5 - rating);
+		return filled + empty;
 	}
 
 	function handleImport() {
@@ -213,6 +251,7 @@
 
 			if (data.success) {
 				bulkResults = data.tabs || [];
+				groupedResults = groupTabVersions(bulkResults);
 				currentView = 'bulk-results';
 			} else {
 				errorMessage = data.error || 'Could not find tabs for this artist';
@@ -260,7 +299,7 @@
 	}
 
 	function resetAndClose() {
-		currentView = 'menu';
+		currentView = 'smart';
 		tabUrl = '';
 		smartQuery = '';
 		disambiguationData = null;
@@ -279,10 +318,8 @@
 				currentView = 'bulk-results';
 			} else if (disambiguationData) {
 				currentView = 'disambiguation';
-			} else if (smartQuery) {
-				currentView = 'smart';
 			} else {
-				currentView = 'url';
+				currentView = 'smart';
 			}
 		} else if (currentView === 'bulk-results') {
 			if (disambiguationData) {
@@ -292,8 +329,11 @@
 			}
 		} else if (currentView === 'disambiguation') {
 			currentView = 'smart';
+		} else if (currentView === 'paste') {
+			currentView = 'smart';
 		} else if (currentView === 'url' || currentView === 'smart') {
-			currentView = 'menu';
+			// Close the modal instead of going back to menu
+			resetAndClose();
 		}
 	}
 
@@ -308,18 +348,11 @@
 	}
 </script>
 
-{#if visible}
-	<div
-		class="modal-backdrop"
-		onclick={resetAndClose}
-		onkeydown={(e) => e.key === 'Escape' && resetAndClose()}
-		role="button"
-		tabindex="0"
-	>
-		<div class="modal-panel" onclick={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
-			<div class="modal-header">
+<BottomSheet bind:open onOpenChange={(newOpen) => !newOpen && resetAndClose()}>
+	<div class="web-import-content">
+		<div class="modal-header">
 				<div class="header-left">
-					{#if currentView !== 'menu'}
+					{#if currentView !== 'smart'}
 						<button class="back-btn" onclick={goBack} aria-label="Go back">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -340,7 +373,9 @@
 						{:else if currentView === 'url'}
 							Paste Tab URL
 						{:else if currentView === 'smart'}
-							Smart Import
+							Import Tab
+						{:else if currentView === 'paste'}
+							Paste Tab Content
 						{:else if currentView === 'disambiguation'}
 							Clarify Your Request
 						{:else if currentView === 'bulk-results'}
@@ -492,6 +527,12 @@
 						>
 							{isLoading ? 'Processing...' : '🚀 Smart Import'}
 						</button>
+
+						<div class="view-toggle">
+							<button class="toggle-link" onclick={showPasteView}>
+								Or paste tab text directly →
+							</button>
+						</div>
 					</div>
 				{:else if currentView === 'disambiguation'}
 					<div class="disambiguation-view">
@@ -571,25 +612,159 @@
 						<p class="results-count">Found {bulkResults.length} tabs</p>
 
 						<div class="tabs-list">
-							{#each bulkResults as tab}
-								<button class="tab-item" onclick={() => selectBulkTab(tab)}>
-									<div class="tab-info">
-										<span class="tab-title">{tab.title}</span>
-										<span class="tab-meta">{tab.type}</span>
-									</div>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										width="20"
-										height="20"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
+							{#each Array.from(groupedResults.values()) as group}
+								{@const groupKey = `${group.baseTitle}|${group.type}`}
+								{@const isExpanded = expandedGroups.has(groupKey)}
+								{@const hasMultiple = group.versions.length > 1}
+
+								<div class="tab-group">
+									<!-- Recommended version (always shown) -->
+									<button
+										class="tab-item recommended"
+										onclick={() => selectBulkTab(group.recommendedVersion)}
 									>
-										<path d="M9 18l6-6-6-6" />
-									</svg>
-								</button>
+										<div class="tab-info">
+											<div class="tab-title-row">
+												<span class="tab-title">{group.recommendedVersion.title}</span>
+												{#if hasMultiple && group.recommendedVersion.rating}
+													<span class="recommended-badge">Recommended</span>
+												{/if}
+											</div>
+											<div class="tab-meta-row">
+												<span class="tab-type">{group.type}</span>
+												{#if group.recommendedVersion.rating}
+													<span class="tab-rating">
+														{renderStars(group.recommendedVersion.rating)}
+														<span class="vote-count"
+															>({formatVotes(group.recommendedVersion.votes)} votes)</span
+														>
+													</span>
+												{/if}
+											</div>
+										</div>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="20"
+											height="20"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+										>
+											<path d="M9 18l6-6-6-6" />
+										</svg>
+									</button>
+
+									<!-- Show alternate versions button if there are multiple versions -->
+									{#if hasMultiple}
+										<button
+											class="show-alternates-btn"
+											onclick={() => toggleGroupExpansion(groupKey)}
+										>
+											<span>
+												{isExpanded ? '▼' : '▶'} {group.alternateVersions.length} alternate version{group.alternateVersions.length !==
+												1
+													? 's'
+													: ''}
+											</span>
+										</button>
+
+										<!-- Alternate versions (shown when expanded) -->
+										{#if isExpanded}
+											<div class="alternate-versions">
+												{#each group.alternateVersions as altVersion}
+													<button
+														class="tab-item alternate"
+														onclick={() => selectBulkTab(altVersion)}
+													>
+														<div class="tab-info">
+															<div class="tab-title-row">
+																<span class="tab-title">{altVersion.title}</span>
+															</div>
+															<div class="tab-meta-row">
+																{#if altVersion.rating}
+																	<span class="tab-rating">
+																		{renderStars(altVersion.rating)}
+																		<span class="vote-count"
+																			>({formatVotes(altVersion.votes)} votes)</span
+																		>
+																	</span>
+																{/if}
+															</div>
+														</div>
+														<svg
+															xmlns="http://www.w3.org/2000/svg"
+															width="20"
+															height="20"
+															viewBox="0 0 24 24"
+															fill="none"
+															stroke="currentColor"
+															stroke-width="2"
+														>
+															<path d="M9 18l6-6-6-6" />
+														</svg>
+													</button>
+												{/each}
+											</div>
+										{/if}
+									{/if}
+								</div>
 							{/each}
+						</div>
+					</div>
+				{:else if currentView === 'paste'}
+					<div class="paste-view">
+						<p class="paste-instructions">
+							Paste tab content directly from Ultimate Guitar or any other source:
+						</p>
+
+						<div class="form-group">
+							<label for="paste-title">Tab Title *</label>
+							<input
+								id="paste-title"
+								type="text"
+								bind:value={tabTitle}
+								placeholder="e.g., Wonderwall"
+							/>
+						</div>
+
+						<div class="form-group">
+							<label for="paste-artist">Artist</label>
+							<input
+								id="paste-artist"
+								type="text"
+								bind:value={tabArtist}
+								placeholder="e.g., Oasis"
+							/>
+						</div>
+
+						<div class="form-group paste-content-group">
+							<label for="paste-content">Tab Content *</label>
+							<textarea
+								id="paste-content"
+								bind:value={pastedContent}
+								rows="15"
+								placeholder="Paste tab content here..."
+								autofocus
+							></textarea>
+						</div>
+
+						{#if errorMessage}
+							<div class="error-message">⚠️ {errorMessage}</div>
+						{/if}
+
+						<button
+							class="import-btn"
+							onclick={handleImport}
+							disabled={!pastedContent.trim() || !tabTitle.trim()}
+						>
+							💾 Save Tab
+						</button>
+
+						<div class="view-toggle">
+							<button class="toggle-link" onclick={showSmartView}>
+								← Back to smart search
+							</button>
 						</div>
 					</div>
 				{:else if currentView === 'preview'}
@@ -625,44 +800,15 @@
 					</div>
 				{/if}
 			</div>
-		</div>
 	</div>
-{/if}
+</BottomSheet>
 
 <style>
-	.modal-backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.6);
-		z-index: 1000;
-		display: flex;
-		align-items: flex-end;
-		justify-content: center;
-	}
-
-	.modal-panel {
-		background-color: white;
-		border-radius: 16px 16px 0 0;
-		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-		width: 100%;
-		max-width: 800px;
-		height: 90vh;
-		overflow: hidden;
+	.web-import-content {
 		display: flex;
 		flex-direction: column;
-		animation: slideUp 0.3s ease-out;
-	}
-
-	@keyframes slideUp {
-		from {
-			transform: translateY(100%);
-		}
-		to {
-			transform: translateY(0);
-		}
+		gap: 1rem;
+		height: 100%;
 	}
 
 	.modal-header {
@@ -1057,6 +1203,54 @@
 		font-weight: 600;
 	}
 
+	.view-toggle {
+		text-align: center;
+		margin-top: 1rem;
+	}
+
+	.toggle-link {
+		background: none;
+		border: none;
+		color: #9c27b0;
+		cursor: pointer;
+		font-size: 0.9rem;
+		padding: 0.5rem 1rem;
+		transition: all 0.2s;
+		border-radius: 4px;
+	}
+
+	.toggle-link:hover {
+		background-color: rgba(156, 39, 176, 0.05);
+		text-decoration: underline;
+	}
+
+	/* Paste View */
+	.paste-view {
+		padding: 1.5rem;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow-y: auto;
+	}
+
+	.paste-instructions {
+		font-size: 0.95rem;
+		color: #666;
+		margin-bottom: 1.5rem;
+		text-align: center;
+	}
+
+	.paste-content-group {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.paste-content-group textarea {
+		flex: 1;
+		min-height: 300px;
+	}
+
 	.example-chip {
 		display: inline-block;
 		padding: 0.5rem 1rem;
@@ -1264,11 +1458,6 @@
 		font-size: 1rem;
 	}
 
-	.tab-meta {
-		font-size: 0.85rem;
-		color: #666;
-	}
-
 	.tab-item svg {
 		color: #999;
 		transition: color 0.2s;
@@ -1276,6 +1465,106 @@
 
 	.tab-item:hover svg {
 		color: #4caf50;
+	}
+
+	/* Tab versioning styles */
+	.tab-group {
+		margin-bottom: 0.75rem;
+	}
+
+	.tab-item.recommended {
+		border-color: #4caf50;
+		background: linear-gradient(135deg, #f8fdf8 0%, #ffffff 100%);
+	}
+
+	.tab-item.recommended:hover {
+		border-color: #45a049;
+		background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f1 100%);
+	}
+
+	.tab-item.alternate {
+		border-color: #e0e0e0;
+		background: #fafafa;
+		margin-left: 1.5rem;
+	}
+
+	.tab-item.alternate:hover {
+		border-color: #9e9e9e;
+		background: #f5f5f5;
+	}
+
+	.tab-title-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.25rem;
+	}
+
+	.tab-meta-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		font-size: 0.85rem;
+	}
+
+	.tab-type {
+		color: #666;
+		font-weight: 500;
+	}
+
+	.tab-rating {
+		color: #ff9800;
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.vote-count {
+		color: #999;
+		font-size: 0.8rem;
+	}
+
+	.recommended-badge {
+		background: #4caf50;
+		color: white;
+		font-size: 0.7rem;
+		padding: 0.15rem 0.5rem;
+		border-radius: 12px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	.show-alternates-btn {
+		background: transparent;
+		border: none;
+		padding: 0.5rem 1rem;
+		cursor: pointer;
+		color: #666;
+		font-size: 0.85rem;
+		text-align: left;
+		width: 100%;
+		transition: color 0.2s, background-color 0.2s;
+		border-radius: 4px;
+		margin-top: 0.25rem;
+	}
+
+	.show-alternates-btn:hover {
+		color: #4caf50;
+		background-color: rgba(76, 175, 80, 0.05);
+	}
+
+	.show-alternates-btn span {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.alternate-versions {
+		margin-top: 0.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 
 	/* Preview View */
@@ -1359,11 +1648,6 @@
 
 	/* Dark Mode */
 	@media (prefers-color-scheme: dark) {
-		.modal-panel {
-			background-color: #222;
-			color: #e0e0e0;
-		}
-
 		.modal-header {
 			border-color: #444;
 		}
@@ -1492,10 +1776,6 @@
 			color: #e0e0e0;
 		}
 
-		.tab-meta {
-			color: #aaa;
-		}
-
 		.tab-item svg {
 			color: #777;
 		}
@@ -1587,13 +1867,6 @@
 			background-color: #2a2a2a;
 			border-color: #444;
 			color: #e0e0e0;
-		}
-	}
-
-	/* Mobile Responsive */
-	@media (max-width: 600px) {
-		.modal-panel {
-			max-height: 95vh;
 		}
 	}
 </style>

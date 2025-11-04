@@ -5,6 +5,7 @@
 
 export { default as GuitarTuner } from './GuitarTuner.svelte';
 export { default as TunerModal } from './TunerModal.svelte';
+export { default as TunerBottomSheet } from './TunerBottomSheet.svelte';
 export { default as TuningControls } from './TuningControls.svelte';
 export { default as TuningMeter } from './TuningMeter.svelte';
 export { default as MeterDisplay } from './MeterDisplay.svelte';

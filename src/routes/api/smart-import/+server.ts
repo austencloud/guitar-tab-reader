@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { ANTHROPIC_API_KEY } from '$env/static/private';
+import { getRecommendedTab } from '$lib/utils/tabVersions';
 
 export const POST: RequestHandler = async ({ request, fetch }) => {
 	try {
@@ -112,10 +113,11 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 				const titleData = await titleResponse.json();
 
 				if (titleData.success && titleData.tabs.length > 0) {
-					// Get the first (most popular) matching tab
-					const matchingTab = titleData.tabs[0];
+					// Get the recommended version based on rating and votes
+					const matchingTab = getRecommendedTab(titleData.tabs);
 					console.log(
-						`✅ Found matching tab: ${matchingTab.title} (${titleData.tabs.length} total versions)`
+						`✅ Found recommended tab: ${matchingTab.title} (${titleData.tabs.length} total versions)`,
+						matchingTab.rating ? `[Rating: ${matchingTab.rating}/5, Votes: ${matchingTab.votes}]` : ''
 					);
 
 					// Now fetch the actual content

@@ -307,11 +307,14 @@ async function generateTabWithAI(
 
 	if (apiKey) {
 		try {
-			const contextPrompt = onlineContext
-				? `\n\nI found the actual guitar tab from Ultimate Guitar:${onlineContext}\n\nPlease clean up and format this tab nicely. Keep all the chords and lyrics exactly as shown, but improve the formatting to be clear and easy to read.`
-				: '\n\nGenerate this based on your knowledge of the song or create a musically appropriate chord progression.';
+			// Only use AI if we have actual tab content from online sources
+			if (!onlineContext) {
+				throw new Error('No online tab content found to format');
+			}
 
-			// Use Claude API to generate the tab
+			const contextPrompt = `\n\nI found the actual guitar tab from Ultimate Guitar:${onlineContext}\n\nPlease clean up and format this tab nicely. Keep all the chords and lyrics exactly as shown, but improve the formatting to be clear and easy to read.`;
+
+			// Use Claude API to format the tab
 			const response = await fetch('https://api.anthropic.com/v1/messages', {
 				method: 'POST',
 				headers: {
@@ -327,19 +330,21 @@ async function generateTabWithAI(
 							role: 'user',
 							content: `I'm creating an educational guitar arrangement for personal practice of the song "${fullTitle}".
 
-Please help me create a chord chart in standard guitar tab format. This is for my own educational use to learn and practice the song.
+I have found an existing guitar tab from Ultimate Guitar that needs formatting cleanup.
 
-Format it as a standard guitar tab with:
+IMPORTANT: Do NOT generate, guess, or invent any chords. Only clean up and format the existing tab content provided below.
+
+Format requirements:
 - Song title and artist at the top
-- Chord positions shown above lyrics
+- Chord positions shown above lyrics (preserve exact chords from source)
 - Section labels like [Verse 1], [Chorus], [Bridge], [Intro], [Outro]
-- Common chord names (G, C, D, Em, Am, F, etc.)
+- Keep all chord names exactly as shown in the source
 - Complete lyrics with chords positioned above the correct words
+- Only include chords and lyrics - no tablature notation (e-B-G-D-A-E strings)
 
-Only include chords and lyrics - no tablature notation (e-B-G-D-A-E strings).
 ${contextPrompt}
 
-This is for personal educational use only and will be stored locally in my browser for practice. Please provide the complete chord chart with full lyrics as I'm trying to learn this song.`
+Remember: Only format and clean up the provided content. Do not add, change, or generate any chords that aren't in the source material.`
 						}
 					]
 				})
@@ -356,48 +361,12 @@ This is for personal educational use only and will be stored locally in my brows
 			}
 		} catch (error) {
 			console.error('❌ Error calling Claude API:', error);
-			// Fall through to basic template
+			throw error;
 		}
 	}
 
-	// Fallback: Basic template if API key is not available or API call fails
-	return `${fullTitle}
-
-[Intro]
-G  D  Em  C
-
-[Verse 1]
-G              D
-(First line of lyrics)
-Em             C
-(Second line of lyrics)
-G              D
-(Third line of lyrics)
-Em             C
-(Fourth line of lyrics)
-
-[Chorus]
-C              G
-(Chorus first line)
-D              Em
-(Chorus second line)
-C              G
-(Chorus third line)
-D
-(Chorus fourth line)
-
-[Verse 2]
-G              D
-(Lyrics...)
-Em             C
-(Lyrics...)
-
-[Chorus]
-C              G
-(Repeat chorus)
-D              Em
-(Lyrics...)
-
-Note: This is an AI-generated basic template. Please verify chords against the original recording.
-${!apiKey ? '\n⚠️ To get actual AI-generated tabs, add your ANTHROPIC_API_KEY to your environment variables.' : ''}`;
+	// No fallback - if we can't scrape tabs or API key is missing, fail gracefully
+	throw new Error(!apiKey
+		? 'ANTHROPIC_API_KEY not configured'
+		: 'Failed to generate tab - no online content available to format');
 }

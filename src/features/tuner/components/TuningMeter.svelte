@@ -119,23 +119,92 @@
 		flex-direction: column;
 		align-items: center;
 		width: 100%;
-		max-width: 400px;
+		max-width: min(400px, 90vw);
 		margin: 0 auto;
-		padding: 1.5rem;
-		border-radius: 16px;
-		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-		transition: all 0.3s ease;
+
+		/* Responsive padding for mobile */
+		padding: clamp(0.75rem, 3vw, 1.5rem);
+		padding-bottom: clamp(1rem, 3vw, 1.5rem);
+
+		border-radius: clamp(12px, 3vw, 16px);
+
+		/* Modern 2025 glassmorphism design */
+		background: linear-gradient(
+			135deg,
+			rgba(255, 255, 255, 0.08),
+			rgba(255, 255, 255, 0.03)
+		);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.1),
+			inset 0 1px 1px rgba(255, 255, 255, 0.1);
+
+		transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
 	.tuning-meter.perfect {
-		box-shadow: 0 4px 24px rgba(76, 175, 80, 0.2);
+		box-shadow:
+			0 8px 40px rgba(76, 175, 80, 0.25),
+			0 0 60px rgba(76, 175, 80, 0.1),
+			inset 0 1px 2px rgba(255, 255, 255, 0.15);
+		border-color: rgba(76, 175, 80, 0.3);
+		background: linear-gradient(
+			135deg,
+			rgba(76, 175, 80, 0.08),
+			rgba(76, 175, 80, 0.03)
+		);
 	}
 
+	/* Dark mode */
 	@media (prefers-color-scheme: dark) {
 		.tuning-meter {
-			background: linear-gradient(to bottom, rgba(30, 30, 30, 0.8), rgba(20, 20, 20, 0.8));
-			box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+			background: linear-gradient(
+				135deg,
+				rgba(30, 30, 30, 0.85),
+				rgba(20, 20, 20, 0.85)
+			);
+			box-shadow:
+				0 8px 32px rgba(0, 0, 0, 0.4),
+				inset 0 1px 1px rgba(255, 255, 255, 0.05);
+			border-color: rgba(255, 255, 255, 0.08);
+		}
+
+		.tuning-meter.perfect {
+			background: linear-gradient(
+				135deg,
+				rgba(76, 175, 80, 0.12),
+				rgba(76, 175, 80, 0.06)
+			);
+			border-color: rgba(76, 175, 80, 0.4);
+		}
+	}
+
+	/* Mobile optimizations */
+	@media (max-width: 480px) {
+		.tuning-meter {
+			max-width: 95vw;
+			padding: 0.875rem 0.75rem 1rem;
+			border-radius: 14px;
+		}
+	}
+
+	/* Extra small devices */
+	@media (max-width: 360px) {
+		.tuning-meter {
+			max-width: 98vw;
+			padding: 0.75rem 0.625rem 0.875rem;
+			border-radius: 12px;
+		}
+	}
+
+	/* Landscape mode - more compact */
+	@media (max-height: 600px) and (orientation: landscape) {
+		.tuning-meter {
+			padding: 0.5rem 1rem 0.75rem;
+			max-width: 85vw;
 		}
 	}
 </style>

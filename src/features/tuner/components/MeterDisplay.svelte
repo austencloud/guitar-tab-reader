@@ -81,13 +81,19 @@
 	.segments-container {
 		display: flex;
 		width: 100%;
-		height: 16px;
-		margin-bottom: var(--spacing-sm);
-		border-radius: var(--radius-lg);
+		height: clamp(14px, 3vw, 18px);
+		margin-bottom: clamp(6px, 1.5vw, 10px);
+		border-radius: clamp(8px, 2vw, 10px);
 		overflow: hidden;
-		background: var(--color-surface-variant);
-		border: 1px solid var(--color-border);
-		box-shadow: inset var(--shadow-sm);
+
+		/* Modern 2025 design */
+		background: linear-gradient(
+			135deg,
+			rgba(0, 0, 0, 0.08),
+			rgba(0, 0, 0, 0.04)
+		);
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 	}
 
 	.segments {
@@ -108,61 +114,96 @@
 		flex: 1;
 		height: 100%;
 		opacity: 0.3;
-		transition: all 0.2s ease;
+		transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+		position: relative;
 	}
 
 	.segment.active {
 		opacity: calc(0.5 + (var(--intensity) * 0.5));
-		transform: scaleY(1.1);
+		transform: scaleY(1.15);
+		filter: brightness(1.2);
 	}
 
 	.flat-segment {
-		background: var(--flat-color);
+		background: linear-gradient(180deg, var(--flat-color) 0%, #1976d2 100%);
 	}
 
 	.sharp-segment {
-		background: var(--sharp-color);
+		background: linear-gradient(180deg, var(--sharp-color) 0%, #d32f2f 100%);
 	}
 
 	.center-segment {
-		width: 20px;
+		width: clamp(18px, 4vw, 24px);
 		height: 100%;
 		background: rgba(76, 175, 80, 0.3);
-		transition: all 0.2s ease;
+		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+		position: relative;
+	}
+
+	.center-segment::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 80%;
+		height: 80%;
+		border-radius: 2px;
+		background: rgba(76, 175, 80, 0.5);
+		opacity: 0;
+		transition: opacity 0.3s ease;
 	}
 
 	.center-segment.active {
-		background: var(--in-tune-color);
-		box-shadow: 0 0 10px var(--in-tune-color);
+		background: linear-gradient(180deg, var(--in-tune-color) 0%, #43a047 100%);
+		box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+	}
+
+	.center-segment.active::after {
+		opacity: 1;
+		animation: centerPulse 1.5s ease-in-out infinite;
+	}
+
+	@keyframes centerPulse {
+		0%, 100% {
+			transform: translate(-50%, -50%) scale(1);
+		}
+		50% {
+			transform: translate(-50%, -50%) scale(1.2);
+		}
 	}
 
 	.indicator-labels {
 		display: flex;
 		justify-content: space-between;
 		width: 100%;
-		margin-top: 4px;
-		padding: 0 2px;
-		font-size: 0.75rem;
-		font-weight: 500;
+		margin-top: clamp(3px, 0.8vw, 5px);
+		padding: 0 clamp(2px, 0.5vw, 4px);
+		font-size: clamp(0.688rem, 1.8vw, 0.813rem);
+		font-weight: 600;
+		letter-spacing: 0.3px;
 	}
 
 	.flat-label {
 		color: var(--flat-color);
+		text-shadow: 0 1px 2px rgba(33, 150, 243, 0.2);
 	}
 
 	.in-tune-label {
-		color: var(--in-tune-color); /* Corrected variable name */
+		color: var(--in-tune-color);
+		text-shadow: 0 1px 2px rgba(76, 175, 80, 0.2);
 	}
 
 	.sharp-label {
 		color: var(--sharp-color);
+		text-shadow: 0 1px 2px rgba(244, 67, 54, 0.2);
 	}
 
 	.needle-container {
 		position: relative;
 		width: 100%;
-		height: 80px;
-		margin-top: 16px;
+		height: clamp(60px, 15vw, 80px);
+		margin-top: clamp(12px, 3vw, 16px);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -170,90 +211,192 @@
 
 	.needle {
 		position: absolute;
-		height: 80px;
+		height: clamp(60px, 15vw, 80px);
 		width: 2px;
-		background: #333;
+		background: linear-gradient(180deg, #424242 0%, #616161 100%);
 		transform-origin: bottom center;
 		transition:
 			transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-			background 0.2s ease;
+			background 0.3s ease;
 		border-radius: 1px;
 		z-index: 1;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 	}
 
 	/* Use :global() to target parent class state */
 	:global(.tuning-meter.perfect) .needle {
-		background: var(--in-tune-color);
-		box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+		background: linear-gradient(180deg, var(--in-tune-color) 0%, #43a047 100%);
+		box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
+		filter: drop-shadow(0 2px 4px rgba(76, 175, 80, 0.4));
 	}
 
 	:global(.tuning-meter.flat) .needle {
-		background: var(--flat-color);
+		background: linear-gradient(180deg, var(--flat-color) 0%, #1976d2 100%);
+		box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
 	}
 
 	:global(.tuning-meter.sharp) .needle {
-		background: var(--sharp-color);
+		background: linear-gradient(180deg, var(--sharp-color) 0%, #d32f2f 100%);
+		box-shadow: 0 0 8px rgba(244, 67, 54, 0.4);
 	}
 
 	.needle-center {
 		position: absolute;
-		width: 10px;
-		height: 10px;
+		width: clamp(8px, 2vw, 11px);
+		height: clamp(8px, 2vw, 11px);
 		border-radius: 50%;
-		background: #333;
+		background: linear-gradient(135deg, #424242 0%, #616161 100%);
 		bottom: 0;
 		z-index: 2;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	:global(.tuning-meter.perfect) .needle-center {
-		background: var(--in-tune-color);
-		box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+		background: linear-gradient(135deg, var(--in-tune-color) 0%, #43a047 100%);
+		box-shadow: 0 0 12px rgba(76, 175, 80, 0.7);
+		animation: centerGlow 1.5s ease-in-out infinite;
+	}
+
+	@keyframes centerGlow {
+		0%, 100% {
+			box-shadow: 0 0 12px rgba(76, 175, 80, 0.7);
+		}
+		50% {
+			box-shadow: 0 0 20px rgba(76, 175, 80, 0.9);
+		}
 	}
 
 	.cents-display {
-		margin-top: 16px;
-		font-size: 1.1rem;
+		margin-top: clamp(12px, 3vw, 16px);
+		font-size: clamp(1rem, 2.5vw, 1.125rem);
 		font-weight: 700;
 		color: #607d8b;
-		padding: 0.5rem 1rem;
-		border-radius: 20px;
-		background: rgba(0, 0, 0, 0.03);
-		transition:
-			color 0.2s ease,
-			background-color 0.2s ease;
+		padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
+		border-radius: clamp(10px, 2.5vw, 14px);
+
+		/* Glassmorphism */
+		background: linear-gradient(
+			135deg,
+			rgba(0, 0, 0, 0.04),
+			rgba(0, 0, 0, 0.02)
+		);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		border: 1px solid rgba(0, 0, 0, 0.06);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
 	.cents-display.perfect {
 		color: var(--in-tune-color);
-		background: rgba(76, 175, 80, 0.15);
-		font-weight: 700;
+		background: linear-gradient(
+			135deg,
+			rgba(76, 175, 80, 0.18),
+			rgba(76, 175, 80, 0.1)
+		);
+		border-color: rgba(76, 175, 80, 0.3);
+		box-shadow: 0 2px 12px rgba(76, 175, 80, 0.2);
+		font-weight: 800;
+		animation: perfectBounce 2s ease-in-out infinite;
+	}
+
+	@keyframes perfectBounce {
+		0%, 100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.05);
+		}
 	}
 
 	.units {
-		font-size: 0.8rem;
-		font-weight: 500;
+		font-size: clamp(0.75rem, 2vw, 0.875rem);
+		font-weight: 600;
 		opacity: 0.7;
-		margin-left: 0.2rem;
+		margin-left: 0.25rem;
 	}
 
+	/* Dark mode */
 	@media (prefers-color-scheme: dark) {
 		.segments-container {
-			background: rgba(255, 255, 255, 0.1);
+			background: linear-gradient(
+				135deg,
+				rgba(255, 255, 255, 0.08),
+				rgba(255, 255, 255, 0.04)
+			);
+			border-color: rgba(255, 255, 255, 0.06);
+			box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 		}
 
 		.needle,
 		.needle-center {
-			background: #e0e0e0;
+			background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
 		}
 
 		.cents-display {
 			color: #b0bec5;
-			background: rgba(255, 255, 255, 0.05);
+			background: linear-gradient(
+				135deg,
+				rgba(255, 255, 255, 0.06),
+				rgba(255, 255, 255, 0.03)
+			);
+			border-color: rgba(255, 255, 255, 0.08);
 		}
 
 		.indicator-labels {
-			opacity: 0.9;
+			opacity: 0.95;
+		}
+	}
+
+	/* Mobile optimizations */
+	@media (max-width: 480px) {
+		.segments-container {
+			height: 15px;
+			margin-bottom: 7px;
+		}
+
+		.needle-container {
+			height: 65px;
+			margin-top: 12px;
+		}
+
+		.needle {
+			height: 65px;
+		}
+
+		.cents-display {
+			margin-top: 12px;
+			padding: 7px 13px;
+		}
+	}
+
+	/* Extra small devices */
+	@media (max-width: 360px) {
+		.segments-container {
+			height: 14px;
+			margin-bottom: 6px;
+		}
+
+		.needle-container {
+			height: 60px;
+			margin-top: 10px;
+		}
+
+		.needle {
+			height: 60px;
+			width: 1.5px;
+		}
+
+		.needle-center {
+			width: 8px;
+			height: 8px;
+		}
+
+		.cents-display {
+			font-size: 1rem;
+			padding: 6px 12px;
 		}
 	}
 </style>

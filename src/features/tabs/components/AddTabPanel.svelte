@@ -2,12 +2,11 @@
 	interface Props {
 		visible: boolean;
 		onclose: () => void;
-		onAISearch: () => void;
 		onURLImport: () => void;
 		onPasteImport: () => void;
 	}
 
-	let { visible = false, onclose, onAISearch, onURLImport, onPasteImport }: Props = $props();
+	let { visible = false, onclose, onURLImport, onPasteImport }: Props = $props();
 
 	function handleBackdropClick(e: MouseEvent) {
 		if (e.target === e.currentTarget) {
@@ -52,7 +51,7 @@
 			</div>
 
 			<div class="panel-content">
-				<button class="option-card ai-option" onclick={onAISearch}>
+				<button class="option-card url-option" onclick={onURLImport}>
 					<div class="option-icon">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -69,47 +68,8 @@
 						</svg>
 					</div>
 					<div class="option-text">
-						<h3>AI Powered Search</h3>
-						<p>Search for any song or artist using AI</p>
-					</div>
-					<div class="option-arrow">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<polyline points="9 18 15 12 9 6"></polyline>
-						</svg>
-					</div>
-				</button>
-
-				<button class="option-card url-option" onclick={onURLImport}>
-					<div class="option-icon">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="32"
-							height="32"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<circle cx="12" cy="12" r="10"></circle>
-							<line x1="2" y1="12" x2="22" y2="12"></line>
-							<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-						</svg>
-					</div>
-					<div class="option-text">
-						<h3>URL Import</h3>
-						<p>Import from Ultimate Guitar or other tab sites</p>
+						<h3>AI-Powered Import</h3>
+						<p>Search for any song or artist, or paste a URL</p>
 					</div>
 					<div class="option-arrow">
 						<svg
@@ -304,26 +264,15 @@
 		outline-offset: 2px;
 	}
 
-	.ai-option {
+	.url-option {
 		background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
 		border-color: var(--color-secondary);
 		color: var(--color-secondary);
 	}
 
-	.ai-option:hover {
+	.url-option:hover {
 		background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
 		box-shadow: var(--shadow-lg), var(--glow-secondary);
-	}
-
-	.url-option {
-		background: linear-gradient(135deg, rgba(0, 180, 216, 0.08) 0%, rgba(0, 119, 182, 0.08) 100%);
-		border-color: #00b4d8;
-		color: #00b4d8;
-	}
-
-	.url-option:hover {
-		background: linear-gradient(135deg, rgba(0, 180, 216, 0.15) 0%, rgba(0, 119, 182, 0.15) 100%);
-		box-shadow: var(--shadow-lg), 0 0 20px rgba(0, 180, 216, 0.3);
 	}
 
 	.paste-option {

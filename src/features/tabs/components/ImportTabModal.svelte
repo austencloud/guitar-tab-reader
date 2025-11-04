@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { importTab, type TabImportOptions } from '$lib/utils/tabImporter';
 	import type { Tab } from '$lib/stores/tabs';
+	import { BottomSheet } from '$features/shared/components';
 
 	interface Props {
-		visible?: boolean;
+		open?: boolean;
 		onclose?: () => void;
 		onimport?: (tab: Tab) => void;
 	}
 
-	let { visible = false, onclose, onimport }: Props = $props();
+	let { open = $bindable(false), onclose, onimport }: Props = $props();
 
 	let importMethod = $state<'url' | 'paste'>('url');
 	let importUrl = $state('');
@@ -101,21 +102,9 @@
 	}
 </script>
 
-{#if visible}
-	<div class="modal-backdrop">
-		<div class="modal-container">
-			<div class="modal-header">
-				<h2>{isPreviewMode ? 'Preview Imported Tab' : 'Import Guitar Tab'}</h2>
-				<button class="close-btn" onclick={closeModal} aria-label="Close">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-						<path
-							d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
-						></path>
-					</svg>
-				</button>
-			</div>
-
-			<div class="modal-content">
+<BottomSheet bind:open onOpenChange={(newOpen) => !newOpen && closeModal()} title={isPreviewMode ? 'Preview Imported Tab' : 'Import Guitar Tab'}>
+	<div class="import-tab-content">
+		<div class="modal-content">
 				{#if errorMessage}
 					<div class="error-message">
 						<span class="icon">⚠️</span>
@@ -269,71 +258,13 @@
 				{/if}
 			</div>
 		</div>
-	</div>
-{/if}
+</BottomSheet>
 
 <style>
-	.modal-backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.6);
-		z-index: 1000;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		padding: 1rem;
-	}
-
-	.modal-container {
-		background-color: white;
-		border-radius: 8px;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-		width: 100%;
-		max-width: 700px;
-		max-height: 90vh;
-		overflow: hidden;
+	.import-tab-content {
 		display: flex;
 		flex-direction: column;
-	}
-
-	.modal-header {
-		padding: 1.25rem;
-		border-bottom: 1px solid #e5e5e5;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-
-	.modal-header h2 {
-		margin: 0;
-		font-size: 1.5rem;
-		color: #333;
-	}
-
-	.close-btn {
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: #666;
-		padding: 0.25rem;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: background-color 0.2s;
-	}
-
-	.close-btn:hover {
-		background-color: rgba(0, 0, 0, 0.05);
-	}
-
-	.close-btn svg {
-		width: 24px;
-		height: 24px;
-		fill: currentColor;
+		gap: 1rem;
 	}
 
 	.modal-content {
@@ -508,27 +439,6 @@
 	}
 
 	@media (prefers-color-scheme: dark) {
-		.modal-container {
-			background-color: #222;
-			color: #e0e0e0;
-		}
-
-		.modal-header {
-			border-color: #444;
-		}
-
-		.modal-header h2 {
-			color: #e0e0e0;
-		}
-
-		.close-btn {
-			color: #aaa;
-		}
-
-		.close-btn:hover {
-			background-color: rgba(255, 255, 255, 0.1);
-		}
-
 		.modal-footer {
 			border-color: #444;
 		}

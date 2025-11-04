@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { Tab } from '$lib/stores/tabs';
+	import { BottomSheet } from '$features/shared/components';
 
 	interface Props {
-		visible?: boolean;
+		open?: boolean;
 		onclose?: () => void;
 		onimport?: (tab: Tab) => void;
 	}
 
-	let { visible = false, onclose, onimport }: Props = $props();
+	let { open = $bindable(false), onclose, onimport }: Props = $props();
 
 	type Message = {
 		role: 'user' | 'assistant';
@@ -20,7 +21,7 @@
 		{
 			role: 'assistant',
 			content:
-				'Hi! I can help you generate guitar tabs. Just tell me the song name and artist, and I\'ll create a tab for you with verification from existing tabs online. For example: "Wonderwall by Oasis"'
+				'Hi! I can help you find and format guitar tabs. Just tell me the song name and artist, and I\'ll search for existing tabs online and format them nicely for you. For example: "Wonderwall by Oasis"'
 		}
 	]);
 	let isLoading = $state(false);
@@ -32,7 +33,7 @@
 			{
 				role: 'assistant',
 				content:
-					'Hi! I can help you generate guitar tabs. Just tell me the song name and artist, and I\'ll create a tab for you with verification from existing tabs online. For example: "Wonderwall by Oasis"'
+					'Hi! I can help you find and format guitar tabs. Just tell me the song name and artist, and I\'ll search for existing tabs online and format them nicely for you. For example: "Wonderwall by Oasis"'
 			}
 		];
 		isLoading = false;
@@ -60,53 +61,98 @@
 		songQuery = '';
 		isLoading = true;
 
-		// Add loading message
+		// Add initial loading message
 		messages = [
 			...messages,
 			{
 				role: 'assistant',
-				content: 'Generating tab with AI and verifying against online sources...',
+				content: 'Starting search...',
 				isGenerating: true
 			}
 		];
 
 		try {
-			const response = await fetch('/api/generate-tab', {
+			// Use Server-Sent Events for real-time progress
+			const response = await fetch('/api/generate-tab-stream', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ query: currentQuery })
 			});
 
-			const data = await response.json();
-
-			// Remove loading message
-			messages = messages.filter((m) => !m.isGenerating);
-
-			if (data.success && data.tab) {
-				generatedTab = data.tab;
-				messages = [
-					...messages,
-					{
-						role: 'assistant',
-						content: `Great! I've generated a tab for "${data.tab.title}"${data.tab.artist ? ` by ${data.tab.artist}` : ''}.\n\n${data.sources ? `Verified against:\n${data.sources.map((s: string) => `- ${s}`).join('\n')}` : ''}\n\nYou can preview it below and save it to your collection!`
-					}
-				];
-			} else {
-				messages = [
-					...messages,
-					{
-						role: 'assistant',
-						content: `Sorry, I couldn't generate a tab. ${data.error || 'Please try rephrasing your request with the format: "Song Name by Artist Name"'}`
-					}
-				];
+			if (!response.ok || !response.body) {
+				throw new Error('Failed to start streaming');
 			}
+
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
+
+			let buffer = '';
+
+			while (true) {
+				const { done, value } = await reader.read();
+
+				if (done) break;
+
+				buffer += decoder.decode(value, { stream: true });
+
+				// Process complete messages (separated by \n\n)
+				const lines = buffer.split('\n\n');
+				buffer = lines.pop() || ''; // Keep incomplete message in buffer
+
+				for (const line of lines) {
+					if (!line.trim() || !line.startsWith('data: ')) continue;
+
+					const data = JSON.parse(line.substring(6)); // Remove 'data: ' prefix
+
+					// Remove old generating message
+					messages = messages.filter((m) => !m.isGenerating);
+
+					if (data.error) {
+						// Error occurred
+						messages = [
+							...messages,
+							{
+								role: 'assistant',
+								content: `Sorry, I couldn't find a tab for that song. ${data.error}`
+							}
+						];
+					} else if (data.success && data.tab) {
+						// Success - final result
+						generatedTab = data.tab;
+						messages = [
+							...messages,
+							{
+								role: 'assistant',
+								content: `Great! I found and formatted a tab for "${data.tab.title}"${data.tab.artist ? ` by ${data.tab.artist}` : ''}.\n\n${data.sources ? `Sources:\n${data.sources.map((s: string) => `- ${s}`).join('\n')}` : ''}\n\nYou can preview it below and save it to your collection!`
+							}
+						];
+					} else if (data.step) {
+						// Progress update - show live status
+						const progressMsg = data.details
+							? `${data.step}: ${data.details}`
+							: data.step;
+
+						messages = [
+							...messages,
+							{
+								role: 'assistant',
+								content: progressMsg,
+								isGenerating: true
+							}
+						];
+					}
+				}
+			}
+
+			// Remove any remaining generating message
+			messages = messages.filter((m) => !m.isGenerating);
 		} catch (error) {
 			messages = messages.filter((m) => !m.isGenerating);
 			messages = [
 				...messages,
 				{
 					role: 'assistant',
-					content: `Error: ${error instanceof Error ? error.message : 'Failed to generate tab. Please try again.'}`
+					content: `Error: ${error instanceof Error ? error.message : 'Failed to find and format tab. Please try again.'}`
 				}
 			];
 		} finally {
@@ -129,28 +175,9 @@
 	}
 </script>
 
-{#if visible}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="panel-backdrop" onclick={closeModal}>
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="panel-container" onclick={(e) => e.stopPropagation()}>
-			<div class="panel-handle">
-				<div class="handle-bar"></div>
-			</div>
-
-			<div class="panel-header">
-				<h2>AI Tab Generator</h2>
-				<button class="close-btn" onclick={closeModal} aria-label="Close">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-						<line x1="18" y1="6" x2="6" y2="18"></line>
-						<line x1="6" y1="6" x2="18" y2="18"></line>
-					</svg>
-				</button>
-			</div>
-
-			<div class="panel-content">
+<BottomSheet bind:open onOpenChange={(newOpen) => !newOpen && closeModal()} title="AI Tab Generator">
+	<div class="ai-generator-content">
+		<div class="panel-content">
 				<div class="chat-container">
 					{#each messages as message}
 						<div class="message {message.role}">
@@ -182,130 +209,39 @@
 						</div>
 					</div>
 				{/if}
-			</div>
 
-			<div class="panel-footer">
-				{#if !generatedTab}
-					<div class="input-container">
-						<input
-							type="text"
-							bind:value={songQuery}
-							onkeypress={handleKeyPress}
-							placeholder='Enter song and artist (e.g., "Wonderwall by Oasis")'
-							disabled={isLoading}
-						/>
-						<button onclick={handleGenerate} disabled={isLoading || !songQuery.trim()}>
-							{isLoading ? 'Generating...' : 'Generate'}
-						</button>
-					</div>
-				{:else}
-					<div class="action-buttons">
-						<button class="back-btn" onclick={() => (generatedTab = null)}>Generate Another</button
-						>
-						<button class="save-btn" onclick={handleSaveTab}>Save to My Tabs</button>
-					</div>
-				{/if}
+				<div class="panel-footer">
+					{#if !generatedTab}
+						<div class="input-container">
+							<input
+								type="text"
+								bind:value={songQuery}
+								onkeypress={handleKeyPress}
+								placeholder='Enter song and artist (e.g., "Wonderwall by Oasis")'
+								disabled={isLoading}
+							/>
+							<button onclick={handleGenerate} disabled={isLoading || !songQuery.trim()}>
+								{isLoading ? 'Generating...' : 'Generate'}
+							</button>
+						</div>
+					{:else}
+						<div class="action-buttons">
+							<button class="back-btn" onclick={() => (generatedTab = null)}>Generate Another</button
+							>
+							<button class="save-btn" onclick={handleSaveTab}>Save to My Tabs</button>
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
-	</div>
-{/if}
+</BottomSheet>
 
 <style>
-	.panel-backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.4);
-		z-index: 1000;
-		animation: fadeIn 0.2s ease;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-
-	.panel-container {
-		position: fixed;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: white;
-		border-radius: 24px 24px 0 0;
-		box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
-		max-height: 85vh;
+	.ai-generator-content {
 		display: flex;
 		flex-direction: column;
-		animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		z-index: 1001;
-	}
-
-	@keyframes slideUp {
-		from {
-			transform: translateY(100%);
-		}
-		to {
-			transform: translateY(0);
-		}
-	}
-
-	.panel-handle {
-		padding: 0.75rem;
-		display: flex;
-		justify-content: center;
-		cursor: pointer;
-	}
-
-	.handle-bar {
-		width: 40px;
-		height: 4px;
-		background-color: #d0d0d0;
-		border-radius: 2px;
-	}
-
-	.panel-header {
-		padding: 0 1.5rem 1rem;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		border-bottom: 1px solid #e5e5e5;
-	}
-
-	.panel-header h2 {
-		margin: 0;
-		font-size: 1.5rem;
-		color: #333;
-		font-weight: 600;
-	}
-
-	.close-btn {
-		background: none;
-		border: none;
-		cursor: pointer;
-		color: #666;
-		padding: 0.5rem;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.2s;
-		width: 36px;
-		height: 36px;
-	}
-
-	.close-btn:hover {
-		background-color: rgba(0, 0, 0, 0.08);
-	}
-
-	.close-btn svg {
-		width: 20px;
-		height: 20px;
+		gap: 1rem;
+		height: 100%;
 	}
 
 	.panel-content {
@@ -511,31 +447,6 @@
 	}
 
 	@media (prefers-color-scheme: dark) {
-		.panel-container {
-			background-color: #1a1a1a;
-			color: #e0e0e0;
-		}
-
-		.handle-bar {
-			background-color: #505050;
-		}
-
-		.panel-header {
-			border-color: #333;
-		}
-
-		.panel-header h2 {
-			color: #e0e0e0;
-		}
-
-		.close-btn {
-			color: #aaa;
-		}
-
-		.close-btn:hover {
-			background-color: rgba(255, 255, 255, 0.1);
-		}
-
 		.message.assistant .message-content {
 			background-color: #333;
 			color: #e0e0e0;

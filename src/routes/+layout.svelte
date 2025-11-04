@@ -1,12 +1,16 @@
 <script lang="ts">
 	import '../app.css';
-	import { SettingsButton, SettingsModal, Footer } from '$features/shared/components';
+	import { SettingsButton, SettingsBottomSheet, PrimaryNavigation } from '$features/shared/components';
 	import { GuitarTuner } from '$features/tuner/components';
+	import { AddTabBottomSheet, ImportTabModal, WebImportModal } from '$features/tabs/components';
 	import { setContext, getContext, onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { initializeApp } from '$lib/app';
 	import { useService } from '$lib/useService.svelte';
 	import { TYPES } from '$core/di';
 	import type { UIState, UserState } from '$features/shared/services';
+	import { tabs } from '$lib/stores/tabs';
+	import type { Tab } from '$lib/stores/tabs';
 
 	interface TunerState {
 		open: boolean;
@@ -19,6 +23,11 @@
 	// Get services from DI container (stored in $state to maintain reactivity)
 	let uiState = $state<UIState | undefined>(undefined);
 	let userState = $state<UserState | undefined>(undefined);
+
+	// State for AddTab bottom sheet and import modals
+	let isAddTabPanelOpen = $state(false);
+	let isImportModalOpen = $state(false);
+	let isWebImportOpen = $state(false);
 
 	// Initialize application on mount
 	onMount(async () => {
@@ -92,6 +101,48 @@
 		}
 	}
 
+	function handleOpenAddTab() {
+		isAddTabPanelOpen = true;
+	}
+
+	function handleCloseAddTab() {
+		isAddTabPanelOpen = false;
+	}
+
+	function handleURLImport() {
+		isAddTabPanelOpen = false;
+		isWebImportOpen = true;
+	}
+
+	function handlePasteImport() {
+		isAddTabPanelOpen = false;
+		isImportModalOpen = true;
+	}
+
+	function closeImportModal() {
+		isImportModalOpen = false;
+	}
+
+	function closeWebImport() {
+		isWebImportOpen = false;
+	}
+
+	function handleImportSubmit(newTab: Tab) {
+		tabs.add(newTab);
+		isImportModalOpen = false;
+		setTimeout(() => {
+			goto(`/tab/${newTab.id}`, {});
+		}, 100);
+	}
+
+	function handleWebImportSubmit(newTab: Tab) {
+		tabs.add(newTab);
+		isWebImportOpen = false;
+		setTimeout(() => {
+			goto(`/tab/${newTab.id}`, {});
+		}, 100);
+	}
+
 	// Dark mode is always active - no theme switching needed
 </script>
 
@@ -130,12 +181,28 @@
 		{@render children()}
 	</div>
 
-	<Footer />
+	<PrimaryNavigation onAddTab={handleOpenAddTab} onOpenTuner={toggleTuner} onOpenSettings={toggleSettings} />
 </div>
 
 {#if uiState}
-	<SettingsModal open={uiState.settingsModalOpen} onclose={closeSettings} />
+	<SettingsBottomSheet open={uiState.settingsModalOpen} onclose={closeSettings} />
 	<GuitarTuner showTuner={uiState.tunerModalOpen} onclose={closeTuner} />
+	<AddTabBottomSheet
+		open={isAddTabPanelOpen}
+		onclose={handleCloseAddTab}
+		onURLImport={handleURLImport}
+		onPasteImport={handlePasteImport}
+	/>
+	<ImportTabModal
+		open={isImportModalOpen}
+		onclose={closeImportModal}
+		onimport={handleImportSubmit}
+	/>
+	<WebImportModal
+		open={isWebImportOpen}
+		onclose={closeWebImport}
+		onimport={handleWebImportSubmit}
+	/>
 {/if}
 
 <style>
@@ -274,9 +341,17 @@
 		width: 100%;
 		max-width: var(--container-lg);
 		padding: 0;
-		padding-bottom: 4rem;
+		padding-bottom: 5rem; /* Increased to accommodate new navigation bar */
 		margin: 0 auto;
 		flex: 1;
+	}
+
+	/* Landscape mode - add left padding for side navigation */
+	@media (orientation: landscape) and (max-height: 600px) {
+		.content-wrapper {
+			padding-left: 80px;
+			padding-bottom: 1rem;
+		}
 	}
 
 	/* ========================================

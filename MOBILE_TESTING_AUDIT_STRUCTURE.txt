@@ -1,0 +1,173 @@
+TABSCROLL MOBILE TESTING AUDIT
+================================
+
+Device: iPhone SE (375x667px)
+Testing Framework: Playwright
+
+## ROUTE PAGES
+
+1. HOME PAGE
+   Path: /
+   File: src/routes/+page.svelte
+   Components: Search, Add Tab button, Tab list, Empty state
+   Modals: AddTabPanel, ImportTabModal, AITabGeneratorModal, WebImportModal
+   Mobile: 2-column grid, icon-only add button, reduced padding
+
+2. CREATE TAB
+   Path: /new
+   File: src/routes/new/+page.svelte
+   Components: TabEditor form
+   Mobile: Stacked metadata, 200px textarea min-height
+
+3. VIEW TAB
+   Path: /tab/[id]
+   File: src/routes/tab/[id]/+page.svelte
+   Components: Header, TabViewer, ScrollControls
+   Mobile: Reduced font, stacked metadata, landscape hides info
+
+4. EDIT TAB
+   Path: /tab/[id]/edit
+   File: src/routes/tab/[id]/edit/+page.svelte
+   Components: Same TabEditor as Create
+
+5. TUNER PAGE
+   Path: /tuner
+   File: src/routes/tuner/+page.svelte
+   Components: GuitarTuner, Help section
+   Mobile: Stacked info items
+
+## MODALS (7)
+
+1. AddTabPanel - Slide-up options (AI Search, Paste)
+2. ImportTabModal - Form for paste import
+3. AITabGeneratorModal - AI song search
+4. WebImportModal - URL import
+5. SettingsModal - Theme, Font, Handedness, Tuning
+6. TunerModal - Audio input tuner
+7. ChordModal - Chord diagram viewer
+
+## COMPONENTS
+
+Shared (5):
+- Footer
+- SettingsButton
+- SettingsModal
+- HandednessToggle
+- VirtualScroller
+
+Tab Features (22):
+- TabEditor
+- TabViewer
+- TabVisualizer
+- ChordDiagram
+- ScrollControls
+- TuningDisplay
+- TuningSelector
+- Various import/web modals
+- SVG renderers
+
+Tuner Features (9):
+- GuitarTuner
+- StringButtons
+- MeterDisplay
+- NoteInfoDisplay
+- TuningControls
+- TuningMeter
+- TunerModal
+
+TOTAL: 37 Svelte components
+
+## MOBILE TESTING CHECKLIST
+
+Layout & Viewport:
+- No horizontal overflow at 375px
+- Touch targets 44x44px minimum
+- Sticky elements dont block content
+- Landscape mode (667x375) works
+- 360px devices handle wrapping
+
+Navigation:
+- All routes accessible
+- Modal open/close paths
+- Back button works
+- Tab history preserved
+
+Forms & Input:
+- Search input
+- Tab editor fields
+- Content textarea scroll
+- Settings controls
+- Keyboard overlay handling
+
+Modals:
+- Smooth animations
+- Escape key closes
+- Backdrop click closes
+- Content scrollable if needed
+- Z-index correct
+
+Lists & Grids:
+- No layout shift
+- Sorting works
+- Search/filter updates
+- Responsive grid (3→2→1 columns)
+- Touch targets adequate
+
+Chords & Tabs:
+- Monospace font
+- Font size settings work
+- Chord highlighting
+- Chord modal display
+- Smooth scrolling
+
+Tuner:
+- Access from header
+- String selection
+- Meter display
+- Help section
+
+Settings:
+- Font size preview
+- Theme changes persist
+- Handedness works
+- Chord toggle
+
+Accessibility:
+- Aria labels
+- Form associations
+- Focus order
+- Keyboard navigation
+
+Performance:
+- Load time <3s
+- 60fps scrolling
+- Smooth animations
+
+Orientation:
+- Portrait mode
+- Landscape mode
+- Rotation handling
+
+## RESPONSIVE BREAKPOINTS
+
+Desktop:  >= 769px
+Tablet:   481-768px (max-width: 768px)
+Mobile:   <= 480px (max-width: 480px)
+XSmall:   <= 360px (max-width: 360px)
+Landscape: max-height: 600px
+
+## KEY FILES
+
+Routes:
+- src/routes/+layout.svelte
+- src/routes/+page.svelte
+- src/routes/new/+page.svelte
+- src/routes/tab/[id]/+page.svelte
+- src/routes/tab/[id]/edit/+page.svelte
+- src/routes/tuner/+page.svelte
+
+## TESTING RECOMMENDATIONS
+
+Quick (15 min): Load all pages, basic nav, create/view tab
+Standard (1-2 hrs): Full nav, all forms, modal interactions
+Comprehensive (2-3 hrs): All interactions, edge cases, performance

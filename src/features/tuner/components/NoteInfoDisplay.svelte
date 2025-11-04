@@ -34,86 +34,194 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		margin-bottom: 1.5rem;
-		height: 160px; /* Fixed height to prevent layout shifts */
+		margin-bottom: clamp(0.75rem, 2vw, 1.5rem);
+		min-height: clamp(100px, 20vh, 140px);
 		justify-content: center;
+		padding: clamp(8px, 2vw, 12px);
 	}
 
 	.string-label {
-		font-size: 0.875rem;
+		font-size: clamp(0.75rem, 2vw, 0.875rem);
 		color: #78909c;
 		text-transform: uppercase;
-		letter-spacing: 1px;
-		font-weight: 500;
+		letter-spacing: clamp(0.5px, 0.15vw, 1px);
+		font-weight: 600;
+		margin-bottom: clamp(4px, 1vw, 8px);
 	}
 
 	.note-name-wrapper {
-		height: 4.5rem;
+		min-height: clamp(2.5rem, 10vw, 4rem);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
 	.note-name {
-		font-size: 4rem;
+		/* Responsive font sizing for mobile */
+		font-size: clamp(2.5rem, 12vw, 4rem);
 		font-weight: 700;
 		line-height: 1;
-		margin: 0.5rem 0;
-		color: #4caf50; /* Use solid color */
-		transition: color 0.2s ease; /* Add transition */
+		margin: clamp(0.25rem, 1vw, 0.5rem) 0;
+
+		/* Modern gradient text */
+		background: linear-gradient(
+			135deg,
+			var(--in-tune-color, #4caf50) 0%,
+			#66bb6a 100%
+		);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+
 		text-shadow: 0 2px 10px rgba(76, 175, 80, 0.2);
+		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+		/* Prevent text selection */
+		user-select: none;
+		-webkit-user-select: none;
 	}
 
-	/* Inherit perfect state styling from parent */
+	/* Perfect state - enhanced glow */
 	:global(.tuning-meter.perfect) .note-name {
-		color: var(--in-tune-color); /* Ensure it stays green */
-		text-shadow: 0 2px 15px rgba(76, 175, 80, 0.4); /* Slightly stronger shadow */
+		animation: perfectPulse 1.5s ease-in-out infinite;
+		filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.4));
 	}
 
 	.note-name.empty {
-		color: #9e9e9e;
+		background: linear-gradient(135deg, #9e9e9e 0%, #bdbdbd 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
 		text-shadow: none;
+		filter: none;
 	}
 
 	.frequency {
-		font-size: 1rem;
+		font-size: clamp(0.813rem, 2.2vw, 1rem);
 		color: #607d8b;
-		margin-bottom: 0.5rem;
+		margin-bottom: clamp(0.25rem, 1vw, 0.5rem);
+		font-weight: 500;
+		letter-spacing: 0.3px;
 	}
 
 	.perfect-indicator-wrapper {
-		height: 1.5rem;
+		min-height: clamp(1.25rem, 3vw, 1.5rem);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
 	.perfect-indicator {
-		color: var(--in-tune-color);
-		font-weight: 600;
-		font-size: 0.9rem;
+		color: var(--in-tune-color, #4caf50);
+		font-weight: 700;
+		font-size: clamp(0.813rem, 2.2vw, 0.95rem);
 		opacity: 0;
 		transform: scale(0);
-		transition: all 0.3s ease;
+		transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+		padding: clamp(4px, 1vw, 6px) clamp(10px, 2.5vw, 14px);
+		border-radius: clamp(8px, 2vw, 12px);
+		background: linear-gradient(
+			135deg,
+			rgba(76, 175, 80, 0.15),
+			rgba(76, 175, 80, 0.08)
+		);
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
+		border: 1px solid rgba(76, 175, 80, 0.3);
 	}
 
 	.perfect-indicator.active {
 		opacity: 1;
 		transform: scale(1);
-		animation: pulse 1.5s infinite ease-in-out; /* Smoother pulse */
+		animation: indicatorPulse 2s ease-in-out infinite;
 	}
 
+	@keyframes perfectPulse {
+		0%, 100% {
+			filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.4));
+		}
+		50% {
+			filter: drop-shadow(0 0 16px rgba(76, 175, 80, 0.6));
+		}
+	}
+
+	@keyframes indicatorPulse {
+		0%, 100% {
+			transform: scale(1);
+			box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+		}
+		50% {
+			transform: scale(1.05);
+			box-shadow: 0 4px 16px rgba(76, 175, 80, 0.4);
+		}
+	}
+
+	/* Dark mode */
 	@media (prefers-color-scheme: dark) {
 		.string-label {
 			color: #b0bec5;
 		}
 
 		.note-name {
-			color: #66bb6a;
+			background: linear-gradient(
+				135deg,
+				#66bb6a 0%,
+				#81c784 100%
+			);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
 		}
 
 		.frequency {
 			color: #90a4ae;
+		}
+
+		.perfect-indicator {
+			background: linear-gradient(
+				135deg,
+				rgba(76, 175, 80, 0.25),
+				rgba(76, 175, 80, 0.15)
+			);
+			border-color: rgba(76, 175, 80, 0.4);
+		}
+	}
+
+	/* Mobile optimizations */
+	@media (max-width: 480px) {
+		.note-info {
+			margin-bottom: 0.75rem;
+			min-height: 100px;
+		}
+
+		.note-name {
+			font-size: 2.75rem;
+			margin: 0.25rem 0;
+		}
+	}
+
+	/* Extra small devices */
+	@media (max-width: 360px) {
+		.note-info {
+			min-height: 90px;
+			margin-bottom: 0.5rem;
+		}
+
+		.note-name {
+			font-size: 2.5rem;
+		}
+
+		.string-label {
+			font-size: 0.75rem;
+		}
+
+		.frequency {
+			font-size: 0.813rem;
+		}
+
+		.perfect-indicator {
+			font-size: 0.813rem;
+			padding: 4px 10px;
 		}
 	}
 </style>
