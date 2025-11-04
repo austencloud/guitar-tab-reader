@@ -98,7 +98,7 @@
 		display: flex;
 		flex-direction: column;
 		border-radius: var(--radius-xl, 1rem) var(--radius-xl, 1rem) 0 0;
-		
+
 		/* Glassmorphism styling */
 		background: rgba(255, 255, 255, 0.85);
 		backdrop-filter: blur(20px) saturate(180%);
@@ -109,7 +109,7 @@
 			inset 0 1px 0 rgba(255, 255, 255, 0.4);
 		border: 1px solid rgba(255, 255, 255, 0.18);
 		border-bottom: none;
-		
+
 		/* Animation */
 		animation: slideUp 300ms cubic-bezier(0.32, 0.72, 0, 1);
 	}
@@ -257,4 +257,3 @@
 		}
 	}
 </style>
-
