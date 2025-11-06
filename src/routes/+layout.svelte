@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
-	import { SettingsBottomSheet, PrimaryNavigation } from '$features/shared/components';
+	import { SettingsBottomSheet } from '$features/shared/components';
+	import PrimaryNavigation from '$features/shared/components/PrimaryNavigation_Modern.svelte';
 	import { GuitarTuner } from '$features/tuner/components';
 	import { AddTabBottomSheet, ImportTabModal, WebImportModal } from '$features/tabs/components';
 	import SessionIndicator from '$features/sessions/components/SessionIndicator.svelte';
@@ -204,7 +205,7 @@
 		{@render children()}
 	</div>
 
-	<PrimaryNavigation onAddTab={handleOpenAddTab} onOpenTuner={toggleTuner} onOpenSettings={toggleSettings} onOpenSessions={handleOpenSessions} />
+	<PrimaryNavigation onAddTab={handleOpenAddTab} onOpenSettings={toggleSettings} />
 </div>
 
 {#if uiState}

@@ -1,28 +1,109 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
+import { ANTHROPIC_API_KEY as STATIC_ANTHROPIC_API_KEY } from '$env/static/private';
 import { getRecommendedTab } from '$lib/utils/tabVersions';
+
+type ProgressLogLevel = 'info' | 'warn' | 'error';
+
+interface ProgressLogEntry {
+	timestamp: string;
+	level: ProgressLogLevel;
+	message: string;
+}
+
+interface ProgressLogger {
+	entries: ProgressLogEntry[];
+	info: (...args: any[]) => void;
+	warn: (...args: any[]) => void;
+	error: (...args: any[]) => void;
+}
+
+function formatLogMessage(args: any[]): string {
+	return args
+		.map((arg) => {
+			if (typeof arg === 'string') {
+				return arg;
+			}
+			try {
+				return JSON.stringify(arg);
+			} catch {
+				return String(arg);
+			}
+		})
+		.join(' ');
+}
+
+function createProgressLogger(): ProgressLogger {
+	const entries: ProgressLogEntry[] = [];
+
+	const push = (level: ProgressLogLevel, args: any[]) => {
+		const message = formatLogMessage(args);
+		entries.push({
+			timestamp: new Date().toISOString(),
+			level,
+			message
+		});
+	};
+
+	return {
+		entries,
+		info: (...args: any[]) => {
+			push('info', args);
+			console.log(...args);
+		},
+		warn: (...args: any[]) => {
+			push('warn', args);
+			console.warn(...args);
+		},
+		error: (...args: any[]) => {
+			push('error', args);
+			console.error(...args);
+		}
+	};
+}
+
+function respondWithProgress<T extends Record<string, any>>(
+	logger: ProgressLogger,
+	body: T,
+	init?: ResponseInit
+) {
+	return json(
+		{
+			...body,
+			progressLog: logger.entries.slice()
+		},
+		init
+	);
+}
 
 // Simple in-memory cache for AI intent analysis (15 minute TTL)
 const intentCache = new Map<string, { intent: Intent; timestamp: number }>();
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 export const POST: RequestHandler = async ({ request, fetch }) => {
+	const logger = createProgressLogger();
+
 	try {
 		const { query } = await request.json();
 
 		if (!query || typeof query !== 'string') {
-			return json({ success: false, error: 'Invalid query' }, { status: 400 });
+			return respondWithProgress(
+				logger,
+				{ success: false, error: 'Invalid query' },
+				{ status: 400 }
+			);
 		}
 
-		console.log(`🤖 Smart import request: "${query}"`);
+		logger.info(`🤖 Smart import request: "${query}"`);
 
 		// Use Claude to analyze the query and determine intent
-		const intent = await analyzeIntent(query);
-		console.log(`🧠 Detected intent:`, intent);
+		const intent = await analyzeIntent(query, logger);
+		logger.info(`🧠 Detected intent:`, intent);
 
 		if (!intent || !intent.type) {
-			return json(
+			return respondWithProgress(
+				logger,
 				{
 					success: false,
 					error: 'Could not understand your request. Try "artist name" or "song name by artist"'
@@ -33,36 +114,41 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 
 		// Handle ambiguous queries
 		if (intent.type === 'AMBIGUOUS') {
-			console.log(`❓ Ambiguous query detected: ${intent.ambiguityReason}`);
+			logger.info(`❓ Ambiguous query detected: ${intent.ambiguityReason}`);
 
 			// Check if this is a simple typo with a clear correction
 			const isTypo = intent.ambiguityReason?.toLowerCase().includes('typo');
-			const hasSingleCorrection =
-				intent.suggestions?.length === 1 && !intent.ambiguityReason?.includes('vague');
+			const suggestions = intent.suggestions ?? [];
+			const hasSingleCorrection = suggestions.length === 1 && !intent.ambiguityReason?.includes('vague');
 
 			if (isTypo && hasSingleCorrection) {
 				// Auto-correct: recursively call with the corrected query
-				const correctedQuery = intent.suggestions[0];
-				console.log(`🔄 Auto-correcting "${query}" → "${correctedQuery}"`);
+				const correctedQuery = suggestions[0];
+				logger.info(`🔄 Auto-correcting "${query}" → "${correctedQuery}"`);
 
 				// Re-analyze with the corrected query
-				const correctedIntent = await analyzeIntent(correctedQuery);
+				const correctedIntent = await analyzeIntent(correctedQuery, logger);
 
 				if (correctedIntent && correctedIntent.type !== 'AMBIGUOUS') {
 					// Get the result from handleIntent
-					const result = await handleIntent(correctedIntent, fetch);
-					const resultData = await result.json();
+					const handled = await handleIntent(correctedIntent, fetch, logger);
+					logger.info(`Completed smart import after auto-correcting to "${correctedQuery}".`);
 
 					// Mark this as auto-corrected in metadata
-					return json({
-						...resultData,
-						autoCorrection: { from: query, to: correctedQuery }
-					});
+					return respondWithProgress(
+						logger,
+						{
+							...handled.body,
+							autoCorrection: { from: query, to: correctedQuery }
+						},
+						handled.status ? { status: handled.status } : undefined
+					);
 				}
 			}
 
 			// Otherwise, show disambiguation UI
-			return json({
+			logger.info('Providing disambiguation suggestions to client.');
+			return respondWithProgress(logger, {
 				success: true,
 				type: 'ambiguous',
 				query: query,
@@ -75,10 +161,23 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 		}
 
 		// Handle the intent
-		return await handleIntent(intent, fetch);
+		const handled = await handleIntent(intent, fetch, logger);
+		if ('type' in handled.body && handled.body.type) {
+			logger.info(`Completed smart import with result type: ${handled.body.type}`);
+		} else if (handled.body.success === false) {
+			logger.warn('Smart import completed with an error result.');
+		} else {
+			logger.info('Completed smart import with response payload.');
+		}
+		return respondWithProgress(
+			logger,
+			handled.body,
+			handled.status ? { status: handled.status } : undefined
+		);
 	} catch (error) {
-		console.error('❌ Smart import error:', error);
-		return json(
+		logger.error('❌ Smart import error:', error);
+		return respondWithProgress(
+			logger,
 			{
 				success: false,
 				error: error instanceof Error ? error.message : 'Unknown error'
@@ -88,11 +187,20 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 	}
 };
 
-async function handleIntent(intent: Intent, fetch: typeof global.fetch) {
+interface HandleIntentResult {
+	body: Record<string, any>;
+	status?: number;
+}
+
+async function handleIntent(
+	intent: Intent,
+	fetch: typeof global.fetch,
+	logger: ProgressLogger
+): Promise<HandleIntentResult> {
 	// Execute the appropriate workflow based on intent
 	if (intent.type === 'ARTIST_BULK_IMPORT') {
 			// Bulk import all tabs for an artist
-			console.log(`📦 Executing bulk artist import for: ${intent.artist}`);
+			logger.info(`📦 Executing bulk artist import for: ${intent.artist}`);
 
 			const response = await fetch('/api/scrape-artist', {
 				method: 'POST',
@@ -103,25 +211,29 @@ async function handleIntent(intent: Intent, fetch: typeof global.fetch) {
 			const data = await response.json();
 
 			if (data.success) {
-				return json({
-					success: true,
-					type: 'artist_bulk',
-					artist: intent.artist,
-					tabs: data.tabs,
-					count: data.count,
-					message: `Found ${data.count} tabs for ${intent.artist}`,
-					_meta: intent._meta
-				});
+				return {
+					body: {
+						success: true,
+						type: 'artist_bulk',
+						artist: intent.artist,
+						tabs: data.tabs,
+						count: data.count,
+						message: `Found ${data.count} tabs for ${intent.artist}`,
+						_meta: intent._meta
+					}
+				};
 			} else {
-				return json({
-					success: false,
-					error: data.error || `Could not find tabs for ${intent.artist}`
-				});
+				return {
+					body: {
+						success: false,
+						error: data.error || `Could not find tabs for ${intent.artist}`
+					}
+				};
 			}
 		} else if (intent.type === 'SINGLE_TAB_IMPORT') {
 			// If URL provided, use it directly
 			if (intent.url) {
-				console.log(`🔗 Importing single tab from URL: ${intent.url}`);
+				logger.info(`🔗 Importing single tab from URL: ${intent.url}`);
 
 				const response = await fetch('/api/parse-ug-url', {
 					method: 'POST',
@@ -132,24 +244,28 @@ async function handleIntent(intent: Intent, fetch: typeof global.fetch) {
 				const data = await response.json();
 
 				if (data.success) {
-					return json({
-						success: true,
-						type: 'single_tab',
-						tab: {
-							title: data.title,
-							artist: data.artist,
-							content: data.content,
-							url: intent.url
-						},
-						message: `Imported "${data.title}" by ${data.artist}`,
-						_meta: intent._meta
-					});
+					return {
+						body: {
+							success: true,
+							type: 'single_tab',
+							tab: {
+								title: data.title,
+								artist: data.artist,
+								content: data.content,
+								url: intent.url
+							},
+							message: `Imported "${data.title}" by ${data.artist}`,
+							_meta: intent._meta
+						}
+					};
 				} else {
-					return json({ success: false, error: data.error });
+					return {
+						body: { success: false, error: data.error }
+					};
 				}
 			} else {
 				// Search for the specific song using title search
-				console.log(`🔍 Searching for: ${intent.song} by ${intent.artist || 'unknown'}`);
+				logger.info(`🔍 Searching for: ${intent.song} by ${intent.artist || 'unknown'}`);
 
 				const titleResponse = await fetch('/api/scrape-title', {
 					method: 'POST',
@@ -162,7 +278,7 @@ async function handleIntent(intent: Intent, fetch: typeof global.fetch) {
 				if (titleData.success && titleData.tabs.length > 0) {
 					// Get the recommended version based on rating and votes
 					const matchingTab = getRecommendedTab(titleData.tabs);
-					console.log(
+					logger.info(
 						`✅ Found recommended tab: ${matchingTab.title} (${titleData.tabs.length} total versions)`,
 						matchingTab.rating ? `[Rating: ${matchingTab.rating}/5, Votes: ${matchingTab.votes}]` : ''
 					);
@@ -177,25 +293,27 @@ async function handleIntent(intent: Intent, fetch: typeof global.fetch) {
 					const tabData = await tabResponse.json();
 
 					if (tabData.success) {
-						return json({
-							success: true,
-							type: 'single_tab',
-							tab: {
-								title: tabData.title,
-								artist: tabData.artist,
-								content: tabData.content,
-								url: matchingTab.url
-							},
-							alternateVersions: titleData.tabs.slice(1, 6), // Include up to 5 alternate versions
-							message: `Imported "${tabData.title}" by ${tabData.artist}${titleData.tabs.length > 1 ? ` (${titleData.tabs.length - 1} other versions available)` : ''}`,
-							_meta: intent._meta
-						});
+						return {
+							body: {
+								success: true,
+								type: 'single_tab',
+								tab: {
+									title: tabData.title,
+									artist: tabData.artist,
+									content: tabData.content,
+									url: matchingTab.url
+								},
+								alternateVersions: titleData.tabs.slice(1, 6), // Include up to 5 alternate versions
+								message: `Imported "${tabData.title}" by ${tabData.artist}${titleData.tabs.length > 1 ? ` (${titleData.tabs.length - 1} other versions available)` : ''}`,
+								_meta: intent._meta
+							}
+						};
 					}
 				}
 
 				// Fallback: If we have an artist, try bulk import instead
 				if (intent.artist) {
-					console.log(`⚠️ Song "${intent.song}" not found. Trying artist bulk import for: ${intent.artist}`);
+					logger.info(`⚠️ Song "${intent.song}" not found. Trying artist bulk import for: ${intent.artist}`);
 
 					const artistResponse = await fetch('/api/scrape-artist', {
 						method: 'POST',
@@ -206,8 +324,9 @@ async function handleIntent(intent: Intent, fetch: typeof global.fetch) {
 					const artistData = await artistResponse.json();
 
 					if (artistData.success && artistData.tabs.length > 0) {
-						console.log(`✅ Fallback successful! Found ${artistData.tabs.length} tabs by ${intent.artist}`);
-						return json({
+						logger.info(`✅ Fallback successful! Found ${artistData.tabs.length} tabs by ${intent.artist}`);
+						return {
+							body: {
 							success: true,
 							type: 'artist_bulk',
 							artist: intent.artist,
@@ -217,22 +336,28 @@ async function handleIntent(intent: Intent, fetch: typeof global.fetch) {
 							fallback: true,
 							originalQuery: intent.song,
 							_meta: intent._meta
-						});
+							}
+						};
 					}
 				}
 
 				// Final fallback: Could not find tabs at all
-				console.log(`❌ Could not find tabs for "${intent.song}" by ${intent.artist || 'unknown'}`);
-				return json({
-					success: false,
-					error: `Could not find tabs for "${intent.song}"${intent.artist ? ` by ${intent.artist}` : ''}. Try searching for just the artist name or check your spelling.`,
-					suggestions: intent.artist ? [`All tabs by ${intent.artist}`, 'Try a different song'] : ['Check spelling', 'Try including artist name'],
-					_meta: intent._meta
-				});
+				logger.info(`❌ Could not find tabs for "${intent.song}" by ${intent.artist || 'unknown'}`);
+				return {
+					body: {
+						success: false,
+						error: `Could not find tabs for "${intent.song}"${intent.artist ? ` by ${intent.artist}` : ''}. Try searching for just the artist name or check your spelling.`,
+						suggestions: intent.artist ? [`All tabs by ${intent.artist}`, 'Try a different song'] : ['Check spelling', 'Try including artist name'],
+						_meta: intent._meta
+					}
+				};
 			}
 		}
 
-	return json({ success: false, error: 'Unknown intent type' }, { status: 400 });
+	return {
+		body: { success: false, error: 'Unknown intent type' },
+		status: 400
+	};
 }
 
 interface Intent {
@@ -251,8 +376,28 @@ interface Intent {
 	};
 }
 
-async function analyzeIntent(query: string): Promise<Intent | null> {
-	const apiKey = ANTHROPIC_API_KEY;
+function resolveAnthropicApiKey() {
+	// Prefer runtime env (works locally and on Netlify functions).
+	const runtimeKey =
+		env.ANTHROPIC_API_KEY ??
+		(typeof process !== 'undefined' ? process.env?.ANTHROPIC_API_KEY : undefined);
+
+	if (runtimeKey) {
+		return runtimeKey;
+	}
+
+	// Fall back to static import for environments that bake vars at build time.
+	if (typeof STATIC_ANTHROPIC_API_KEY !== 'undefined' && STATIC_ANTHROPIC_API_KEY) {
+		return STATIC_ANTHROPIC_API_KEY;
+	}
+
+	// As a last resort, support global injection (e.g. window/globalThis).
+	const globalRecord = globalThis as unknown as Record<string, string | undefined>;
+	return globalRecord.ANTHROPIC_API_KEY;
+}
+
+async function analyzeIntent(query: string, logger: ProgressLogger): Promise<Intent | null> {
+	const apiKey = resolveAnthropicApiKey();
 
 	// Normalize query for cache key
 	const cacheKey = query.toLowerCase().trim();
@@ -260,7 +405,7 @@ async function analyzeIntent(query: string): Promise<Intent | null> {
 	// Check cache first
 	const cached = intentCache.get(cacheKey);
 	if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-		console.log(`💾 Cache hit for: "${query}"`);
+		logger.info(`💾 Cache hit for: "${query}"`);
 		return { ...cached.intent, _meta: { ...cached.intent._meta, cached: true } as any };
 	}
 
@@ -276,16 +421,17 @@ async function analyzeIntent(query: string): Promise<Intent | null> {
 
 	if (!apiKey) {
 		// Fallback: Simple heuristics
+		logger.warn('ANTHROPIC_API_KEY unavailable. Using heuristic intent analysis.');
 		return simpleIntentAnalysis(query);
 	}
 
 	// STEP 1: Check MusicBrainz database for real-world ambiguity data
-	console.log('🎵 Querying MusicBrainz database...');
+	logger.info('🎵 Querying MusicBrainz database...');
 	let mbAnalysis;
 	try {
 		mbAnalysis = await analyzeQueryAmbiguity(query);
 	} catch (error) {
-		console.warn('⚠️ MusicBrainz query failed, proceeding without it:', error);
+		logger.warn('⚠️ MusicBrainz query failed, proceeding without it:', error);
 		mbAnalysis = null;
 	}
 
@@ -463,21 +609,25 @@ Edge case examples:
 				rawResponse: jsonText
 			};
 
-			console.log('🧠 AI analyzed intent:', intent);
-			console.log(`📊 Token usage: ${intent._meta.inputTokens} input + ${intent._meta.outputTokens} output = ${intent._meta.inputTokens + intent._meta.outputTokens} total`);
+			logger.info('🧠 AI analyzed intent:', intent);
+			logger.info(`📊 Token usage: ${intent._meta.inputTokens} input + ${intent._meta.outputTokens} output = ${intent._meta.inputTokens + intent._meta.outputTokens} total`);
 
 			// Cache the result
 			intentCache.set(cacheKey, { intent, timestamp: Date.now() });
-			console.log(`💾 Cached intent for: "${query}"`);
+			logger.info(`💾 Cached intent for: "${query}"`);
 
 			return intent;
 		}
 	} catch (error) {
-		console.warn('⚠️ AI intent analysis failed, using fallback:', error);
+		logger.warn('⚠️ AI intent analysis failed, using fallback:', error);
 	}
 
 	// Fallback to simple analysis
-	return simpleIntentAnalysis(query);
+	const heuristicIntent = simpleIntentAnalysis(query);
+	if (heuristicIntent) {
+		logger.info('Using heuristic intent analysis result:', heuristicIntent);
+	}
+	return heuristicIntent;
 }
 
 function simpleIntentAnalysis(query: string): Intent | null {
