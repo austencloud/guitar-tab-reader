@@ -1,7 +1,6 @@
 <script lang="ts">
 	import BottomSheet from './BottomSheet.svelte';
 	import preferences from '$lib/stores/preferences';
-	import { theme } from '$lib/stores/theme';
 	import { TuningSelector } from '$features/tabs/components';
 
 	interface Props {
@@ -42,71 +41,6 @@
 </script>
 
 <BottomSheet bind:open onOpenChange={handleOpenChange} title="Settings">
-	<!-- Theme Section -->
-	<div class="setting-section">
-		<div class="setting-row">
-			<div class="setting-info">
-				<span class="setting-label">Theme</span>
-				<span class="setting-description">Choose your preferred color scheme</span>
-			</div>
-			<div class="theme-options">
-				<button
-					class="theme-option-btn"
-					class:active={$theme.mode === 'light'}
-					onclick={() => theme.setMode('light')}
-					aria-label="Light theme"
-					title="Light theme"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-						<circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
-						<path
-							d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
-							stroke="currentColor"
-							stroke-width="2"
-						/>
-					</svg>
-				</button>
-				<button
-					class="theme-option-btn"
-					class:active={$theme.mode === 'dark'}
-					onclick={() => theme.setMode('dark')}
-					aria-label="Dark theme"
-					title="Dark theme"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-						<path
-							d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-							stroke="currentColor"
-							stroke-width="2"
-						/>
-					</svg>
-				</button>
-				<button
-					class="theme-option-btn"
-					class:active={$theme.mode === 'system'}
-					onclick={() => theme.setMode('system')}
-					aria-label="System theme"
-					title="Follow system preference"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-						<rect
-							x="2"
-							y="3"
-							width="20"
-							height="14"
-							rx="2"
-							ry="2"
-							stroke="currentColor"
-							stroke-width="2"
-						/>
-						<line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2" />
-						<line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2" />
-					</svg>
-				</button>
-			</div>
-		</div>
-	</div>
-
 	<!-- Font Size Section -->
 	<div class="setting-section">
 		<div class="setting-row">
@@ -264,46 +198,6 @@ E|--3--x--x--|`}
 		font-size: var(--font-size-sm, 0.875rem);
 		color: var(--color-text-secondary, #737373);
 		line-height: 1.4;
-	}
-
-	/* Theme Options */
-	.theme-options {
-		display: flex;
-		gap: var(--spacing-sm, 0.5rem);
-		flex-shrink: 0;
-	}
-
-	.theme-option-btn {
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: var(--radius-md, 0.5rem);
-		border: 2px solid var(--color-border, #e5e5e5);
-		background-color: var(--color-surface, #ffffff);
-		color: var(--color-text-secondary, #737373);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: var(--transition-all, all 150ms ease);
-		padding: 0;
-	}
-
-	.theme-option-btn svg {
-		width: 1.25rem;
-		height: 1.25rem;
-		fill: currentColor;
-	}
-
-	.theme-option-btn:hover {
-		border-color: var(--color-primary, #4ade80);
-		background-color: var(--color-hover, #f5f5f5);
-		transform: translateY(-1px);
-	}
-
-	.theme-option-btn.active {
-		border-color: var(--color-primary, #4ade80);
-		background-color: var(--color-primary-dim, rgba(74, 222, 128, 0.1));
-		color: var(--color-primary, #4ade80);
 	}
 
 	/* Font Size Control */
@@ -507,7 +401,6 @@ E|--3--x--x--|`}
 			gap: var(--spacing-md, 1rem);
 		}
 
-		.theme-options,
 		.hand-toggle,
 		.toggle-control {
 			align-self: flex-start;

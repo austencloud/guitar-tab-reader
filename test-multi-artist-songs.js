@@ -167,8 +167,8 @@ async function runTests() {
 			possibleSong: result.possibleSong
 		};
 
-		if (result.type === 'ambiguous') {
-			console.log(`   ✅ CORRECT: Detected as AMBIGUOUS`);
+		if (result.type === 'ambiguous' || result.type === 'ambiguous_with_results') {
+			console.log(`   ✅ CORRECT: Detected as AMBIGUOUS${result.type === 'ambiguous_with_results' ? ' (with live search results)' : ''}`);
 			console.log(`   Reason: ${result.ambiguityReason}`);
 
 			if (result.suggestions && result.suggestions.length > 0) {

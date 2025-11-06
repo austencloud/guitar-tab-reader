@@ -84,49 +84,64 @@
 		width: 100%;
 		height: 100%;
 		background-color: rgba(0, 0, 0, 0.7);
+		backdrop-filter: var(--blur-md);
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 1000;
+		z-index: var(--z-modal);
 	}
 
 	.chord-modal-content {
-		background-color: var(--modal-bg, white);
-		color: var(--modal-text, #333);
-		padding: 20px;
-		border-radius: 8px;
+		background: var(--color-surface-high);
+		color: var(--color-text-primary);
+		padding: var(--spacing-xl);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-2xl);
 		max-width: 90%;
 		text-align: center;
-		box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+		box-shadow: var(--shadow-2xl);
+	}
+
+	.chord-modal-content:focus {
+		outline: none;
 	}
 
 	.chord-modal-content h3 {
 		margin-top: 0;
-		margin-bottom: 1rem;
+		margin-bottom: var(--spacing-lg);
+		font-size: var(--font-size-2xl);
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text-primary);
+		letter-spacing: var(--letter-spacing-tight);
 	}
 
 	.chord-modal-content button {
-		margin-top: 15px;
-		padding: 8px 16px;
-		background-color: var(--button-bg, #0066cc);
-		color: var(--button-text, white);
+		margin-top: var(--spacing-lg);
+		padding: var(--spacing-sm) var(--spacing-xl);
+		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+		color: var(--color-text-inverse);
 		border: none;
-		border-radius: 4px;
+		border-radius: var(--radius-xl);
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--letter-spacing-tight);
 		cursor: pointer;
-		transition: background-color 0.2s;
+		transition: var(--transition-all);
+		min-height: var(--touch-target-min);
+		box-shadow: var(--shadow-md);
 	}
 
 	.chord-modal-content button:hover {
-		background-color: var(--button-hover-bg, #0055aa);
+		transform: translateY(-2px);
+		box-shadow: var(--glow-primary);
 	}
 
-	@media (prefers-color-scheme: dark) {
-		.chord-modal-content {
-			--modal-bg: #2d2d2d;
-			--modal-text: #e0e0e0;
-			--button-bg: #64b5f6;
-			--button-text: #111;
-			--button-hover-bg: #42a5f5;
-		}
+	.chord-modal-content button:active {
+		transform: translateY(0);
+	}
+
+	.chord-modal-content button:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 </style>

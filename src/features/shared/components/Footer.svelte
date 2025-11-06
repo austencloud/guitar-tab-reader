@@ -117,11 +117,11 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: var(--color-surface);
+		background: var(--color-surface-high);
 		border-top: 1px solid var(--color-border);
-		box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+		box-shadow: var(--shadow-lg);
 		z-index: 100;
-		transition: var(--transition-colors);
+		transition: var(--transition-all);
 	}
 
 	.footer-content {
@@ -130,7 +130,7 @@
 		justify-content: space-between;
 		max-width: 1400px;
 		margin: 0 auto;
-		padding: 0.5rem var(--spacing-md);
+		padding: var(--spacing-sm) var(--spacing-md);
 		gap: var(--spacing-md);
 	}
 
@@ -149,13 +149,14 @@
 		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
+		letter-spacing: var(--letter-spacing-tight);
 	}
 
 	.version {
 		font-size: var(--font-size-xs);
 		color: var(--color-text-tertiary);
-		background: var(--color-surface-variant);
-		padding: 0.125rem 0.5rem;
+		background: var(--color-surface-low);
+		padding: var(--spacing-xs) var(--spacing-sm);
 		border-radius: var(--radius-full);
 	}
 
@@ -169,17 +170,19 @@
 	.quick-action {
 		display: flex;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.75rem;
-		background: var(--color-surface-variant);
+		gap: var(--spacing-xs);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		background: var(--color-surface-low);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
+		border-radius: var(--radius-lg);
 		color: var(--color-text-secondary);
 		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: var(--transition-all);
 		text-decoration: none;
 		white-space: nowrap;
+		min-height: var(--touch-target-min);
 	}
 
 	.quick-action:hover {
@@ -187,10 +190,16 @@
 		border-color: var(--color-primary);
 		color: var(--color-primary);
 		transform: translateY(-1px);
+		box-shadow: var(--glow-primary);
 	}
 
 	.quick-action:active {
 		transform: translateY(0);
+	}
+
+	.quick-action:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.quick-action svg {
@@ -214,14 +223,15 @@
 		bottom: 100%;
 		left: 50%;
 		transform: translateX(-50%);
-		background: var(--color-surface);
+		background: var(--color-surface-high);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		box-shadow: var(--shadow-xl);
-		padding: var(--spacing-md);
-		margin-bottom: 0.5rem;
+		border-radius: var(--radius-xl);
+		box-shadow: var(--shadow-2xl);
+		padding: var(--spacing-lg);
+		margin-bottom: var(--spacing-sm);
 		min-width: 300px;
 		max-width: 90vw;
+		backdrop-filter: var(--blur-md);
 	}
 
 	.shortcuts-header {
@@ -235,27 +245,35 @@
 
 	.shortcuts-header h3 {
 		margin: 0;
-		font-size: var(--font-size-base);
+		font-size: var(--font-size-lg);
 		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
+		letter-spacing: var(--letter-spacing-tight);
 	}
 
 	.close-btn {
 		background: none;
 		border: none;
-		padding: 0.25rem;
+		padding: var(--spacing-xs);
 		cursor: pointer;
 		color: var(--color-text-secondary);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: var(--radius-sm);
-		transition: var(--transition-colors);
+		border-radius: var(--radius-lg);
+		transition: var(--transition-all);
+		min-height: var(--touch-target-min);
+		min-width: var(--touch-target-min);
 	}
 
 	.close-btn:hover {
 		background: var(--color-hover);
 		color: var(--color-text-primary);
+	}
+
+	.close-btn:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
 	}
 
 	.shortcuts-list {
@@ -275,15 +293,15 @@
 		align-items: center;
 		justify-content: center;
 		min-width: 2.5rem;
-		padding: 0.25rem 0.5rem;
-		background: var(--color-surface-variant);
+		padding: var(--spacing-xs) var(--spacing-sm);
+		background: var(--color-surface-low);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-lg);
 		font-size: var(--font-size-xs);
 		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
 		font-family: monospace;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.shortcut-action {
@@ -294,7 +312,7 @@
 	/* Responsive design */
 	@media (max-width: 768px) {
 		.footer-content {
-			padding: 0.375rem var(--spacing-sm);
+			padding: var(--spacing-xs) var(--spacing-sm);
 			gap: var(--spacing-sm);
 		}
 
@@ -303,8 +321,8 @@
 		}
 
 		.quick-action {
-			padding: 0.5rem;
-			min-width: 2rem;
+			padding: var(--spacing-sm);
+			min-width: var(--touch-target-min);
 			justify-content: center;
 		}
 
@@ -331,11 +349,11 @@
 		}
 
 		.actions {
-			gap: 0.25rem;
+			gap: var(--spacing-xs);
 		}
 
 		.quick-action {
-			padding: 0.375rem;
+			padding: var(--spacing-xs);
 		}
 
 		.quick-action svg {

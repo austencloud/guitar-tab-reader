@@ -23,6 +23,7 @@
 		suggestions: string[];
 		possibleArtist?: string;
 		possibleSong?: string;
+		searchResults?: any[];
 	} | null>(null);
 	let bulkResults = $state<any[]>([]);
 	let groupedResults = $state<Map<string, TabGroup>>(new Map());
@@ -117,14 +118,15 @@
 			}
 
 			if (data.success) {
-				if (data.type === 'ambiguous') {
-					// Show disambiguation options
+				if (data.type === 'ambiguous' || data.type === 'ambiguous_with_results') {
+					// Show disambiguation options (with or without live search results)
 					disambiguationData = {
 						query: data.query,
 						reason: data.ambiguityReason,
 						suggestions: data.suggestions || [],
 						possibleArtist: data.possibleArtist,
-						possibleSong: data.possibleSong
+						possibleSong: data.possibleSong,
+						searchResults: data.searchResults || []
 					};
 					currentView = 'disambiguation';
 				} else if (data.type === 'artist_bulk') {

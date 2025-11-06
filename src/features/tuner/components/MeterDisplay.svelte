@@ -161,8 +161,8 @@
 	.needle-container {
 		position: relative;
 		width: 100%;
-		height: 80px;
-		margin-top: var(--spacing-md);
+		height: 60px;
+		margin-top: var(--spacing-sm);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -170,7 +170,7 @@
 
 	.needle {
 		position: absolute;
-		height: 80px;
+		height: 60px;
 		width: 2px;
 		background: var(--color-text-secondary);
 		transform-origin: bottom center;

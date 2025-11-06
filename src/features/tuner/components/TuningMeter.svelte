@@ -121,8 +121,8 @@
 		width: 100%;
 		max-width: 400px;
 		margin: 0 auto;
-		padding: var(--spacing-lg);
-		border-radius: var(--radius-2xl);
+		padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+		border-radius: var(--radius-xl);
 		background: linear-gradient(
 			to bottom,
 			var(--color-surface),

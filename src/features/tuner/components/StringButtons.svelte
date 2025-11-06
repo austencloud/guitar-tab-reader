@@ -35,26 +35,24 @@
 
 <style>
 	.string-buttons {
-		display: flex;
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		padding-bottom: var(--spacing-xs);
-		justify-content: center;
-		gap: var(--spacing-sm);
-		margin-top: var(--spacing-lg);
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--spacing-xs);
+		margin-top: var(--spacing-md);
 		width: 100%;
+		max-width: 280px;
 	}
 
 	.string-button {
 		position: relative;
-		flex-shrink: 0;
 		min-height: var(--touch-target-min);
-		padding: var(--spacing-sm) var(--spacing-md);
+		padding: var(--spacing-sm);
 		background: var(--color-surface-high);
 		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
+		border-radius: var(--radius-md);
 		color: var(--color-text-primary);
 		font-weight: var(--font-weight-semibold);
+		font-size: var(--font-size-sm);
 		letter-spacing: var(--letter-spacing-tight);
 		cursor: pointer;
 		transition: var(--transition-all);

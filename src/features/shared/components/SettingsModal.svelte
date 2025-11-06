@@ -4,7 +4,6 @@
 	import { cubicOut } from 'svelte/easing';
 	import preferences from '$lib/stores/preferences';
 	import { browser } from '$app/environment';
-	import { theme } from '$lib/stores/theme';
 	import { TuningSelector } from '$features/tabs/components';
 
 	interface Props {
@@ -106,71 +105,6 @@
 			</div>
 
 			<div class="modal-body">
-				<!-- Theme Section -->
-				<div class="setting-section">
-					<div class="setting-row">
-						<div class="setting-info">
-							<span class="setting-label">Theme</span>
-							<span class="setting-description">Choose your preferred color scheme</span>
-						</div>
-						<div class="theme-options">
-							<button
-								class="theme-option-btn"
-								class:active={$theme.mode === 'light'}
-								onclick={() => theme.setMode('light')}
-								aria-label="Light theme"
-								title="Light theme"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-									<circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
-									<path
-										d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
-										stroke="currentColor"
-										stroke-width="2"
-									/>
-								</svg>
-							</button>
-							<button
-								class="theme-option-btn"
-								class:active={$theme.mode === 'dark'}
-								onclick={() => theme.setMode('dark')}
-								aria-label="Dark theme"
-								title="Dark theme"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-									<path
-										d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-										stroke="currentColor"
-										stroke-width="2"
-									/>
-								</svg>
-							</button>
-							<button
-								class="theme-option-btn"
-								class:active={$theme.mode === 'system'}
-								onclick={() => theme.setMode('system')}
-								aria-label="System theme"
-								title="Follow system preference"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-									<rect
-										x="2"
-										y="3"
-										width="20"
-										height="14"
-										rx="2"
-										ry="2"
-										stroke="currentColor"
-										stroke-width="2"
-									/>
-									<line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2" />
-									<line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2" />
-								</svg>
-							</button>
-						</div>
-					</div>
-				</div>
-
 				<!-- Font Size Section -->
 				<div class="setting-section">
 					<div class="setting-row">
@@ -401,53 +335,6 @@ E|--3--x--x--|`}
 		font-size: var(--font-size-sm);
 		color: var(--color-text-secondary);
 		line-height: var(--line-height-normal);
-	}
-
-	/* Theme Options */
-	.theme-options {
-		display: flex;
-		gap: var(--spacing-xs);
-		flex-shrink: 0;
-	}
-
-	.theme-option-btn {
-		min-width: var(--touch-target-min);
-		min-height: var(--touch-target-min);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--spacing-sm);
-		border: 2px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		background-color: var(--color-surface-low);
-		color: var(--color-text-tertiary);
-		cursor: pointer;
-		transition: var(--transition-all);
-	}
-
-	.theme-option-btn.active {
-		border-color: var(--color-primary);
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		color: var(--color-text-inverse);
-		transform: scale(1.05);
-		box-shadow: var(--glow-primary);
-	}
-
-	.theme-option-btn:hover:not(.active) {
-		border-color: var(--color-primary);
-		color: var(--color-primary);
-		transform: scale(1.02);
-		background-color: var(--color-hover);
-	}
-
-	.theme-option-btn:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
-	}
-
-	.theme-option-btn svg {
-		width: 18px;
-		height: 18px;
 	}
 
 	/* Font size control styles */
@@ -681,7 +568,6 @@ E|--3--x--x--|`}
 			margin-bottom: var(--spacing-xs);
 		}
 
-		.theme-options,
 		.hand-toggle,
 		.toggle-control {
 			align-self: flex-start;

@@ -34,8 +34,8 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		margin-bottom: var(--spacing-lg);
-		height: 160px; /* Fixed height to prevent layout shifts */
+		margin-bottom: var(--spacing-sm);
+		height: 110px; /* Reduced height */
 		justify-content: center;
 	}
 
@@ -48,17 +48,17 @@
 	}
 
 	.note-name-wrapper {
-		height: 4.5rem;
+		height: 3rem;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
 	.note-name {
-		font-size: var(--font-size-4xl);
+		font-size: var(--font-size-3xl);
 		font-weight: var(--font-weight-bold);
 		line-height: var(--line-height-tight);
-		margin: var(--spacing-sm) 0;
+		margin: var(--spacing-xs) 0;
 		color: var(--color-success);
 		transition: var(--transition-colors);
 		text-shadow: var(--glow-primary);

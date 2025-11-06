@@ -2,7 +2,6 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { getRecommendedTab } from '$lib/utils/tabVersions';
-import { analyzeQueryAmbiguity } from '$lib/utils/musicBrainz';
 
 export const POST: RequestHandler = async ({ request, fetch }) => {
 	try {
@@ -28,81 +27,19 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 			);
 		}
 
-		// Handle ambiguous queries - ACTUALLY SEARCH UG to get real results
+		// Handle ambiguous queries - return options for user to disambiguate
 		if (intent.type === 'AMBIGUOUS') {
 			console.log(`❓ Ambiguous query detected: ${intent.ambiguityReason}`);
-			console.log(`🔍 Performing live search on Ultimate Guitar for: "${query}"`);
-
-			try {
-				// Search UG to get actual results instead of relying on AI guesses
-				const searchResponse = await fetch('/api/scrape-title', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ song: intent.song || query, artist: intent.artist })
-				});
-
-				const searchData = await searchResponse.json();
-
-				if (searchData.success && searchData.tabs && searchData.tabs.length > 0) {
-					console.log(`✅ Live search found ${searchData.tabs.length} real tabs`);
-
-					// Group tabs by artist to show user real options
-					const artistGroups = new Map<string, typeof searchData.tabs>();
-					searchData.tabs.forEach((tab: any) => {
-						const artist = tab.artist || 'Unknown Artist';
-						if (!artistGroups.has(artist)) {
-							artistGroups.set(artist, []);
-						}
-						artistGroups.get(artist)!.push(tab);
-					});
-
-					// Create suggestions based on ACTUAL search results, not AI guesses
-					const realSuggestions = Array.from(artistGroups.entries())
-						.slice(0, 5) // Top 5 artists
-						.map(([artist, tabs]) => `${artist} - ${intent.song || query}`);
-
-					console.log(`💡 Showing ${realSuggestions.length} real artist options from search`);
-
-					return json({
-						success: true,
-						type: 'ambiguous_with_results',
-						query: query,
-						ambiguityReason: `Found ${searchData.tabs.length} versions by different artists`,
-						suggestions: realSuggestions,
-						// Include actual search results so UI can show them
-						searchResults: searchData.tabs.slice(0, 10), // Top 10 results
-						possibleArtist: intent.artist,
-						possibleSong: intent.song || query,
-						_meta: intent._meta
-					});
-				} else {
-					console.warn(`⚠️ Live search found no results, falling back to AI suggestions`);
-					// Fall back to AI suggestions if search finds nothing
-					return json({
-						success: true,
-						type: 'ambiguous',
-						query: query,
-						ambiguityReason: intent.ambiguityReason,
-						suggestions: intent.suggestions || [],
-						possibleArtist: intent.artist,
-						possibleSong: intent.song,
-						_meta: intent._meta
-					});
-				}
-			} catch (searchError) {
-				console.error(`❌ Live search failed:`, searchError);
-				// Fall back to AI suggestions if search fails
-				return json({
-					success: true,
-					type: 'ambiguous',
-					query: query,
-					ambiguityReason: intent.ambiguityReason,
-					suggestions: intent.suggestions || [],
-					possibleArtist: intent.artist,
-					possibleSong: intent.song,
-					_meta: intent._meta
-				});
-			}
+			return json({
+				success: true,
+				type: 'ambiguous',
+				query: query,
+				ambiguityReason: intent.ambiguityReason,
+				suggestions: intent.suggestions || [],
+				possibleArtist: intent.artist,
+				possibleSong: intent.song,
+				_meta: intent._meta
+			});
 		}
 
 		// Execute the appropriate workflow based on intent
@@ -256,16 +193,6 @@ async function analyzeIntent(query: string): Promise<Intent | null> {
 		return simpleIntentAnalysis(query);
 	}
 
-	// STEP 1: Check MusicBrainz database for real-world ambiguity data
-	console.log('🎵 Querying MusicBrainz database...');
-	let mbAnalysis;
-	try {
-		mbAnalysis = await analyzeQueryAmbiguity(query);
-	} catch (error) {
-		console.warn('⚠️ MusicBrainz query failed, proceeding without it:', error);
-		mbAnalysis = null;
-	}
-
 	try {
 		const response = await fetch('https://api.anthropic.com/v1/messages', {
 			method: 'POST',
@@ -284,23 +211,7 @@ async function analyzeIntent(query: string): Promise<Intent | null> {
 
 User query: "${query}"
 
-${mbAnalysis ? `🎵 MusicBrainz Database Analysis (REAL MUSIC DATA):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Is Ambiguous: ${mbAnalysis.isAmbiguous ? '⚠️ YES - Multiple interpretations exist' : '✅ NO - Clear match'}
-Confidence: ${mbAnalysis.confidence.toUpperCase()}
-Artist Matches: ${mbAnalysis.artistMatches} ${mbAnalysis.artistMatches > 0 ? `(${mbAnalysis.topArtists.join(', ')})` : ''}
-Song Matches: ${mbAnalysis.songMatches} ${mbAnalysis.songMatches > 0 ? `(found in songs by ${mbAnalysis.songMatches} different artists)` : ''}
-Reasoning: ${mbAnalysis.reasoning}
-
-${mbAnalysis.topSongs.length > 0 ? `Top Songs Found:
-${mbAnalysis.topSongs.map(s => `  • "${s.title}" by ${s.artist}`).join('\n')}` : ''}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**CRITICAL INSTRUCTION**: MusicBrainz is a comprehensive real-world music database.
-If MusicBrainz says isAmbiguous=true, you MUST use type "AMBIGUOUS" - do NOT override this with SINGLE_TAB_IMPORT or ARTIST_BULK_IMPORT.
-The database knows which terms are actually ambiguous in the real music world.
-
-` : '⚠️ MusicBrainz data unavailable - use your best judgment\n\n'}Respond with ONLY a JSON object (no markdown, no explanation) with this structure:
+Respond with ONLY a JSON object (no markdown, no explanation) with this structure:
 {
   "type": "ARTIST_BULK_IMPORT" | "SINGLE_TAB_IMPORT" | "AMBIGUOUS",
   "artist": "artist name if mentioned",
@@ -312,13 +223,6 @@ The database knows which terms are actually ambiguous in the real music world.
 }
 
 Rules:
-🚨 **PRIORITY 1: RESPECT MUSICBRAINZ DATA**
-- If MusicBrainz says isAmbiguous=true, you MUST use type "AMBIGUOUS"
-- MusicBrainz knows the real music world - DO NOT assume you know better
-- If MusicBrainz confidence is "low", be extremely cautious and prefer AMBIGUOUS
-- Use MusicBrainz reasoning in your ambiguityReason field
-
-**Standard Rules (when MusicBrainz is unavailable or inconclusive):**
 - If the query is clearly just an artist name (e.g., "Fish in a Birdcage", "The Beatles"), use ARTIST_BULK_IMPORT
 - If it clearly mentions a specific song, use SINGLE_TAB_IMPORT. Song patterns include:
   * "{song} by {artist}" (e.g., "Wonderwall by Oasis")

@@ -3,7 +3,6 @@
  * Manages user preferences, settings, and authentication state
  */
 export interface UserPreferences {
-    theme: 'light' | 'dark' | 'auto';
     fontSize: number;
     showChordDiagrams: boolean;
     autoScroll: boolean;
@@ -29,14 +28,12 @@ export declare class UserState {
     preferences: UserPreferences;
     sessionStartTime: number | null;
     lastActivity: number | null;
-    isDarkMode: () => boolean;
     isLeftHanded: () => boolean;
     hasProfile: () => boolean;
     login(profile: UserProfile): void;
     logout(): void;
     updateProfile(updates: Partial<UserProfile>): void;
     updatePreferences(updates: Partial<UserPreferences>): void;
-    setTheme(theme: 'light' | 'dark' | 'auto'): void;
     setFontSize(fontSize: number): void;
     toggleChordDiagrams(): void;
     toggleAutoScroll(): void;

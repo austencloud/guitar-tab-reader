@@ -157,19 +157,15 @@
 </svelte:head>
 
 <div class="app-container">
-	<header class="app-header">
-		<div class="logo-area">
-			<a href="/" class="logo-link">
-				<h1 class="app-title">TabScroll</h1>
-			</a>
-		</div>
-	</header>
-
 	<div class="content-wrapper" use:handleContextMount>
 		{@render children()}
 	</div>
 
-	<PrimaryNavigation onAddTab={handleOpenAddTab} onOpenTuner={toggleTuner} onOpenSettings={toggleSettings} />
+	<PrimaryNavigation
+		onAddTab={handleOpenAddTab}
+		onOpenTuner={toggleTuner}
+		onOpenSettings={toggleSettings}
+	/>
 </div>
 
 {#if uiState}
@@ -204,65 +200,11 @@
 		background: var(--color-background);
 	}
 
-	.app-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: var(--spacing-md) var(--spacing-lg);
-		border-bottom: 1px solid var(--color-border);
-		background: var(--color-surface);
-		box-shadow: var(--shadow-md);
-		position: sticky;
-		top: 0;
-		z-index: var(--z-sticky);
-		backdrop-filter: var(--blur-sm);
-	}
-
-	.logo-area {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		flex-shrink: 0;
-	}
-
-	.logo-link {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-		text-decoration: none;
-		color: var(--color-text-primary);
-		transition: var(--transition-all);
-		padding: var(--spacing-xs);
-		border-radius: var(--radius-md);
-	}
-
-	.logo-link:hover {
-		color: var(--color-primary);
-		background: var(--color-hover);
-	}
-
-	.logo-link:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
-	}
-
-	.app-title {
-		font-size: var(--font-size-xl);
-		font-weight: var(--font-weight-bold);
-		margin: 0;
-		color: inherit;
-		letter-spacing: var(--letter-spacing-tight);
-		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
-
 	.content-wrapper {
 		width: 100%;
 		max-width: var(--container-lg);
 		padding: 0;
-		padding-bottom: 5rem; /* Increased to accommodate new navigation bar */
+		padding-bottom: 5rem; /* Space for bottom navigation bar */
 		margin: 0 auto;
 		flex: 1;
 	}
@@ -275,44 +217,4 @@
 		}
 	}
 
-	/* ========================================
-	   RESPONSIVE BREAKPOINTS
-	   ======================================== */
-
-	/* Tablet - 768px */
-	@media (max-width: 768px) {
-		.app-header {
-			padding: var(--spacing-sm) var(--spacing-md);
-		}
-
-		.app-title {
-			font-size: var(--font-size-lg);
-		}
-	}
-
-	/* Mobile - 480px */
-	@media (max-width: 480px) {
-		.app-header {
-			padding: var(--spacing-sm) var(--spacing-page-padding-mobile);
-		}
-
-		.logo-link {
-			padding: var(--spacing-xs) 0;
-		}
-
-		.app-title {
-			font-size: var(--font-size-base);
-		}
-	}
-
-	/* Extra small - 360px */
-	@media (max-width: 360px) {
-		.app-header {
-			padding: var(--spacing-xs) var(--spacing-sm);
-		}
-
-		.app-title {
-			font-size: var(--font-size-sm);
-		}
-	}
 </style>

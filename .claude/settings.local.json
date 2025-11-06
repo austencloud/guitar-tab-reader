@@ -15,7 +15,14 @@
       "Bash(npm run build:*)",
       "Bash(node test-navigation-accessibility.js:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(done)",
+      "Bash(git checkout:*)",
+      "Bash(sed:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)",
+      "Bash(find:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
