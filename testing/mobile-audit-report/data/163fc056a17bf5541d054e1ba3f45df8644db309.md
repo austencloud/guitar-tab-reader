@@ -1,0 +1,54 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link "TabScroll" [ref=e6]:
+        - /url: /
+        - heading "TabScroll" [level=1] [ref=e7]
+    - main [ref=e9]:
+      - generic [ref=e11]:
+        - heading "Tab Scroll" [level=1] [ref=e12]
+        - generic [ref=e13]: 1.0.0
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - searchbox "Search tabs" [ref=e17]
+            - img
+          - button "Add new tab" [ref=e18] [cursor=pointer]:
+            - img [ref=e19]
+            - generic [ref=e20]: Add Tab
+        - generic [ref=e21]:
+          - heading "No tabs yet" [level=2] [ref=e22]
+          - paragraph [ref=e23]: Get started by adding your first tab!
+    - navigation [ref=e24]:
+      - button "Play" [ref=e25] [cursor=pointer]:
+        - img [ref=e27]
+        - generic [ref=e28]: Play
+      - button "Jam" [ref=e29] [cursor=pointer]:
+        - img [ref=e31]
+        - generic [ref=e32]: Jam
+      - button "Tune" [ref=e33] [cursor=pointer]:
+        - img [ref=e35]
+        - generic [ref=e36]: Tune
+      - button "Settings" [ref=e37] [cursor=pointer]:
+        - img [ref=e39]
+        - generic [ref=e40]: Settings
+  - generic [ref=e42]:
+    - button "Close" [ref=e43] [cursor=pointer]:
+      - img [ref=e44]
+    - generic [ref=e45]:
+      - img "TabScroll" [ref=e47]
+      - heading "Install TabScroll" [level=2] [ref=e48]
+      - paragraph [ref=e49]: Install this app on your device for a better experience!
+      - generic [ref=e50]:
+        - paragraph [ref=e51]: "To install this app on your iOS device:"
+        - list [ref=e52]:
+          - listitem [ref=e53]:
+            - text: Tap the Share button
+            - generic [ref=e54]: ⎋
+          - listitem [ref=e55]: Scroll down and tap "Add to Home Screen"
+          - listitem [ref=e56]: Tap "Add" in the top right corner
+      - button "Maybe Later" [ref=e57] [cursor=pointer]
+```

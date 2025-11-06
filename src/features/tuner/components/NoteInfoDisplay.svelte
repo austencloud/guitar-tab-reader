@@ -35,8 +35,16 @@
 		flex-direction: column;
 		align-items: center;
 		margin-bottom: var(--spacing-sm);
-		height: 110px; /* Reduced height */
+		min-height: 90px; /* Changed from fixed height to min-height for flexibility */
 		justify-content: center;
+	}
+
+	/* Compact mode for very small screens or landscape */
+	@media (max-height: 500px), (max-width: 380px) {
+		.note-info {
+			min-height: 70px;
+			margin-bottom: var(--spacing-xs);
+		}
 	}
 
 	.string-label {
@@ -62,6 +70,14 @@
 		color: var(--color-success);
 		transition: var(--transition-colors);
 		text-shadow: var(--glow-primary);
+	}
+
+	/* Smaller font size for compact layouts */
+	@media (max-height: 500px), (max-width: 380px) {
+		.note-name {
+			font-size: var(--font-size-2xl);
+			margin: var(--spacing-2xs) 0;
+		}
 	}
 
 	/* Inherit perfect state styling from parent */

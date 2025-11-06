@@ -168,6 +168,14 @@
 		justify-content: center;
 	}
 
+	/* Compact needle for small screens */
+	@media (max-height: 500px), (max-width: 380px) {
+		.needle-container {
+			height: 45px;
+			margin-top: var(--spacing-xs);
+		}
+	}
+
 	.needle {
 		position: absolute;
 		height: 60px;
@@ -179,6 +187,13 @@
 			background var(--transition-base);
 		border-radius: var(--radius-sm);
 		z-index: 1;
+	}
+
+	/* Adjust needle height for compact layouts */
+	@media (max-height: 500px), (max-width: 380px) {
+		.needle {
+			height: 45px;
+		}
 	}
 
 	/* Use :global() to target parent class state */

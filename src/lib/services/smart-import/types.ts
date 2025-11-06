@@ -2,6 +2,11 @@
  * Shared types for Smart Import functionality
  */
 
+/**
+ * Callback function for progress updates during import
+ */
+export type ProgressCallback = (step: string, details?: string) => void;
+
 export interface Intent {
 	type: 'ARTIST_BULK_IMPORT' | 'SINGLE_TAB_IMPORT' | 'AMBIGUOUS';
 	artist?: string;

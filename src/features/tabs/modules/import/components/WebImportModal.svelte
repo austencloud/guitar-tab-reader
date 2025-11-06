@@ -91,8 +91,19 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 		state.loadingLogs = [];
 		state.clearError();
 
-		const result = await getSmartImportService().processQuery(state.smartQuery);
+		// Progress callback to update loading message in real-time
+		const onProgress = (step: string, details?: string) => {
+			state.loadingMessage = details || step;
+			console.log(`📊 Progress: ${step}${details ? ` - ${details}` : ''}`);
+		};
+
+		const result = await getSmartImportService().processQuery(state.smartQuery, onProgress);
 		state.loadingLogs = result.progressLog || [];
+
+		console.log('🎯 Import result received:', result);
+		console.log('🎯 Result type:', result.type);
+		console.log('🎯 Result success:', result.success);
+		console.log('🎯 Result tabs:', result.tabs);
 
 		if (result.success) {
 			// Store AI metadata if available

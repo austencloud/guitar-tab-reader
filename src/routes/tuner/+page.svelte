@@ -116,6 +116,23 @@
 		margin: 0 auto;
 		padding: 0.75rem;
 		overflow: hidden;
+		/* Prevent any horizontal overflow */
+		box-sizing: border-box;
+		width: 100%;
+	}
+
+	/* Extra compact mode for very small screens */
+	@media (max-width: 380px) {
+		.tuner-page {
+			padding: 0.5rem;
+		}
+	}
+
+	/* Landscape mode - reduce vertical spacing */
+	@media (max-height: 500px) {
+		.tuner-page {
+			padding: 0.5rem;
+		}
 	}
 
 	.tuner-header {
@@ -130,7 +147,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.375rem;
-		min-height: 40px;
+		min-height: var(--touch-target-min, 44px);
 		background: none;
 		border: none;
 		padding: 0.5rem;
@@ -177,6 +194,10 @@
 		gap: 0.75rem;
 		flex-shrink: 0;
 		padding-bottom: 0.5rem;
+		/* Prevent overflow on small screens */
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 
 	.tuning-selector label {
@@ -188,6 +209,7 @@
 
 	.tuning-selector select {
 		flex: 1;
+		min-width: 0; /* Allow flex item to shrink below content size */
 		padding: 0.5rem 0.75rem;
 		font-size: 0.875rem;
 		border: 1px solid var(--color-border);
@@ -196,6 +218,9 @@
 		color: var(--color-text);
 		cursor: pointer;
 		transition: all 0.2s ease;
+		/* Ensure minimum touch target size */
+		min-height: var(--touch-target-min, 44px);
+		box-sizing: border-box;
 	}
 
 	.tuning-selector select:hover {
@@ -239,6 +264,9 @@
 		justify-content: center;
 		min-height: 0;
 		overflow: hidden;
+		width: 100%;
+		/* Ensure proper box sizing to prevent overflow */
+		box-sizing: border-box;
 	}
 
 	/* Responsive adjustments */

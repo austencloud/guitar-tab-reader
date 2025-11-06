@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import { SettingsModal } from '$features/shared/components';
+	import { SettingsBottomSheet } from '$features/shared/components';
 	import {
 		ImportTabModal,
 		WebImportModal,
@@ -164,7 +164,7 @@
 	onPasteImport={handlePasteImport}
 />
 
-<SettingsModal open={isSettingsModalOpen} onclose={closeSettingsModal} />
+<SettingsBottomSheet open={isSettingsModalOpen} onclose={closeSettingsModal} />
 <ImportTabModal
 	open={isImportModalOpen}
 	onclose={closeImportModal}

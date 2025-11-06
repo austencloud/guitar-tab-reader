@@ -3,37 +3,19 @@
 	import { page } from '$app/state';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import {
-		ScrollControls,
-		TabViewer,
-		TuningDisplay,
-		LibrarySheet,
-		AddTabBottomSheet,
-		ImportTabModal,
-		WebImportModal
-	} from '$features/tabs/components';
+	import { ScrollControls, TabViewer } from '$features/tabs/components';
 	import { GuitarTuner } from '$features/tuner/components';
 	import preferences from '$lib/stores/preferences';
-	import type { Tab } from '$lib/stores/tabs';
-	import { Library } from 'lucide-svelte';
 
 	let tabContainer = $state<HTMLDivElement | undefined>(undefined);
 	// let currentPosition = $state(0); // TODO: Use for scroll position tracking
 	let tunerOpen = $state(false);
-	let librarySheetOpen = $state(false);
-	let isAddTabPanelOpen = $state(false);
-	let isImportModalOpen = $state(false);
-	let isWebImportOpen = $state(false);
 
 	const id = $derived(page.params.id);
 	const currentTab = $derived($tabs.find((tab) => tab.id === id));
 
 	function goBack() {
 		goto('/');
-	}
-
-	function editTab() {
-		goto(`/tab/${id}/edit`);
 	}
 
 	function handleScrollChange(isScrolling: boolean) {
@@ -59,56 +41,6 @@
 		tunerOpen = false;
 	}
 
-	function handleOpenLibrary() {
-		librarySheetOpen = true;
-	}
-
-	function handleCloseLibrary() {
-		librarySheetOpen = false;
-	}
-
-	function handleOpenAddTab() {
-		isAddTabPanelOpen = true;
-	}
-
-	function handleCloseAddTabPanel() {
-		isAddTabPanelOpen = false;
-	}
-
-	function handleURLImport() {
-		isAddTabPanelOpen = false;
-		isWebImportOpen = true;
-	}
-
-	function handlePasteImport() {
-		isAddTabPanelOpen = false;
-		isImportModalOpen = true;
-	}
-
-	function handleImportSubmit(newTab: Tab) {
-		tabs.add(newTab);
-		isImportModalOpen = false;
-		setTimeout(() => {
-			goto(`/tab/${newTab.id}`, {});
-		}, 100);
-	}
-
-	function handleWebImportSubmit(newTab: Tab) {
-		tabs.add(newTab);
-		isWebImportOpen = false;
-		setTimeout(() => {
-			goto(`/tab/${newTab.id}`, {});
-		}, 100);
-	}
-
-	function closeImportModal() {
-		isImportModalOpen = false;
-	}
-
-	function closeWebImport() {
-		isWebImportOpen = false;
-	}
-
 	// Make sure we have access to the container after component is mounted
 	onMount(() => {
 		return () => {
@@ -131,44 +63,6 @@
 
 {#if currentTab}
 	<div class="tab-view">
-		<header>
-			<button class="library-btn" onclick={handleOpenLibrary} aria-label="Open library">
-				<Library size={20} />
-				<span>Library</span>
-			</button>
-			<div class="title-container">
-				<h1>{currentTab.title}</h1>
-				{#if currentTab.artist || currentTab.album}
-					<div class="tab-metadata">
-						{#if currentTab.artist}<span class="artist">{currentTab.artist}</span>{/if}
-						{#if currentTab.artist && currentTab.album}<span class="separator">·</span>{/if}
-						{#if currentTab.album}<span class="album">{currentTab.album}</span>{/if}
-					</div>
-				{/if}
-				<div class="tuning-info">
-					<TuningDisplay compact={true} showStrings={false} />
-				</div>
-			</div>
-			<div class="action-buttons">
-				<button class="edit-btn" onclick={editTab} aria-label="Edit tab">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M12 20h9"></path>
-						<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-					</svg>
-				</button>
-			</div>
-		</header>
-
 		<div class="tab-container" bind:this={tabContainer}>
 			{#if tabContainer}
 				<TabViewer
@@ -188,32 +82,6 @@
 
 		<!-- Add GuitarTuner component here -->
 		<GuitarTuner showTuner={tunerOpen} onclose={handleCloseTuner} />
-
-		<!-- Library Sheet -->
-		<LibrarySheet
-			open={librarySheetOpen}
-			currentTabId={id}
-			onclose={handleCloseLibrary}
-			onopenAddTab={handleOpenAddTab}
-		/>
-
-		<!-- Add Tab Modals -->
-		<AddTabBottomSheet
-			open={isAddTabPanelOpen}
-			onclose={handleCloseAddTabPanel}
-			onURLImport={handleURLImport}
-			onPasteImport={handlePasteImport}
-		/>
-		<ImportTabModal
-			open={isImportModalOpen}
-			onclose={closeImportModal}
-			onimport={handleImportSubmit}
-		/>
-		<WebImportModal
-			open={isWebImportOpen}
-			onclose={closeWebImport}
-			onimport={handleWebImportSubmit}
-		/>
 	</div>
 {:else}
 	<div class="not-found">
@@ -227,127 +95,26 @@
 	.tab-view {
 		display: flex;
 		flex-direction: column;
-		height: 100vh;
-		max-height: 100vh;
+		min-height: calc(100vh - 5rem); /* Account for bottom nav */
 		background: var(--color-background);
-	}
-
-	header {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-md);
-		padding: var(--spacing-md);
-		border-bottom: 2px solid var(--color-border-light);
-		position: sticky;
-		top: 0;
-		background: var(--color-surface);
-		box-shadow: var(--shadow-sm);
-		z-index: var(--z-sticky);
-		transition: var(--transition-colors);
-	}
-
-	h1 {
-		flex: 1;
-		margin: 0;
-		text-align: center;
-		font-size: clamp(1.125rem, 3vw, 1.5rem);
-		font-weight: var(--font-weight-bold);
-		color: var(--color-text-primary);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		letter-spacing: -0.01em;
-	}
-
-	.title-container {
-		flex: 1;
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-		min-width: 0;
-	}
-
-	.tab-metadata {
-		font-size: var(--font-size-sm);
-		color: var(--color-text-secondary);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.tuning-info {
-		opacity: 0.9;
-		font-size: var(--font-size-xs);
-	}
-
-	.artist,
-	.album {
-		font-weight: var(--font-weight-semibold);
-	}
-
-	.separator {
-		color: var(--color-text-tertiary);
-	}
-
-	.library-btn,
-	.edit-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: var(--spacing-sm);
-		background: var(--color-surface-variant);
-		border: 2px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		cursor: pointer;
-		color: var(--color-text-primary);
-		transition: var(--transition-all);
-		min-width: var(--touch-target-min);
-		min-height: var(--touch-target-min);
-		flex-shrink: 0;
-		font-size: 0.875rem;
-		font-weight: 500;
-	}
-
-	.library-btn:hover,
-	.edit-btn:hover {
-		background: var(--color-hover);
-		border-color: var(--color-primary);
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-sm);
-	}
-
-	.library-btn:active,
-	.edit-btn:active {
-		transform: translateY(0);
-		box-shadow: none;
-	}
-
-	.action-buttons {
-		display: flex;
-		gap: var(--spacing-sm);
-		align-items: center;
 	}
 
 	.tab-container {
 		flex: 1;
 		overflow-y: auto;
 		overflow-x: hidden;
-		padding: 0;
+		padding: var(--spacing-md);
 		background: var(--color-background);
 	}
 
 	.controls-container {
-		padding: var(--spacing-md);
-		border-top: 2px solid var(--color-border-light);
+		padding: var(--spacing-sm) var(--spacing-md);
+		border-top: 1px solid var(--color-border-light);
 		position: sticky;
 		bottom: 0;
 		background: var(--color-surface);
-		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-		z-index: var(--z-sticky);
+		box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
+		z-index: 50;
 		transition: var(--transition-colors);
 	}
 
@@ -401,78 +168,23 @@
 
 	/* Tablet breakpoint - 768px */
 	@media (max-width: 768px) {
-		header {
-			padding: var(--spacing-sm) var(--spacing-md);
-			gap: var(--spacing-sm);
-		}
-
-		h1 {
-			font-size: 1.125rem;
-		}
-
-		.tab-metadata {
-			font-size: var(--font-size-xs);
-		}
-
-		.library-btn,
-		.edit-btn {
+		.tab-container {
 			padding: var(--spacing-sm);
-			min-width: 40px;
-			min-height: 40px;
-		}
-
-		.library-btn span {
-			display: none;
 		}
 
 		.controls-container {
-			padding: var(--spacing-sm);
+			padding: var(--spacing-xs) var(--spacing-sm);
 		}
 	}
 
 	/* Mobile breakpoint - 480px */
 	@media (max-width: 480px) {
-		header {
-			padding: var(--spacing-sm);
-			gap: var(--spacing-xs);
-		}
-
-		h1 {
-			font-size: 1rem;
-		}
-
-		.tab-metadata {
-			font-size: 0.625rem;
-			flex-direction: column;
-			gap: 0.125rem;
-		}
-
-		.separator {
-			display: none;
-		}
-
-		.tuning-info {
-			font-size: 0.625rem;
-		}
-
-		.library-btn,
-		.edit-btn {
-			padding: 0.625rem;
-			min-width: var(--touch-target-min);
-			min-height: var(--touch-target-min);
-		}
-
-		.edit-btn svg {
-			width: 18px;
-			height: 18px;
-		}
-
-		.action-buttons {
-			gap: 0.25rem;
+		.tab-container {
+			padding: var(--spacing-xs);
 		}
 
 		.controls-container {
-			padding: var(--spacing-xs) var(--spacing-sm);
+			padding: var(--spacing-xs);
 		}
 
 		.not-found {
@@ -480,35 +192,18 @@
 		}
 	}
 
-	/* Extra small devices - 360px */
-	@media (max-width: 360px) {
-		header {
-			padding: 0.5rem;
-		}
-
-		h1 {
-			font-size: 0.875rem;
-		}
-
-		.library-btn,
-		.edit-btn {
-			padding: 0.5rem;
-		}
-	}
-
-	/* Landscape mobile optimization */
+	/* Landscape mobile optimization - maximize content space */
 	@media (max-height: 600px) and (orientation: landscape) {
-		header {
-			padding: var(--spacing-xs) var(--spacing-sm);
+		.tab-view {
+			min-height: calc(100vh - 4rem);
 		}
 
-		.tab-metadata,
-		.tuning-info {
-			display: none;
+		.tab-container {
+			padding: var(--spacing-xs);
 		}
 
 		.controls-container {
-			padding: var(--spacing-xs) var(--spacing-sm);
+			padding: var(--spacing-xs);
 		}
 	}
 </style>

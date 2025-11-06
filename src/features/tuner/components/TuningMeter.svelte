@@ -131,6 +131,24 @@
 		box-shadow: var(--shadow-lg);
 		transition: var(--transition-all);
 		border: 1px solid var(--color-border);
+
+		/* Ensure component fits within viewport on all devices */
+		max-height: 100%;
+		overflow: visible;
+	}
+
+	/* Mobile optimizations - reduce padding for small screens */
+	@media (max-width: 380px) {
+		.tuning-meter {
+			padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-xs);
+		}
+	}
+
+	/* Landscape mode - make more compact */
+	@media (max-height: 500px) {
+		.tuning-meter {
+			padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs);
+		}
 	}
 
 	.tuning-meter.perfect {

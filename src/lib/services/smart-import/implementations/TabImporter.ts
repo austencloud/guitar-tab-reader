@@ -1,6 +1,6 @@
 import type { ITabImporter } from '../contracts/ITabImporter';
 import type { IUltimateGuitarClient } from '../contracts/IUltimateGuitarClient';
-import type { Intent, TabImportResult } from '../types';
+import type { Intent, TabImportResult, ProgressCallback } from '../types';
 import { getRecommendedTab } from '$lib/utils/tabVersions';
 
 /**
@@ -9,11 +9,11 @@ import { getRecommendedTab } from '$lib/utils/tabVersions';
 export class TabImporter implements ITabImporter {
 	constructor(private ugClient: IUltimateGuitarClient) {}
 
-	async executeImport(intent: Intent): Promise<TabImportResult> {
+	async executeImport(intent: Intent, onProgress?: ProgressCallback): Promise<TabImportResult> {
 		if (intent.type === 'ARTIST_BULK_IMPORT') {
-			return this.importArtistBulk(intent);
+			return this.importArtistBulk(intent, onProgress);
 		} else if (intent.type === 'SINGLE_TAB_IMPORT') {
-			return this.importSingleTab(intent);
+			return this.importSingleTab(intent, onProgress);
 		}
 
 		return {
@@ -22,12 +22,17 @@ export class TabImporter implements ITabImporter {
 		};
 	}
 
-	private async importArtistBulk(intent: Intent): Promise<TabImportResult> {
+	private async importArtistBulk(
+		intent: Intent,
+		onProgress?: ProgressCallback
+	): Promise<TabImportResult> {
 		console.log(`📦 Executing bulk artist import for: ${intent.artist}`);
+		onProgress?.('Fetching artist tabs', `Searching for all tabs by ${intent.artist}...`);
 
 		const data = await this.ugClient.scrapeArtistTabs(intent.artist!);
 
 		if (data.success) {
+			onProgress?.('Artist tabs found', `Found ${data.count} tabs for ${intent.artist}`);
 			return {
 				success: true,
 				type: 'artist_bulk',
@@ -45,22 +50,30 @@ export class TabImporter implements ITabImporter {
 		}
 	}
 
-	private async importSingleTab(intent: Intent): Promise<TabImportResult> {
+	private async importSingleTab(
+		intent: Intent,
+		onProgress?: ProgressCallback
+	): Promise<TabImportResult> {
 		// If URL provided, use it directly
 		if (intent.url) {
-			return this.importFromUrl(intent);
+			return this.importFromUrl(intent, onProgress);
 		}
 
 		// Search for the specific song
-		return this.importFromSearch(intent);
+		return this.importFromSearch(intent, onProgress);
 	}
 
-	private async importFromUrl(intent: Intent): Promise<TabImportResult> {
+	private async importFromUrl(
+		intent: Intent,
+		onProgress?: ProgressCallback
+	): Promise<TabImportResult> {
 		console.log(`🔗 Importing single tab from URL: ${intent.url}`);
+		onProgress?.('Fetching tab from URL', `Loading tab content from ${intent.url}...`);
 
 		const data = await this.ugClient.parseUrl(intent.url!);
 
 		if (data.success) {
+			onProgress?.('Tab loaded', `Successfully imported "${data.title}" by ${data.artist}`);
 			return {
 				success: true,
 				type: 'single_tab',
@@ -81,8 +94,15 @@ export class TabImporter implements ITabImporter {
 		}
 	}
 
-	private async importFromSearch(intent: Intent): Promise<TabImportResult> {
+	private async importFromSearch(
+		intent: Intent,
+		onProgress?: ProgressCallback
+	): Promise<TabImportResult> {
 		console.log(`🔍 Searching for: ${intent.song} by ${intent.artist || 'unknown'}`);
+		onProgress?.(
+			'Searching for tab',
+			`Looking for "${intent.song}"${intent.artist ? ` by ${intent.artist}` : ''}...`
+		);
 
 		const titleData = await this.ugClient.searchSong(intent.song!, intent.artist);
 
@@ -93,11 +113,17 @@ export class TabImporter implements ITabImporter {
 				`✅ Found recommended tab: ${matchingTab.title} (${titleData.tabs.length} total versions)`,
 				matchingTab.rating ? `[Rating: ${matchingTab.rating}/5, Votes: ${matchingTab.votes}]` : ''
 			);
+			onProgress?.(
+				'Tab found',
+				`Found ${titleData.tabs.length} version${titleData.tabs.length > 1 ? 's' : ''}, selecting best match...`
+			);
 
 			// Now fetch the actual content
+			onProgress?.('Loading tab content', 'Fetching the full tab...');
 			const tabData = await this.ugClient.parseUrl(matchingTab.url);
 
 			if (tabData.success) {
+				onProgress?.('Tab loaded', `Successfully imported "${tabData.title}"`);
 				return {
 					success: true,
 					type: 'single_tab',
@@ -116,7 +142,7 @@ export class TabImporter implements ITabImporter {
 
 		// Fallback: If we have an artist, try bulk import instead
 		if (intent.artist) {
-			return this.fallbackToArtistBulk(intent);
+			return this.fallbackToArtistBulk(intent, onProgress);
 		}
 
 		// Final fallback: Could not find tabs at all
@@ -131,15 +157,23 @@ export class TabImporter implements ITabImporter {
 		};
 	}
 
-	private async fallbackToArtistBulk(intent: Intent): Promise<TabImportResult> {
+	private async fallbackToArtistBulk(
+		intent: Intent,
+		onProgress?: ProgressCallback
+	): Promise<TabImportResult> {
 		console.log(
 			`⚠️ Song "${intent.song}" not found. Trying artist bulk import for: ${intent.artist}`
+		);
+		onProgress?.(
+			'Song not found',
+			`Couldn't find "${intent.song}", searching for all tabs by ${intent.artist}...`
 		);
 
 		const artistData = await this.ugClient.scrapeArtistTabs(intent.artist!);
 
 		if (artistData.success && artistData.tabs.length > 0) {
 			console.log(`✅ Fallback successful! Found ${artistData.tabs.length} tabs by ${intent.artist}`);
+			onProgress?.('Artist tabs found', `Found ${artistData.tabs.length} tabs by ${intent.artist}`);
 			return {
 				success: true,
 				type: 'artist_bulk',

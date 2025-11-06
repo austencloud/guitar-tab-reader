@@ -29,7 +29,7 @@
 </script>
 
 {#if mounted && sessionState}
-	<SessionBottomSheet {isSessionSheetOpen} onClose={onCloseSessions} />
+	<SessionBottomSheet isOpen={isSessionSheetOpen} onClose={onCloseSessions} {sessionState} />
 	<CreateSessionModal />
 	<JoinSessionModal />
 	<SessionQueueView />

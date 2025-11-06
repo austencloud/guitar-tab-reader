@@ -6,11 +6,15 @@ import type { ImportResult } from '../../domain/types';
  */
 export interface ISmartImportService {
 	/**
-	 * Process a smart import query using AI
+	 * Process a smart import query using AI with real-time progress updates
 	 * @param query - User's natural language query
+	 * @param onProgress - Optional callback for progress updates
 	 * @returns Promise with import result
 	 */
-	processQuery(query: string): Promise<ImportResult>;
+	processQuery(
+		query: string,
+		onProgress?: (step: string, details?: string) => void
+	): Promise<ImportResult>;
 
 	/**
 	 * Fetch tabs for a specific artist

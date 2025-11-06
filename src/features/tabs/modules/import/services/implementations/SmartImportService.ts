@@ -8,7 +8,10 @@ import type { ImportResult } from '../../domain/types';
  */
 @injectable()
 export class SmartImportService implements ISmartImportService {
-	async processQuery(query: string): Promise<ImportResult> {
+	async processQuery(
+		query: string,
+		onProgress?: (step: string, details?: string) => void
+	): Promise<ImportResult> {
 		if (!query.trim()) {
 			return {
 				success: false,
@@ -17,14 +20,75 @@ export class SmartImportService implements ISmartImportService {
 		}
 
 		try {
-			const response = await fetch('/api/smart-import', {
+			// Use streaming endpoint for real-time progress updates
+			const response = await fetch('/api/smart-import-stream', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ query: query.trim() })
 			});
 
-			const data = await response.json();
-			return data as ImportResult;
+			if (!response.ok || !response.body) {
+				throw new Error('Failed to start streaming');
+			}
+
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
+			let buffer = '';
+			let finalResult: ImportResult | null = null;
+
+			while (true) {
+				const { done, value } = await reader.read();
+
+				if (done) break;
+
+				buffer += decoder.decode(value, { stream: true });
+
+				// Process complete messages (separated by \n\n)
+				const lines = buffer.split('\n\n');
+				buffer = lines.pop() || ''; // Keep incomplete message in buffer
+
+				for (const line of lines) {
+					if (!line.trim() || !line.startsWith('data: ')) continue;
+
+					const data = JSON.parse(line.substring(6)); // Remove 'data: ' prefix
+					console.log('📦 Received SSE data:', data);
+
+					// Handle progress updates
+					if (data.step && onProgress) {
+						onProgress(data.step, data.details);
+					}
+
+					// Handle errors
+					if (data.error) {
+						console.log('❌ Error received:', data.error);
+						return {
+							success: false,
+							error: data.error,
+							suggestions: data.suggestions
+						};
+					}
+
+					// Handle disambiguation
+					if (data.needsDisambiguation) {
+						console.log('❓ Disambiguation needed:', data.disambiguationData);
+						finalResult = data.disambiguationData;
+					}
+
+					// Handle completion
+					if (data.success && data.result) {
+						console.log('✅ Import complete, result type:', data.result.type);
+						console.log('✅ Result data:', data.result);
+						finalResult = data.result;
+					}
+				}
+			}
+
+			return (
+				finalResult || {
+					success: false,
+					error: 'No result received from server'
+				}
+			);
 		} catch (error) {
 			return {
 				success: false,

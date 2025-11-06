@@ -1,6 +1,6 @@
 import type { IIntentAnalyzer } from '../contracts/IIntentAnalyzer';
 import type { IIntentCache } from '../contracts/IIntentCache';
-import type { Intent, MusicBrainzAnalysis } from '../types';
+import type { Intent, MusicBrainzAnalysis, ProgressCallback } from '../types';
 import { analyzeQueryAmbiguity } from '$lib/utils/musicBrainz';
 
 /**
@@ -12,10 +12,11 @@ export class IntentAnalyzer implements IIntentAnalyzer {
 		private apiKey: string | undefined
 	) {}
 
-	async analyze(query: string): Promise<Intent | null> {
+	async analyze(query: string, onProgress?: ProgressCallback): Promise<Intent | null> {
 		// Check cache first
 		const cached = this.cache.get(query);
 		if (cached) {
+			onProgress?.('Intent retrieved from cache', 'Using cached analysis result');
 			return cached;
 		}
 
@@ -24,11 +25,13 @@ export class IntentAnalyzer implements IIntentAnalyzer {
 
 		// If no API key, use simple fallback
 		if (!this.apiKey) {
+			onProgress?.('Analyzing query', 'Using basic pattern matching...');
 			return this.simpleAnalysis(query);
 		}
 
 		// Get MusicBrainz analysis for real-world data
 		console.log('🎵 Querying MusicBrainz database...');
+		onProgress?.('Checking MusicBrainz', 'Verifying against music database...');
 		let mbAnalysis: MusicBrainzAnalysis | null = null;
 		try {
 			mbAnalysis = await analyzeQueryAmbiguity(query);
@@ -38,9 +41,11 @@ export class IntentAnalyzer implements IIntentAnalyzer {
 
 		// Try AI analysis
 		try {
+			onProgress?.('AI analyzing intent', 'Using Claude AI to understand your request...');
 			const intent = await this.aiAnalysis(query, mbAnalysis);
 			if (intent) {
 				this.cache.set(query, intent);
+				onProgress?.('Intent determined', 'Successfully analyzed your request');
 				return intent;
 			}
 		} catch (error) {
@@ -48,6 +53,7 @@ export class IntentAnalyzer implements IIntentAnalyzer {
 		}
 
 		// Fallback to simple analysis
+		onProgress?.('Using fallback analysis', 'Analyzing with basic pattern matching...');
 		return this.simpleAnalysis(query);
 	}
 
@@ -63,7 +69,7 @@ export class IntentAnalyzer implements IIntentAnalyzer {
 				'anthropic-version': '2023-06-01'
 			},
 			body: JSON.stringify({
-				model: 'claude-3-5-haiku-20241022',
+				model: 'claude-haiku-4-5-20250604',
 				max_tokens: 400,
 				messages: [
 					{
@@ -87,7 +93,7 @@ export class IntentAnalyzer implements IIntentAnalyzer {
 
 		// Attach metadata
 		intent._meta = {
-			model: 'claude-3-5-haiku-20241022',
+			model: 'claude-haiku-4-5-20250604',
 			inputTokens: data.usage?.input_tokens || 0,
 			outputTokens: data.usage?.output_tokens || 0,
 			rawResponse: jsonText

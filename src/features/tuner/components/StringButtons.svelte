@@ -43,6 +43,14 @@
 		max-width: 280px;
 	}
 
+	/* Compact spacing for small screens */
+	@media (max-height: 500px), (max-width: 380px) {
+		.string-buttons {
+			margin-top: var(--spacing-sm);
+			gap: var(--spacing-2xs);
+		}
+	}
+
 	.string-button {
 		position: relative;
 		min-height: var(--touch-target-min);

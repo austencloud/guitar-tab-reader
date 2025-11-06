@@ -179,6 +179,10 @@
 		overflow-y: auto;
 		padding: var(--spacing-xl, 1.5rem);
 		overscroll-behavior: contain;
+		/* Prevent horizontal overflow */
+		overflow-x: hidden;
+		box-sizing: border-box;
+		width: 100%;
 	}
 
 	/* Custom scrollbar for body */
@@ -215,6 +219,24 @@
 
 		.bottom-sheet-body {
 			padding: var(--spacing-lg, 1.25rem);
+		}
+	}
+
+	/* Extra compact for very small screens */
+	@media (max-width: 380px) {
+		.bottom-sheet-body {
+			padding: var(--spacing-md, 1rem);
+		}
+	}
+
+	/* Landscape mode - more compact */
+	@media (max-height: 500px) {
+		:global(.bottom-sheet-content) {
+			max-height: 98vh;
+		}
+
+		.bottom-sheet-body {
+			padding: var(--spacing-md, 1rem);
 		}
 	}
 

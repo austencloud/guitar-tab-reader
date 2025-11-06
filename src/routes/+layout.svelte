@@ -13,6 +13,7 @@
 	import PWAUpdateNotification from '$lib/components/PWAUpdateNotification.svelte';
 	import { setContext, getContext, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { initializeApp } from '$lib/app';
 	import { useService } from '$lib/useService.svelte';
 	import { TYPES } from '$core/di';
@@ -20,6 +21,7 @@
 	import { tabs } from '$lib/stores/tabs';
 	import type { Tab } from '$lib/stores/tabs';
 	import { useSessionState } from '$lib/useSessionState.svelte';
+	import { ArrowLeft } from 'lucide-svelte';
 
 	interface TunerState {
 		open: boolean;
@@ -44,6 +46,11 @@
 	// Session state initialization
 	let sessionState = $state<ReturnType<typeof useSessionState> | undefined>(undefined);
 	let sessionsEnabled = $state(false);
+
+	// Detect if we're viewing a tab and get current tab data
+	const isViewingTab = $derived(page.url.pathname.startsWith('/tab/') && !page.url.pathname.includes('/edit'));
+	const currentTabId = $derived(isViewingTab ? page.params.id : null);
+	const currentTab = $derived(currentTabId ? $tabs.find((tab) => tab.id === currentTabId) : null);
 
 	// Initialize application on mount (SSR is disabled so this is safe)
 	onMount(async () => {
@@ -176,6 +183,10 @@
 		isSessionSheetOpen = false;
 	}
 
+	function goBackToLibrary() {
+		goto('/');
+	}
+
 	// Dark mode is always active - no theme switching needed
 </script>
 
@@ -191,14 +202,31 @@
 
 <div class="app-container">
 	<header class="app-header">
-		<div class="logo-area">
-			<a href="/" class="logo-link">
-				<h1 class="app-title">TabScroll</h1>
-			</a>
-		</div>
-		<div class="header-actions">
-			<SessionIndicator sessionState={sessionState} />
-		</div>
+		{#if isViewingTab && currentTab}
+			<!-- Tab viewing mode - show back button and song info -->
+			<button class="back-button" onclick={goBackToLibrary} aria-label="Back to library">
+				<ArrowLeft size={20} />
+			</button>
+			<div class="tab-header-info">
+				<h1 class="tab-title">{currentTab.title}</h1>
+				{#if currentTab.artist}
+					<p class="tab-artist">{currentTab.artist}</p>
+				{/if}
+			</div>
+			<div class="header-actions">
+				<SessionIndicator sessionState={sessionState} />
+			</div>
+		{:else}
+			<!-- Default mode - show app logo -->
+			<div class="logo-area">
+				<a href="/" class="logo-link">
+					<h1 class="app-title">TabScroll</h1>
+				</a>
+			</div>
+			<div class="header-actions">
+				<SessionIndicator sessionState={sessionState} />
+			</div>
+		{/if}
 	</header>
 
 	<div class="content-wrapper" use:handleContextMount>
@@ -254,14 +282,69 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		gap: var(--spacing-md);
 		padding: var(--spacing-md) var(--spacing-lg);
 		border-bottom: 1px solid var(--color-border);
 		background: var(--color-surface);
 		box-shadow: var(--shadow-md);
 		position: sticky;
 		top: 0;
-		z-index: var(--z-sticky);
+		z-index: 100;
 		backdrop-filter: var(--blur-sm);
+	}
+
+	.back-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--spacing-sm);
+		background: var(--color-surface-variant);
+		border: 2px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		cursor: pointer;
+		color: var(--color-text-primary);
+		transition: var(--transition-all);
+		min-width: var(--touch-target-min);
+		min-height: var(--touch-target-min);
+		flex-shrink: 0;
+	}
+
+	.back-button:hover {
+		background: var(--color-hover);
+		border-color: var(--color-primary);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.back-button:active {
+		transform: translateY(0);
+		box-shadow: none;
+	}
+
+	.tab-header-info {
+		flex: 1;
+		min-width: 0;
+		text-align: center;
+	}
+
+	.tab-title {
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-bold);
+		margin: 0;
+		color: var(--color-text-primary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.tab-artist {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		margin: 0;
+		margin-top: 0.125rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.logo-area {

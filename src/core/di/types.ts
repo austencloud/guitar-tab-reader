@@ -35,7 +35,17 @@ export const TYPES = {
 	PeerConnection: Symbol.for('PeerConnection'),
 	SessionStorage: Symbol.for('SessionStorage'),
 	SessionManager: Symbol.for('SessionManager'),
-	SessionState: Symbol.for('SessionState')
+	SessionState: Symbol.for('SessionState'),
+
+	// Session refactored services
+	SessionEventBus: Symbol.for('SessionEventBus'),
+	SessionLifecycle: Symbol.for('SessionLifecycle'),
+	QueueManagement: Symbol.for('QueueManagement'),
+	MemberManagement: Symbol.for('MemberManagement'),
+	PlaylistService: Symbol.for('PlaylistService'),
+	SessionHistory: Symbol.for('SessionHistory'),
+	PersistentRoomService: Symbol.for('PersistentRoomService'),
+	SessionSync: Symbol.for('SessionSync')
 } as const;
 
 export type ServiceType = (typeof TYPES)[keyof typeof TYPES];

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { loadChordDictionary, findChordsInText, type ProcessedChord } from '$lib/utils/chordUtils';
+	import { stretchChordLyrics } from '$lib/utils/chordLayout';
 	import { browser } from '$app/environment';
 	import TabContentRenderer from './tabViewer/TabContentRenderer.svelte';
 	import ChordTooltip from './tabViewer/ChordTooltip.svelte';
@@ -23,6 +24,7 @@
 	let contentHash = $state('');
 	let isMobile = $state(false);
 	let isTouch = $state(false);
+	let containerWidth = $state(0);
 
 	// Tooltip state
 	let tooltipVisible = $state(false);
@@ -32,6 +34,7 @@
 	let tooltipPlacement = $state<'above' | 'below'>('below');
 	let tooltipTimeout = $state<number | null>(null);
 	let tooltipComponent = $state<ChordTooltip>();
+	let resizeObserver: ResizeObserver | null = null;
 
 	// Modal state
 	let modalVisible = $state(false);
@@ -48,8 +51,10 @@
 
 	// Re-process content when it changes or dictionary loads
 	$effect(() => {
+		const widthKey = Math.round(containerWidth);
+
 		if (browser && content && chordDictionaryLoaded) {
-			const newHash = hashString(content);
+			const newHash = hashString(`${content}|${fontSize}|${widthKey}`);
 			if (newHash !== contentHash) {
 				contentHash = newHash;
 				processAndRenderContent();
@@ -73,6 +78,20 @@
 			{ once: true, passive: true }
 		);
 
+		await tick();
+
+		if (typeof ResizeObserver !== 'undefined' && container) {
+			containerWidth = container.clientWidth;
+			resizeObserver = new ResizeObserver((entries) => {
+				for (const entry of entries) {
+					if (entry.target === container) {
+						containerWidth = entry.contentRect.width;
+					}
+				}
+			});
+			resizeObserver.observe(container);
+		}
+
 		await loadChordDictionary();
 		chordDictionaryLoaded = true; // Triggers reactive processing
 	});
@@ -80,6 +99,7 @@
 	onDestroy(() => {
 		document.removeEventListener('click', handleDocumentClick);
 		if (tooltipTimeout !== null) window.clearTimeout(tooltipTimeout);
+		resizeObserver?.disconnect();
 	});
 
 	// --- Core Logic ---
@@ -101,9 +121,24 @@
 			return;
 		}
 
-		const foundChords = findChordsInText(content);
+		let displayContent = content;
+		const viewerWidth = containerWidth || container?.clientWidth || 0;
+
+		if (viewerWidth >= 900) {
+			const approxChars = Math.max(
+				Math.floor(viewerWidth / Math.max(fontSize * 0.6, 1)),
+				0
+			);
+			if (approxChars > 0) {
+				displayContent = stretchChordLyrics(content, {
+					targetWidth: Math.max(approxChars - 2, 80)
+				});
+			}
+		}
+
+		const foundChords = findChordsInText(displayContent);
 		if (foundChords.length === 0) {
-			processedContentHtml = content; // No chords, render plain text
+			processedContentHtml = displayContent; // No chords, render plain text
 			chordsMap.clear();
 			return;
 		}
@@ -119,12 +154,12 @@
 		foundChords.sort((a, b) => a.startIndex - b.startIndex);
 
 		for (const chord of foundChords) {
-			result += escapeHtml(content.substring(lastEnd, chord.startIndex));
+			result += escapeHtml(displayContent.substring(lastEnd, chord.startIndex));
 			// Add tabindex="0" to make spans focusable
 			result += `<span class="chord" data-chord="${escapeHtml(chord.name)}" tabindex="0">${escapeHtml(chord.name)}</span>`;
 			lastEnd = chord.endIndex;
 		}
-		result += escapeHtml(content.substring(lastEnd));
+		result += escapeHtml(displayContent.substring(lastEnd));
 
 		processedContentHtml = result;
 
