@@ -87,7 +87,7 @@
 		}
 	}
 
-	/* Content - Glassmorphism sheet */
+	/* Content - Modern dark sheet */
 	:global(.bottom-sheet-content) {
 		position: fixed;
 		bottom: 0;
@@ -97,17 +97,17 @@
 		max-height: 90vh;
 		display: flex;
 		flex-direction: column;
-		border-radius: var(--radius-xl, 1rem) var(--radius-xl, 1rem) 0 0;
+		border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
 
-		/* Glassmorphism styling */
-		background: rgba(255, 255, 255, 0.85);
+		/* Modern dark styling */
+		background: var(--color-background);
 		backdrop-filter: blur(20px) saturate(180%);
 		-webkit-backdrop-filter: blur(20px) saturate(180%);
 		box-shadow:
-			0 -8px 32px rgba(0, 0, 0, 0.1),
-			0 0 0 1px rgba(255, 255, 255, 0.2),
-			inset 0 1px 0 rgba(255, 255, 255, 0.4);
-		border: 1px solid rgba(255, 255, 255, 0.18);
+			0 -8px 32px rgba(0, 0, 0, 0.5),
+			0 0 0 1px var(--color-border-strong),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		border: 1px solid var(--color-border-strong);
 		border-bottom: none;
 
 		/* Animation */
@@ -121,19 +121,6 @@
 		to {
 			transform: translateY(0);
 		}
-	}
-
-	/* Dark mode styling */
-	:global([data-theme='dark']) :global(.bottom-sheet-content) {
-		background: rgba(45, 45, 45, 0.85);
-		backdrop-filter: blur(20px) saturate(180%);
-		-webkit-backdrop-filter: blur(20px) saturate(180%);
-		box-shadow:
-			0 -8px 32px rgba(0, 0, 0, 0.3),
-			0 0 0 1px rgba(255, 255, 255, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-bottom: none;
 	}
 
 	/* Handle Container */
@@ -153,42 +140,37 @@
 	.bottom-sheet-handle {
 		width: 3rem;
 		height: 0.25rem;
-		border-radius: var(--radius-full, 9999px);
-		background-color: var(--color-border, #e5e5e5);
-		transition: background-color 150ms ease;
+		border-radius: var(--radius-full);
+		background-color: var(--color-border);
+		transition: var(--transition-all);
 	}
 
 	.bottom-sheet-handle-container:hover .bottom-sheet-handle {
-		background-color: var(--color-border-strong, #d4d4d4);
-	}
-
-	:global([data-theme='dark']) .bottom-sheet-handle {
-		background-color: var(--color-border, #404040);
-	}
-
-	:global([data-theme='dark']) .bottom-sheet-handle-container:hover .bottom-sheet-handle {
-		background-color: var(--color-border-strong, #525252);
+		background-color: var(--color-border-strong);
 	}
 
 	/* Header */
 	.bottom-sheet-header {
-		padding: 0 var(--spacing-xl, 1.5rem) var(--spacing-lg, 1.25rem);
-		border-bottom: 1px solid var(--color-border, #e5e5e5);
+		padding: 0 var(--spacing-xl) var(--spacing-lg);
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-surface-low);
 	}
 
 	:global(.bottom-sheet-title) {
 		margin: 0;
-		font-size: var(--font-size-xl, 1.25rem);
-		font-weight: var(--font-weight-semibold, 600);
-		color: var(--color-text-primary, #0a0a0a);
+		font-size: var(--font-size-2xl);
+		font-weight: var(--font-weight-bold);
+		color: var(--color-text-primary);
 		line-height: 1.4;
+		letter-spacing: -0.02em;
 	}
 
 	:global(.bottom-sheet-description) {
-		margin: var(--spacing-xs, 0.25rem) 0 0;
-		font-size: var(--font-size-sm, 0.875rem);
-		color: var(--color-text-secondary, #737373);
+		margin: var(--spacing-xs) 0 0;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
 		line-height: 1.5;
+		opacity: 0.9;
 	}
 
 	/* Body */
@@ -209,33 +191,20 @@
 	}
 
 	.bottom-sheet-body::-webkit-scrollbar-thumb {
-		background: var(--color-border, #e5e5e5);
-		border-radius: var(--radius-full, 9999px);
+		background: var(--color-border);
+		border-radius: var(--radius-full);
 	}
 
 	.bottom-sheet-body::-webkit-scrollbar-thumb:hover {
-		background: var(--color-border-strong, #d4d4d4);
-	}
-
-	:global([data-theme='dark']) .bottom-sheet-body::-webkit-scrollbar-thumb {
-		background: var(--color-border, #404040);
-	}
-
-	:global([data-theme='dark']) .bottom-sheet-body::-webkit-scrollbar-thumb:hover {
-		background: var(--color-border-strong, #525252);
+		background: var(--color-border-strong);
 	}
 
 	/* Footer */
 	.bottom-sheet-footer {
-		padding: var(--spacing-lg, 1.25rem) var(--spacing-xl, 1.5rem);
-		border-top: 1px solid var(--color-border, #e5e5e5);
-		background: rgba(255, 255, 255, 0.5);
+		padding: var(--spacing-lg) var(--spacing-xl);
+		border-top: 1px solid var(--color-border);
+		background: var(--color-surface-low);
 		backdrop-filter: blur(10px);
-	}
-
-	:global([data-theme='dark']) .bottom-sheet-footer {
-		background: rgba(45, 45, 45, 0.5);
-		border-top-color: var(--color-border, #404040);
 	}
 
 	/* Responsive adjustments */
