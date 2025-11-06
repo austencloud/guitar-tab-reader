@@ -15,7 +15,14 @@
       "Bash(npm run build:*)",
       "Bash(node test-navigation-accessibility.js:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(node test-import-fixes.js:*)",
+      "Bash(node:*)",
+      "Bash(npx @playwright/mcp-server --help)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(nul)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

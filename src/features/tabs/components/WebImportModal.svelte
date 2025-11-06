@@ -31,7 +31,9 @@
 	let tabTitle = $state('');
 	let tabArtist = $state('');
 	let isLoading = $state(false);
+	let loadingMessage = $state('');
 	let errorMessage = $state('');
+	let errorSuggestions = $state<string[]>([]);
 	let aiMetadata = $state<{
 		model: string;
 		inputTokens: number;
@@ -99,7 +101,9 @@
 		if (!smartQuery.trim()) return;
 
 		isLoading = true;
+		loadingMessage = 'Analyzing your request...';
 		errorMessage = '';
+		errorSuggestions = [];
 		aiMetadata = null;
 
 		try {
@@ -109,6 +113,7 @@
 				body: JSON.stringify({ query: smartQuery.trim() })
 			});
 
+			loadingMessage = 'Processing results...';
 			const data = await response.json();
 
 			// Capture AI metadata if available
@@ -129,11 +134,18 @@
 					currentView = 'disambiguation';
 				} else if (data.type === 'artist_bulk') {
 					// Show bulk results for user to choose from
+					loadingMessage = `Found ${data.count || data.tabs?.length || 0} tabs...`;
 					bulkResults = data.tabs || [];
 					groupedResults = groupTabVersions(bulkResults);
 					currentView = 'bulk-results';
+
+					// Show fallback message if applicable
+					if (data.fallback && data.message) {
+						errorMessage = data.message;
+					}
 				} else if (data.type === 'single_tab' || data.type === 'ai_generated') {
 					// Direct import of single tab
+					loadingMessage = 'Loading tab content...';
 					tabTitle = data.tab.title || 'Imported Tab';
 					tabArtist = data.tab.artist || '';
 					pastedContent = data.tab.content || '';
@@ -141,6 +153,7 @@
 				}
 			} else {
 				errorMessage = data.error || 'Could not import tabs';
+				errorSuggestions = data.suggestions || [];
 			}
 		} catch (error) {
 			errorMessage = 'Network error. Please check your connection and try again.';
@@ -220,11 +233,12 @@
 
 	async function handleDisambiguationChoice(choice: 'artist' | 'song' | 'suggestion', value?: string) {
 		if (choice === 'suggestion' && value) {
-			// User selected a suggestion (e.g., typo correction)
+			// User selected a suggestion - populate the input field but DON'T auto-submit
+			// This prevents recursive AI analysis loops with vague suggestions
 			smartQuery = value;
+			disambiguationData = null;
 			currentView = 'smart';
-			// Automatically re-run the query with the corrected value
-			await handleSmartImport();
+			// Let the user review and submit manually
 		} else if (choice === 'artist' && disambiguationData?.possibleArtist) {
 			// User wants to import all tabs by this artist
 			smartQuery = disambiguationData.possibleArtist;
@@ -480,13 +494,31 @@
 						</div>
 
 						{#if errorMessage}
-							<div class="error-message">⚠️ {errorMessage}</div>
+							<div class="error-message">
+								⚠️ {errorMessage}
+								{#if errorSuggestions.length > 0}
+									<div class="error-suggestions">
+										{#each errorSuggestions as suggestion}
+											<button
+												class="suggestion-chip"
+												onclick={() => {
+													smartQuery = suggestion;
+													errorMessage = '';
+													errorSuggestions = [];
+												}}
+											>
+												{suggestion}
+											</button>
+										{/each}
+									</div>
+								{/if}
+							</div>
 						{/if}
 
 						{#if isLoading}
 							<div class="loading-state">
 								<div class="spinner"></div>
-								<p>Processing your request with AI...</p>
+								<p>{loadingMessage || 'Processing your request with AI...'}</p>
 
 							{#if aiMetadata}
 								<div class="ai-processing-details">
@@ -1034,6 +1066,27 @@
 		color: #c62828;
 		margin-bottom: 1rem;
 		text-align: center;
+	}
+
+	.error-suggestions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+		justify-content: center;
+	}
+
+	.error-suggestions .suggestion-chip {
+		background-color: rgba(244, 67, 54, 0.15);
+		border-color: rgba(244, 67, 54, 0.4);
+		color: #c62828;
+		font-weight: 500;
+	}
+
+	.error-suggestions .suggestion-chip:hover {
+		background-color: rgba(244, 67, 54, 0.25);
+		border-color: rgba(244, 67, 54, 0.6);
+		color: #b71c1c;
 	}
 
 	.loading-state {

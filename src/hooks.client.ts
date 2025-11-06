@@ -1,15 +1,4 @@
-// Register service worker for PWA functionality
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-	window.addEventListener('load', () => {
-		navigator.serviceWorker
-			.register('/sw.js')
-			.then((registration) => {
-				console.log('ServiceWorker registration successful with scope:', registration.scope);
-			})
-			.catch((error) => {
-				console.error('ServiceWorker registration failed:', error);
-			});
-	});
-}
+// PWA service worker is now handled by @vite-pwa/sveltekit plugin
+// No manual registration needed
 
 export {};
