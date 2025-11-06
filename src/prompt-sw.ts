@@ -1,10 +1,24 @@
+/// <reference lib="webworker" />
+
+export {};
+
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { ExpirationPlugin } from 'workbox-expiration';
 
-declare let self: ServiceWorkerGlobalScope;
+declare const self: ServiceWorkerGlobalScope;
+
+declare global {
+	interface SyncEvent extends ExtendableEvent {
+		readonly tag: string;
+	}
+
+	interface ServiceWorkerGlobalScopeEventMap {
+		sync: SyncEvent;
+	}
+}
 
 // Clean up old caches
 cleanupOutdatedCaches();
@@ -84,7 +98,7 @@ registerRoute(
 
 // This allows the web app to trigger skipWaiting via
 // registration.waiting.postMessage({type: 'SKIP_WAITING'})
-self.addEventListener('message', (event) => {
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
 	if (event.data && event.data.type === 'SKIP_WAITING') {
 		self.skipWaiting();
 	}
@@ -99,7 +113,7 @@ const navigationRoute = new NavigationRoute(createHandlerBoundToURL('/'), {
 registerRoute(navigationRoute);
 
 // Background sync for offline data
-self.addEventListener('sync', (event) => {
+self.addEventListener('sync', (event: SyncEvent) => {
 	if (event.tag === 'sync-tabs') {
 		event.waitUntil(syncTabs());
 	}
@@ -112,7 +126,7 @@ async function syncTabs() {
 }
 
 // Push notification support (optional)
-self.addEventListener('push', (event) => {
+self.addEventListener('push', (event: PushEvent) => {
 	const data = event.data?.json() ?? {};
 	const title = data.title || 'TabScroll';
 	const options = {
@@ -125,7 +139,7 @@ self.addEventListener('push', (event) => {
 	event.waitUntil(self.registration.showNotification(title, options));
 });
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', (event: NotificationEvent) => {
 	event.notification.close();
 	event.waitUntil(
 		self.clients.matchAll({ type: 'window' }).then((clientList) => {
@@ -140,4 +154,3 @@ self.addEventListener('notificationclick', (event) => {
 		})
 	);
 });
-
