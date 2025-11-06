@@ -25,7 +25,13 @@ export const TYPES = {
 	UIState: Symbol.for('UIState'),
 	UserState: Symbol.for('UserState'),
 	PersistenceManager: Symbol.for('PersistenceManager'),
-	StorageService: Symbol.for('StorageService')
+	StorageService: Symbol.for('StorageService'),
+
+	// Session feature services
+	PeerConnection: Symbol.for('PeerConnection'),
+	SessionStorage: Symbol.for('SessionStorage'),
+	SessionManager: Symbol.for('SessionManager'),
+	SessionState: Symbol.for('SessionState')
 } as const;
 
 export type ServiceType = (typeof TYPES)[keyof typeof TYPES];

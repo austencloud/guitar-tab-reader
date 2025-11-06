@@ -3,6 +3,13 @@
 	import { SettingsBottomSheet, PrimaryNavigation } from '$features/shared/components';
 	import { GuitarTuner } from '$features/tuner/components';
 	import { AddTabBottomSheet, ImportTabModal, WebImportModal } from '$features/tabs/components';
+	import SessionIndicator from '$features/sessions/components/SessionIndicator.svelte';
+	import SessionBottomSheet from '$features/sessions/components/SessionBottomSheet.svelte';
+	import CreateSessionModal from '$features/sessions/components/CreateSessionModal.svelte';
+	import JoinSessionModal from '$features/sessions/components/JoinSessionModal.svelte';
+	import SessionQueueView from '$features/sessions/components/SessionQueueView.svelte';
+	import PWAInstallPrompt from '$lib/components/PWAInstallPrompt.svelte';
+	import PWAUpdateNotification from '$lib/components/PWAUpdateNotification.svelte';
 	import { setContext, getContext, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { initializeApp } from '$lib/app';
@@ -11,6 +18,7 @@
 	import type { UIState, UserState } from '$features/shared/services';
 	import { tabs } from '$lib/stores/tabs';
 	import type { Tab } from '$lib/stores/tabs';
+	import { useSessionState } from '$lib/useSessionState.svelte';
 
 	interface TunerState {
 		open: boolean;
@@ -29,13 +37,29 @@
 	let isImportModalOpen = $state(false);
 	let isWebImportOpen = $state(false);
 
-	// Initialize application on mount
+	// State for session sheet
+	let isSessionSheetOpen = $state(false);
+
+	// Session state initialization
+	let sessionState = $state<ReturnType<typeof useSessionState> | undefined>(undefined);
+	let sessionsEnabled = $state(false);
+
+	// Initialize application on mount (SSR is disabled so this is safe)
 	onMount(async () => {
 		await initializeApp();
 
 		// Get services after initialization
 		uiState = useService<UIState>(TYPES.UIState);
 		userState = useService<UserState>(TYPES.UserState);
+
+		// Initialize session state
+		try {
+			sessionState = useSessionState();
+			sessionsEnabled = true;
+			console.log('✅ SessionState initialized successfully');
+		} catch (error) {
+			console.error('❌ Failed to initialize SessionState:', error);
+		}
 	});
 
 	// Create a global tuner context
@@ -143,6 +167,14 @@
 		}, 100);
 	}
 
+	function handleOpenSessions() {
+		isSessionSheetOpen = true;
+	}
+
+	function handleCloseSessions() {
+		isSessionSheetOpen = false;
+	}
+
 	// Dark mode is always active - no theme switching needed
 </script>
 
@@ -157,15 +189,22 @@
 </svelte:head>
 
 <div class="app-container">
+	<header class="app-header">
+		<div class="logo-area">
+			<a href="/" class="logo-link">
+				<h1 class="app-title">TabScroll</h1>
+			</a>
+		</div>
+		<div class="header-actions">
+			<SessionIndicator sessionState={sessionState} />
+		</div>
+	</header>
+
 	<div class="content-wrapper" use:handleContextMount>
 		{@render children()}
 	</div>
 
-	<PrimaryNavigation
-		onAddTab={handleOpenAddTab}
-		onOpenTuner={toggleTuner}
-		onOpenSettings={toggleSettings}
-	/>
+	<PrimaryNavigation onAddTab={handleOpenAddTab} onOpenTuner={toggleTuner} onOpenSettings={toggleSettings} onOpenSessions={handleOpenSessions} />
 </div>
 
 {#if uiState}
@@ -189,6 +228,16 @@
 	/>
 {/if}
 
+<!-- Session components - always rendered, handle their own visibility -->
+<SessionBottomSheet isOpen={isSessionSheetOpen} onClose={handleCloseSessions} sessionState={sessionState} />
+<CreateSessionModal sessionState={sessionState} />
+<JoinSessionModal sessionState={sessionState} />
+<SessionQueueView sessionState={sessionState} />
+
+<!-- PWA Components -->
+<PWAInstallPrompt />
+<PWAUpdateNotification />
+
 <style>
 	/* Global body styles are now in app.css */
 
@@ -198,6 +247,66 @@
 		display: flex;
 		flex-direction: column;
 		background: var(--color-background);
+	}
+
+	.app-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: var(--spacing-md) var(--spacing-lg);
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-md);
+		position: sticky;
+		top: 0;
+		z-index: var(--z-sticky);
+		backdrop-filter: var(--blur-sm);
+	}
+
+	.logo-area {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		flex-shrink: 0;
+	}
+
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+	}
+
+	.logo-link {
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-sm);
+		text-decoration: none;
+		color: var(--color-text-primary);
+		transition: var(--transition-all);
+		padding: var(--spacing-xs);
+		border-radius: var(--radius-md);
+	}
+
+	.logo-link:hover {
+		color: var(--color-primary);
+		background: var(--color-hover);
+	}
+
+	.logo-link:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
+	}
+
+	.app-title {
+		font-size: var(--font-size-xl);
+		font-weight: var(--font-weight-bold);
+		margin: 0;
+		color: inherit;
+		letter-spacing: var(--letter-spacing-tight);
+		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
 	}
 
 	.content-wrapper {

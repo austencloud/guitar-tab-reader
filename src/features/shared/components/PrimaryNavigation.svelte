@@ -10,17 +10,78 @@
 		currentSection = $bindable('tabs'),
 		onAddTab,
 		onOpenTuner,
-		onOpenSettings
+		onOpenSettings,
+		onOpenSessions
 	} = $props<{
 		currentSection?: string;
 		onAddTab?: () => void;
 		onOpenTuner?: () => void;
 		onOpenSettings?: () => void;
+		onOpenSessions?: () => void;
 	}>();
 
 	// Layout state - detect landscape orientation
 	let isLandscape = $state(false);
 	let navElement = $state<HTMLElement | null>(null);
+
+	// Navigation sections
+	const sections = [
+		{
+			id: 'tabs',
+			label: 'My Tabs',
+			compactLabel: 'Tabs',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`,
+			color: '#4caf50',
+			gradient: 'linear-gradient(135deg, #4caf50, #66bb6a)',
+			href: '/'
+		},
+		{
+			id: 'add',
+			label: 'Add Tab',
+			compactLabel: 'Add',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`,
+			color: '#2196f3',
+			gradient: 'linear-gradient(135deg, #2196f3, #42a5f5)',
+			action: 'add'
+		},
+		{
+			id: 'sessions',
+			label: 'Jam Session',
+			compactLabel: 'Jam',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>`,
+			color: '#e91e63',
+			gradient: 'linear-gradient(135deg, #e91e63, #ec407a)',
+			action: 'sessions'
+		},
+		{
+			id: 'tuner',
+			label: 'Tuner',
+			compactLabel: 'Tune',
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 0 0-9 9h3c0-3.31 2.69-6 6-6s6 2.69 6 6h3a9 9 0 0 0-9-9zm3.14 12a3.01 3.01 0 0 1-2.14.9 3 3 0 0 1-3-3 2.97 2.97 0 0 1 .9-2.14L12 8.07l1.14 2.69c.58.59.9 1.35.9 2.14a2.99 2.99 0 0 1-.9 2.1z"/></svg>`,
+			color: '#ff9800',
+			gradient: 'linear-gradient(135deg, #ff9800, #ffa726)',
+			action: 'tuner'
+		}
+	];
+
+	// Handle section tap
+	function handleSectionTap(section: (typeof sections)[number]) {
+		if (section.action === 'add') {
+			onAddTab?.();
+		} else if (section.action === 'tuner') {
+			onOpenTuner?.();
+		} else if (section.action === 'sessions') {
+			onOpenSessions?.();
+		} else if (section.href) {
+			currentSection = section.id;
+			goto(section.href);
+		}
+	}
+
+	// Handle settings tap
+	function handleSettingsTap() {
+		onOpenSettings?.();
+	}
 
 	// Update layout based on orientation
 	function updateLayout() {

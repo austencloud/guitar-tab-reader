@@ -73,20 +73,20 @@ async function fetchTabWithPlaywright(url: string): Promise<TabData | null> {
 
 		console.log(`🌐 Navigating to ${url}...`);
 
-		// Navigate to the page
-		await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+		// Navigate to the page - use domcontentloaded instead of networkidle (faster, more reliable)
+		await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
-		// Wait reactively for tab content - no fixed timeout, just wait for element
+		// Wait for page to settle and tab content to load
 		console.log(`⏳ Waiting for tab content to load...`);
+		await page.waitForTimeout(3000); // Give the page time to load dynamic content
 
 		// Use Promise.race to wait for any of these selectors to appear
 		await Promise.race([
-			page.waitForSelector('code', { state: 'attached' }),
-			page.waitForSelector('pre.js-tab-content', { state: 'attached' }),
-			page.waitForSelector('pre[class*="tab"]', { state: 'attached' })
+			page.waitForSelector('code', { state: 'attached', timeout: 10000 }),
+			page.waitForSelector('pre.js-tab-content', { state: 'attached', timeout: 10000 }),
+			page.waitForSelector('pre[class*="tab"]', { state: 'attached', timeout: 10000 })
 		]).catch(() => {
-			// If none appear within Playwright's default timeout (30s), that's fine
-			// We'll handle it in the evaluation step
+			console.warn('⚠️ Tab content selectors not found, will try to extract anyway');
 		});
 
 		// Extract tab data from the page

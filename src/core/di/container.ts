@@ -7,7 +7,6 @@ import { Container } from 'inversify';
  */
 export const container = new Container({
 	defaultScope: 'Singleton',
-	autoBindInjectable: true,
 	skipBaseClassChecks: true
 });
 
@@ -24,12 +23,14 @@ export async function initializeContainer(): Promise<void> {
 	const { registerTunerServices } = await import('$features/tuner/services');
 	const { registerPracticeServices } = await import('$features/practice/services');
 	const { registerSharedServices } = await import('$features/shared/services');
+	const { registerSessionServices } = await import('$features/sessions/services/registration');
 
 	// Register all services
 	registerTabServices(container);
 	registerTunerServices(container);
 	registerPracticeServices(container);
 	registerSharedServices(container);
+	registerSessionServices(container);
 }
 
 /**

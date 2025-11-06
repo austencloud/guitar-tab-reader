@@ -17,5 +17,9 @@ export declare const TYPES: {
     readonly UserState: symbol;
     readonly PersistenceManager: symbol;
     readonly StorageService: symbol;
+    readonly PeerConnection: symbol;
+    readonly SessionStorage: symbol;
+    readonly SessionManager: symbol;
+    readonly SessionState: symbol;
 };
 export type ServiceType = (typeof TYPES)[keyof typeof TYPES];

@@ -2,7 +2,10 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { getRecommendedTab } from '$lib/utils/tabVersions';
-import { analyzeQueryAmbiguity } from '$lib/utils/musicBrainz';
+
+// Simple in-memory cache for AI intent analysis (15 minute TTL)
+const intentCache = new Map<string, { intent: Intent; timestamp: number }>();
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 export const POST: RequestHandler = async ({ request, fetch }) => {
 	try {
@@ -28,85 +31,66 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 			);
 		}
 
-		// Handle ambiguous queries - ACTUALLY SEARCH UG to get real results
+		// Handle ambiguous queries
 		if (intent.type === 'AMBIGUOUS') {
 			console.log(`❓ Ambiguous query detected: ${intent.ambiguityReason}`);
-			console.log(`🔍 Performing live search on Ultimate Guitar for: "${query}"`);
 
-			try {
-				// Search UG to get actual results instead of relying on AI guesses
-				const searchResponse = await fetch('/api/scrape-title', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ song: intent.song || query, artist: intent.artist })
-				});
+			// Check if this is a simple typo with a clear correction
+			const isTypo = intent.ambiguityReason?.toLowerCase().includes('typo');
+			const hasSingleCorrection =
+				intent.suggestions?.length === 1 && !intent.ambiguityReason?.includes('vague');
 
-				const searchData = await searchResponse.json();
+			if (isTypo && hasSingleCorrection) {
+				// Auto-correct: recursively call with the corrected query
+				const correctedQuery = intent.suggestions[0];
+				console.log(`🔄 Auto-correcting "${query}" → "${correctedQuery}"`);
 
-				if (searchData.success && searchData.tabs && searchData.tabs.length > 0) {
-					console.log(`✅ Live search found ${searchData.tabs.length} real tabs`);
+				// Re-analyze with the corrected query
+				const correctedIntent = await analyzeIntent(correctedQuery);
 
-					// Group tabs by artist to show user real options
-					const artistGroups = new Map<string, typeof searchData.tabs>();
-					searchData.tabs.forEach((tab: any) => {
-						const artist = tab.artist || 'Unknown Artist';
-						if (!artistGroups.has(artist)) {
-							artistGroups.set(artist, []);
-						}
-						artistGroups.get(artist)!.push(tab);
-					});
+				if (correctedIntent && correctedIntent.type !== 'AMBIGUOUS') {
+					// Get the result from handleIntent
+					const result = await handleIntent(correctedIntent, fetch);
+					const resultData = await result.json();
 
-					// Create suggestions based on ACTUAL search results, not AI guesses
-					const realSuggestions = Array.from(artistGroups.entries())
-						.slice(0, 5) // Top 5 artists
-						.map(([artist, tabs]) => `${artist} - ${intent.song || query}`);
-
-					console.log(`💡 Showing ${realSuggestions.length} real artist options from search`);
-
+					// Mark this as auto-corrected in metadata
 					return json({
-						success: true,
-						type: 'ambiguous_with_results',
-						query: query,
-						ambiguityReason: `Found ${searchData.tabs.length} versions by different artists`,
-						suggestions: realSuggestions,
-						// Include actual search results so UI can show them
-						searchResults: searchData.tabs.slice(0, 10), // Top 10 results
-						possibleArtist: intent.artist,
-						possibleSong: intent.song || query,
-						_meta: intent._meta
-					});
-				} else {
-					console.warn(`⚠️ Live search found no results, falling back to AI suggestions`);
-					// Fall back to AI suggestions if search finds nothing
-					return json({
-						success: true,
-						type: 'ambiguous',
-						query: query,
-						ambiguityReason: intent.ambiguityReason,
-						suggestions: intent.suggestions || [],
-						possibleArtist: intent.artist,
-						possibleSong: intent.song,
-						_meta: intent._meta
+						...resultData,
+						autoCorrection: { from: query, to: correctedQuery }
 					});
 				}
-			} catch (searchError) {
-				console.error(`❌ Live search failed:`, searchError);
-				// Fall back to AI suggestions if search fails
-				return json({
-					success: true,
-					type: 'ambiguous',
-					query: query,
-					ambiguityReason: intent.ambiguityReason,
-					suggestions: intent.suggestions || [],
-					possibleArtist: intent.artist,
-					possibleSong: intent.song,
-					_meta: intent._meta
-				});
 			}
+
+			// Otherwise, show disambiguation UI
+			return json({
+				success: true,
+				type: 'ambiguous',
+				query: query,
+				ambiguityReason: intent.ambiguityReason,
+				suggestions: intent.suggestions || [],
+				possibleArtist: intent.artist,
+				possibleSong: intent.song,
+				_meta: intent._meta
+			});
 		}
 
-		// Execute the appropriate workflow based on intent
-		if (intent.type === 'ARTIST_BULK_IMPORT') {
+		// Handle the intent
+		return await handleIntent(intent, fetch);
+	} catch (error) {
+		console.error('❌ Smart import error:', error);
+		return json(
+			{
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error'
+			},
+			{ status: 500 }
+		);
+	}
+};
+
+async function handleIntent(intent: Intent, fetch: typeof global.fetch) {
+	// Execute the appropriate workflow based on intent
+	if (intent.type === 'ARTIST_BULK_IMPORT') {
 			// Bulk import all tabs for an artist
 			console.log(`📦 Executing bulk artist import for: ${intent.artist}`);
 
@@ -209,28 +193,47 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 					}
 				}
 
-				// Fallback: Could not find tabs
+				// Fallback: If we have an artist, try bulk import instead
+				if (intent.artist) {
+					console.log(`⚠️ Song "${intent.song}" not found. Trying artist bulk import for: ${intent.artist}`);
+
+					const artistResponse = await fetch('/api/scrape-artist', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ artistName: intent.artist })
+					});
+
+					const artistData = await artistResponse.json();
+
+					if (artistData.success && artistData.tabs.length > 0) {
+						console.log(`✅ Fallback successful! Found ${artistData.tabs.length} tabs by ${intent.artist}`);
+						return json({
+							success: true,
+							type: 'artist_bulk',
+							artist: intent.artist,
+							tabs: artistData.tabs,
+							count: artistData.count,
+							message: `Couldn't find "${intent.song}", but here are all tabs by ${intent.artist}`,
+							fallback: true,
+							originalQuery: intent.song,
+							_meta: intent._meta
+						});
+					}
+				}
+
+				// Final fallback: Could not find tabs at all
 				console.log(`❌ Could not find tabs for "${intent.song}" by ${intent.artist || 'unknown'}`);
 				return json({
 					success: false,
-					error: `Could not find tabs for "${intent.song}" by ${intent.artist || 'unknown artist'}. Please check the spelling or try a different search.`,
+					error: `Could not find tabs for "${intent.song}"${intent.artist ? ` by ${intent.artist}` : ''}. Try searching for just the artist name or check your spelling.`,
+					suggestions: intent.artist ? [`All tabs by ${intent.artist}`, 'Try a different song'] : ['Check spelling', 'Try including artist name'],
 					_meta: intent._meta
 				});
 			}
 		}
 
-		return json({ success: false, error: 'Unknown intent type' }, { status: 400 });
-	} catch (error) {
-		console.error('❌ Smart import error:', error);
-		return json(
-			{
-				success: false,
-				error: error instanceof Error ? error.message : 'Unknown error'
-			},
-			{ status: 500 }
-		);
-	}
-};
+	return json({ success: false, error: 'Unknown intent type' }, { status: 400 });
+}
 
 interface Intent {
 	type: 'ARTIST_BULK_IMPORT' | 'SINGLE_TAB_IMPORT' | 'AMBIGUOUS';
@@ -249,7 +252,27 @@ interface Intent {
 }
 
 async function analyzeIntent(query: string): Promise<Intent | null> {
-	const apiKey = env.ANTHROPIC_API_KEY;
+	const apiKey = ANTHROPIC_API_KEY;
+
+	// Normalize query for cache key
+	const cacheKey = query.toLowerCase().trim();
+
+	// Check cache first
+	const cached = intentCache.get(cacheKey);
+	if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+		console.log(`💾 Cache hit for: "${query}"`);
+		return { ...cached.intent, _meta: { ...cached.intent._meta, cached: true } as any };
+	}
+
+	// Clean up expired cache entries periodically
+	if (intentCache.size > 100) {
+		const now = Date.now();
+		for (const [key, value] of intentCache.entries()) {
+			if (now - value.timestamp >= CACHE_TTL) {
+				intentCache.delete(key);
+			}
+		}
+	}
 
 	if (!apiKey) {
 		// Fallback: Simple heuristics
@@ -312,24 +335,20 @@ The database knows which terms are actually ambiguous in the real music world.
 }
 
 Rules:
-🚨 **PRIORITY 1: RESPECT MUSICBRAINZ DATA**
-- If MusicBrainz says isAmbiguous=true, you MUST use type "AMBIGUOUS"
-- MusicBrainz knows the real music world - DO NOT assume you know better
-- If MusicBrainz confidence is "low", be extremely cautious and prefer AMBIGUOUS
-- Use MusicBrainz reasoning in your ambiguityReason field
-
-**Standard Rules (when MusicBrainz is unavailable or inconclusive):**
-- If the query is clearly just an artist name (e.g., "Fish in a Birdcage", "The Beatles"), use ARTIST_BULK_IMPORT
+- If the query is clearly just an artist name (e.g., "Fish in a Birdcage", "The Beatles", "Metallica", "Nirvana"), use ARTIST_BULK_IMPORT
 - If it clearly mentions a specific song, use SINGLE_TAB_IMPORT. Song patterns include:
-  * "{song} by {artist}" (e.g., "Wonderwall by Oasis")
+  * "{song} by {artist}" (e.g., "Wonderwall by Oasis", "Hello by Adele")
   * "{artist} {song}" (e.g., "Green Day Basket Case", "Oasis Wonderwall")
   * "{artist} - {song}" (e.g., "Led Zeppelin - Stairway to Heaven")
-  * Just "{song}" if it's a famous song (e.g., "Stairway to Heaven")
+  * **IMPORTANT**: Single-word queries (e.g., "Hello", "Yesterday", "Creep", "Dreams", "Home", "Stay") should ALWAYS default to SINGLE_TAB_IMPORT unless they are clearly famous band names. Even common words like "Hello" are likely song titles in this guitar tab context.
+- **DEFAULT BEHAVIOR**: When in doubt between artist or song for ANY single word, ALWAYS prefer SINGLE_TAB_IMPORT with confidence "medium". Let the search engine decide if it exists. DO NOT mark as AMBIGUOUS just because a word is common.
 - If it's a Ultimate Guitar URL, use SINGLE_TAB_IMPORT and extract the URL
-- If the query is ambiguous (could be artist OR song, has typos, is vague), use type "AMBIGUOUS"
+- **RARELY use "AMBIGUOUS"** - Only use it if:
+  * The query contains obvious typos that need correction (e.g., "Beatels")
+  * The query is genuinely unclear with no actionable intent (e.g., "that song that goes...", "something by")
+  * The query is too vague to be actionable (e.g., "guitar tabs", "music", "songs")
 - Provide spelling corrections in "suggestions" if there are likely typos
-- Set confidence to "low" if you detect typos or ambiguity
-- For ambiguous queries, provide suggestions for both artist and song interpretations
+- For ambiguous queries, provide specific song/artist suggestions, not generic placeholders
 - When parsing "{artist} {song}" format, assume the first part is the artist and the rest is the song title
 
 **CRITICAL - Suggestion Formatting Rules:**
@@ -396,29 +415,30 @@ Advanced pattern recognition:
   * "Jimi Hendix" → "Jimi Hendrix"
   Always provide corrected spelling in suggestions
 
-Ambiguous cases:
-- Single word that could be band OR song (e.g., "Oasis" - could be the band Oasis, or a song called Oasis)
-- Queries with potential typos (e.g., "Beatels" instead of "Beatles")
-- Vague queries without clear artist or song indicators
+Ambiguous cases (use sparingly):
+- Queries with obvious typos (e.g., "Beatels" instead of "Beatles")
+- Genuinely vague queries (e.g., "guitar tabs", "that song", "music")
 
 Examples:
 "Fish in a Birdcage" → {"type": "ARTIST_BULK_IMPORT", "artist": "Fish in a Birdcage", "confidence": "high"}
 "Wonderwall by Oasis" → {"type": "SINGLE_TAB_IMPORT", "song": "Wonderwall", "artist": "Oasis", "confidence": "high"}
 "Green Day Basket Case" → {"type": "SINGLE_TAB_IMPORT", "song": "Basket Case", "artist": "Green Day", "confidence": "high"}
 "Oasis Wonderwall" → {"type": "SINGLE_TAB_IMPORT", "song": "Wonderwall", "artist": "Oasis", "confidence": "high"}
-"Oasis" → {"type": "AMBIGUOUS", "ambiguityReason": "Could be the band Oasis or a song called Oasis", "suggestions": ["All tabs by Oasis", "Search for: Oasis (song)"], "artist": "Oasis", "confidence": "low"}
-"Beatels" → {"type": "AMBIGUOUS", "ambiguityReason": "Possible typo detected", "suggestions": ["Did you mean: The Beatles"], "artist": "The Beatles", "confidence": "low"}
+"Hello" → {"type": "SINGLE_TAB_IMPORT", "song": "Hello", "confidence": "medium"}
+"Oasis" → {"type": "SINGLE_TAB_IMPORT", "song": "Oasis", "confidence": "medium"} (try as song first; if no results, fallback happens server-side)
+"Yesterday" → {"type": "SINGLE_TAB_IMPORT", "song": "Yesterday", "confidence": "medium"}
+"Beatels" → {"type": "AMBIGUOUS", "ambiguityReason": "Possible typo detected", "suggestions": ["The Beatles"], "confidence": "low"}
 "Stairway to Heaven" → {"type": "SINGLE_TAB_IMPORT", "song": "Stairway to Heaven", "confidence": "medium"}
-"im so tired" → {"type": "AMBIGUOUS", "ambiguityReason": "Incomplete or unclear query", "suggestions": ["The Beatles - I'm So Tired", "Search for: I'm So Tired"], "song": "I'm So Tired", "artist": "The Beatles", "confidence": "medium"}
+"im so tired" → {"type": "SINGLE_TAB_IMPORT", "song": "I'm So Tired", "confidence": "medium"}
 
 Edge case examples:
 "RHCP Californication" → {"type": "SINGLE_TAB_IMPORT", "song": "Californication", "artist": "Red Hot Chili Peppers", "confidence": "high"}
-"Stairway" → {"type": "AMBIGUOUS", "ambiguityReason": "Partial song name detected", "suggestions": ["Led Zeppelin - Stairway to Heaven", "Search for: Stairway"], "song": "Stairway to Heaven", "artist": "Led Zeppelin", "confidence": "medium"}
+"Stairway" → {"type": "SINGLE_TAB_IMPORT", "song": "Stairway", "confidence": "medium"} (search will likely find "Stairway to Heaven")
 "Wonderwall acoustic" → {"type": "SINGLE_TAB_IMPORT", "song": "Wonderwall", "artist": "Oasis", "confidence": "high"}
-"Nirvanna Smells Like Teen Spirit" → {"type": "AMBIGUOUS", "ambiguityReason": "Possible typo in artist name", "suggestions": ["Did you mean: Nirvana - Smells Like Teen Spirit"], "song": "Smells Like Teen Spirit", "artist": "Nirvana", "confidence": "medium"}
+"Nirvanna Smells Like Teen Spirit" → {"type": "AMBIGUOUS", "ambiguityReason": "Possible typo in artist name", "suggestions": ["Nirvana - Smells Like Teen Spirit"], "confidence": "low"}
 "Hotel California live" → {"type": "SINGLE_TAB_IMPORT", "song": "Hotel California", "artist": "Eagles", "confidence": "high"}
 "Beatles 1967" → {"type": "ARTIST_BULK_IMPORT", "artist": "Beatles", "confidence": "high"}
-"something by Metallica" → {"type": "AMBIGUOUS", "ambiguityReason": "Query too vague", "suggestions": ["All tabs by Metallica", "Metallica - Enter Sandman", "Metallica - Nothing Else Matters"], "artist": "Metallica", "confidence": "low"}
+"something by Metallica" → {"type": "AMBIGUOUS", "ambiguityReason": "Query too vague - no specific song mentioned", "suggestions": ["All tabs by Metallica", "Metallica - Enter Sandman", "Metallica - Nothing Else Matters"], "confidence": "low"}
 "RATM" → {"type": "ARTIST_BULK_IMPORT", "artist": "Rage Against the Machine", "confidence": "high"}
 "best tabs by Pink Floyd" → {"type": "ARTIST_BULK_IMPORT", "artist": "Pink Floyd", "confidence": "high"}`
 					}
@@ -445,6 +465,11 @@ Edge case examples:
 
 			console.log('🧠 AI analyzed intent:', intent);
 			console.log(`📊 Token usage: ${intent._meta.inputTokens} input + ${intent._meta.outputTokens} output = ${intent._meta.inputTokens + intent._meta.outputTokens} total`);
+
+			// Cache the result
+			intentCache.set(cacheKey, { intent, timestamp: Date.now() });
+			console.log(`💾 Cached intent for: "${query}"`);
+
 			return intent;
 		}
 	} catch (error) {

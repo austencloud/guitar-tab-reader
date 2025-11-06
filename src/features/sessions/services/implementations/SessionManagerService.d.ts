@@ -1,0 +1,78 @@
+import type { Tab } from '$lib/stores/tabs';
+import type { ISessionManager } from '../contracts/ISessionManager';
+import type { IPeerConnection } from '../contracts/IPeerConnection';
+import type { ISessionStorage } from '../contracts/ISessionStorage';
+import type { Session, QueueTab, Member, SessionSettings, PastSession, PersistentRoom, Playlist } from '../../types';
+/**
+ * High-level session management service
+ * Coordinates WebRTC connections and local storage
+ */
+export declare class SessionManagerService implements ISessionManager {
+    private peerConnection;
+    private storage;
+    private currentSession;
+    private currentMemberId;
+    private sessionStartTime;
+    private sessionUpdateCallbacks;
+    private queueUpdateCallbacks;
+    private memberUpdateCallbacks;
+    private errorCallbacks;
+    constructor(peerConnection: IPeerConnection, storage: ISessionStorage);
+    createSession(name: string, deviceName: string, persistentRoomId?: string): Promise<Session>;
+    joinSession(code: string, deviceName: string): Promise<Session>;
+    leaveSession(saveHistory?: boolean): Promise<void>;
+    getCurrentSession(): Session | null;
+    isInSession(): boolean;
+    addTabToQueue(tab: Tab): Promise<QueueTab>;
+    removeTabFromQueue(queueTabId: string): Promise<void>;
+    reorderQueue(queueTabs: QueueTab[]): Promise<void>;
+    setCurrentTab(queueTabId: string): Promise<void>;
+    getNextTab(): QueueTab | null;
+    playNextTab(): Promise<void>;
+    getMembers(): Member[];
+    getCurrentMember(): Member | null;
+    updateCurrentMember(updates: Partial<Member>): Promise<void>;
+    updateSettings(settings: Partial<SessionSettings>): Promise<void>;
+    enableScrollSync(): Promise<void>;
+    disableScrollSync(): Promise<void>;
+    updateScrollPosition(lineNumber: number): Promise<void>;
+    getPastSessions(): Promise<PastSession[]>;
+    getPastSession(id: string): Promise<PastSession | undefined>;
+    deletePastSession(id: string): Promise<void>;
+    exportSession(sessionId: string): Promise<string>;
+    createPersistentRoom(name: string): Promise<PersistentRoom>;
+    getPersistentRooms(): Promise<PersistentRoom[]>;
+    rejoinPersistentRoom(roomId: string, deviceName: string): Promise<Session>;
+    deletePersistentRoom(roomId: string): Promise<void>;
+    createPlaylist(name: string, tabs: Tab[]): Promise<Playlist>;
+    getPlaylists(): Promise<Playlist[]>;
+    loadPlaylistToQueue(playlistId: string): Promise<void>;
+    updatePlaylist(playlistId: string, updates: Partial<Playlist>): Promise<void>;
+    deletePlaylist(playlistId: string): Promise<void>;
+    saveTabToLibrary(queueTab: QueueTab): Promise<void>;
+    batchSaveToLibrary(queueTabIds: string[]): Promise<void>;
+    savePastSessionTabs(sessionId: string): Promise<void>;
+    onSessionUpdate(callback: (session: Session) => void): void;
+    onQueueUpdate(callback: (queue: QueueTab[]) => void): void;
+    onMemberUpdate(callback: (members: Member[]) => void): void;
+    onError(callback: (error: Error) => void): void;
+    private setupPeerConnectionHandlers;
+    private handlePeerEvent;
+    private handleMemberJoined;
+    private handleMemberLeft;
+    private handleQueueTabAdded;
+    private handleQueueTabRemoved;
+    private handleQueueReordered;
+    private handleTabStarted;
+    private handleScrollPositionUpdated;
+    private handleSessionSettingsUpdated;
+    private handleSessionStateSync;
+    private mergeMemberLists;
+    private saveSessionToHistory;
+    private requestSessionState;
+    private discoverHostPeerId;
+    private notifySessionUpdate;
+    private notifyQueueUpdate;
+    private notifyMemberUpdate;
+    private notifyError;
+}

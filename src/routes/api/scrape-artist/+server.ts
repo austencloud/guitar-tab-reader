@@ -129,53 +129,82 @@ async function scrapeArtistTabs(artistName: string): Promise<TabInfo[]> {
 			const artistHeader = document.querySelector('h1');
 			const artist = artistHeader?.textContent?.replace(/\s+(Chords?|Tabs?|&).*/i, '').trim() || '';
 
-			// Find all rows in the artist page table (each row is a tab)
-			const rows = document.querySelectorAll('article .dyhP1:not(.oStLJ)');
-			console.log(`Found ${rows.length} result rows`);
+			// Find all tab links - try multiple selector strategies
+			let tabLinks = document.querySelectorAll('article a[href*="/tab/"]');
 
-			rows.forEach((row) => {
-				// Each row has 4 cells: Artist | Song | Rating | Type
-				const cells = row.querySelectorAll('.qNp1Q');
-				if (cells.length < 4) return;
+			// Log what we found for debugging
+			console.log(`Strategy 1 - Found ${tabLinks.length} tab links with 'article a[href*="/tab/"]'`);
 
-				// Cell 1: Song title and URL
-				const songCell = cells[1];
-				const songLink = songCell.querySelector('a[href*="/tab/"]') as HTMLAnchorElement;
-				if (!songLink) return;
+			// If we didn't find any with the article selector, try broader search
+			if (tabLinks.length === 0) {
+				tabLinks = document.querySelectorAll('a[href*="/tab/"]');
+				console.log(`Strategy 2 - Found ${tabLinks.length} tab links with 'a[href*="/tab/"]'`);
+			}
 
-				const url = songLink.href;
+			// Process each tab link
+			tabLinks.forEach((link) => {
+				const url = (link as HTMLAnchorElement).href;
 				if (!url || url.endsWith('#') || seenUrls.has(url)) return;
 				seenUrls.add(url);
 
-				let title = songLink.textContent?.trim() || '';
+				// Get title from link text
+				let title = link.textContent?.trim() || '';
 				title = title.replace(/\s*\*\s*$/, '').trim();
 				if (!title) return;
 
-				// Cell 2: Rating (stars and vote count)
-				const ratingCell = cells[2];
-				const stars = ratingCell.querySelectorAll('.STM0m');
-				let rating = 0;
-				stars.forEach((star) => {
-					// Count filled stars (N3Nzv without cr1d0 or t4iet = filled)
-					if (
-						star.classList.contains('N3Nzv') &&
-						!star.classList.contains('cr1d0') &&
-						!star.classList.contains('t4iet')
-					) {
-						rating++;
+				// Try to find parent row to extract rating and type info
+				let rating: number | undefined;
+				let votes: number | undefined;
+				let type = 'Tab';
+
+				// Try to find the containing row/article
+				const parentRow = link.closest('article') || link.closest('tr') || link.closest('div[class*="row"]');
+
+				if (parentRow) {
+					// Try to extract rating - look for star elements
+					const stars = parentRow.querySelectorAll('[class*="star" i], .STM0m, [data-rating]');
+					if (stars.length > 0) {
+						// Count filled/active stars
+						let starCount = 0;
+						stars.forEach((star) => {
+							// Check various ways stars might be marked as filled
+							const classList = Array.from(star.classList);
+							const isFilled = classList.some(c =>
+								c.includes('fill') || c.includes('active') || c.includes('N3Nzv')
+							) && !classList.some(c =>
+								c.includes('empty') || c.includes('cr1d0') || c.includes('t4iet')
+							);
+							if (isFilled) starCount++;
+						});
+						if (starCount > 0) rating = starCount;
 					}
-				});
 
-				const voteDiv = ratingCell.querySelector('.fxXfx');
-				const votesText = voteDiv?.textContent?.trim() || '0';
-				// Parse vote count, handling commas (e.g., "4,307" -> 4307)
-				const votes = parseInt(votesText.replace(/,/g, ''), 10) || 0;
+					// Try to extract vote count
+					const voteElements = parentRow.querySelectorAll('[class*="vote" i], .fxXfx, [class*="rating" i]');
+					for (const el of voteElements) {
+						const text = el.textContent?.trim() || '';
+						const match = text.match(/[\d,]+/);
+						if (match) {
+							const parsedVotes = parseInt(match[0].replace(/,/g, ''), 10);
+							if (parsedVotes > 0) {
+								votes = parsedVotes;
+								break;
+							}
+						}
+					}
 
-				// Cell 3: Type
-				const typeCell = cells[3];
-				let type = typeCell.textContent?.trim() || 'Tab';
+					// Try to extract type from text content or nearby elements
+					const typeElements = parentRow.querySelectorAll('[class*="type" i]');
+					for (const el of typeElements) {
+						const typeText = el.textContent?.trim();
+						if (typeText && typeText.length < 20) { // Type should be short
+							type = typeText;
+							break;
+						}
+					}
+				}
 
-				// If type is not set or is generic, try to determine from URL
+				// Fallback: determine type from URL if not found
 				if (!type || type === 'Tab') {
 					if (url.includes('-chords-')) type = 'Chords';
 					else if (url.includes('-bass-')) type = 'Bass';
@@ -191,8 +220,8 @@ async function scrapeArtistTabs(artistName: string): Promise<TabInfo[]> {
 					artist,
 					url,
 					type,
-					rating: rating > 0 ? rating : undefined,
-					votes: votes > 0 ? votes : undefined
+					rating: rating && rating > 0 ? rating : undefined,
+					votes: votes && votes > 0 ? votes : undefined
 				});
 			});
 
