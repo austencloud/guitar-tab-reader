@@ -6,11 +6,13 @@
 	let {
 		currentSection = $bindable('tabs'),
 		onAddTab,
-		onOpenSettings
+		onOpenSettings,
+		isHeaderVisible = true
 	} = $props<{
 		currentSection?: string;
 		onAddTab?: () => void;
 		onOpenSettings?: () => void;
+		isHeaderVisible?: boolean;
 	}>();
 
 	// Navigation items with modern lucide icons
@@ -57,7 +59,7 @@
 	}
 </script>
 
-<nav class="modern-nav">
+<nav class="modern-nav" class:nav-hidden={!isHeaderVisible}>
 	{#each navItems as item}
 		{@const Icon = item.icon}
 		<button
@@ -92,6 +94,12 @@
 		border-top: 1px solid rgba(255, 255, 255, 0.08);
 		z-index: 100;
 		gap: 0.125rem;
+		transform: translateY(0);
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.modern-nav.nav-hidden {
+		transform: translateY(100%);
 	}
 
 	.nav-item {

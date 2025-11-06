@@ -119,9 +119,17 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 				sendProgress('Starting import', 'Fetching tab data from Ultimate Guitar...');
 				const result = await tabImporter.executeImport(intent, sendProgress);
 
+				console.log('🎯 Import result:', result);
+				console.log('🎯 Result type:', result.type);
+				console.log('🎯 Result success:', result.success);
+				console.log('🎯 Tabs count:', result.tabs?.length || result.count);
+
 				if (result.success) {
+					console.log('✅ Sending completion message...');
 					sendComplete(result);
+					console.log('✅ Completion message sent');
 				} else {
+					console.log('❌ Sending error message...');
 					sendError(result.error || 'Import failed', result.suggestions);
 				}
 			} catch (error) {

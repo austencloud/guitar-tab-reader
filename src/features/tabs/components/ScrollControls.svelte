@@ -1,15 +1,20 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { AutoScrollController, scrollToPosition } from '$lib/utils/autoScroll';
 
-	interface Props {
+	let {
+		container = $bindable(),
+		onscrollStateChange,
+		onstartScroll,
+		onstopScroll,
+		onhideNavigation
+	}: {
 		container: HTMLElement;
 		onscrollStateChange?: (isScrolling: boolean) => void;
 		onstartScroll?: () => void;
 		onstopScroll?: () => void;
-	}
-
-	let { container, onscrollStateChange, onstartScroll, onstopScroll }: Props = $props();
+		onhideNavigation?: () => void;
+	} = $props();
 
 	let isScrolling = $state(false);
 	let scrollSpeed = $state(20);
@@ -31,6 +36,7 @@
 
 	function startScroll() {
 		if (!container) {
+			console.error('Cannot start scroll: container is null or undefined');
 			return;
 		}
 
@@ -46,6 +52,10 @@
 			isScrolling = true;
 			onscrollStateChange?.(isScrolling);
 			onstartScroll?.();
+			// Hide navigation when auto-scroll starts
+			onhideNavigation?.();
+		} else {
+			console.warn('Cannot start auto-scroll: content does not overflow container');
 		}
 	}
 
@@ -155,7 +165,6 @@
 	});
 
 	// Clean up on component destroy
-	import { onDestroy } from 'svelte';
 	onDestroy(() => {
 		if (scrollController) {
 			scrollController.stop();
@@ -164,256 +173,340 @@
 </script>
 
 <div class="scroll-controls">
+	<!-- Compact single-row layout -->
 	<div class="controls-row">
-		<button aria-label={isScrolling ? 'Pause' : 'Play'} class="icon-button" onclick={toggleScroll}>
+		<!-- Play/Pause button -->
+		<button 
+			class="control-btn primary-btn" 
+			onclick={toggleScroll}
+			aria-label={isScrolling ? 'Pause auto-scroll' : 'Start auto-scroll'}
+		>
 			{#if isScrolling}
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-					><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg
-				>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+				</svg>
 			{:else}
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-					><path d="M8 5v14l11-7-11-7z" /></svg
-				>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M8 5v14l11-7z" />
+				</svg>
 			{/if}
 		</button>
 
-		<button aria-label="Reset to top" class="icon-button" onclick={resetScroll}>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 6h12v12H6z" /></svg>
-		</button>
-	</div>
-
-	<div class="speed-control">
-		<button
-			class="speed-button"
-			onclick={decreaseSpeed}
-			aria-label="Decrease speed"
-			disabled={scrollSpeed <= MIN_SPEED}
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-				><path d="M19 13H5v-2h14v2z" /></svg
+		<!-- Speed control -->
+		<div class="speed-section">
+			<button
+				class="control-btn speed-btn"
+				onclick={decreaseSpeed}
+				aria-label="Decrease speed"
+				disabled={scrollSpeed <= MIN_SPEED}
 			>
-		</button>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M19 13H5v-2h14v2z" />
+				</svg>
+			</button>
 
-		<div class="speed-slider-container">
-			<div class="slider-with-buttons">
-				<input
-					type="range"
-					min={MIN_SPEED}
-					max={MAX_SPEED}
-					step={SPEED_STEP}
-					bind:value={scrollSpeed}
-					oninput={handleSpeedChange}
-					aria-label="Scroll speed"
-				/>
+			<div class="speed-display">
+				<div class="speed-label">Speed</div>
+				<div class="speed-value">{formattedSpeed}</div>
 			</div>
-			<div class="speed-feedback">
-				<span class="speed-value">{formattedSpeed}</span>
-				<span class="speed-percentage">({speedPercentage}%)</span>
-			</div>
+
+			<button
+				class="control-btn speed-btn"
+				onclick={increaseSpeed}
+				aria-label="Increase speed"
+				disabled={scrollSpeed >= MAX_SPEED}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+					<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+				</svg>
+			</button>
 		</div>
 
-		<button
-			class="speed-button"
-			onclick={increaseSpeed}
-			aria-label="Increase speed"
-			disabled={scrollSpeed >= MAX_SPEED}
+		<!-- Reset button -->
+		<button 
+			class="control-btn reset-btn" 
+			onclick={resetScroll}
+			aria-label="Reset to top"
 		>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-				><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg
-			>
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+				<path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+			</svg>
 		</button>
 	</div>
 
-	<div class="keyboard-shortcuts">
-		<span>Space: Play/Pause</span>
-		<span>+/-: Speed</span>
-	</div>
+	<!-- Hidden range input for fine control (accessible) -->
+	<input
+		type="range"
+		class="speed-slider"
+		min={MIN_SPEED}
+		max={MAX_SPEED}
+		step={SPEED_STEP}
+		bind:value={scrollSpeed}
+		oninput={handleSpeedChange}
+		aria-label="Fine-tune scroll speed"
+	/>
 </div>
 
 <style>
 	.scroll-controls {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-sm);
-		padding: var(--spacing-md);
-		background-color: var(--color-surface-high);
-		border-radius: var(--radius-xl);
-		box-shadow: var(--shadow-lg);
-		margin-top: var(--spacing-md);
-		border: 1px solid var(--color-border);
+		gap: 0.5rem;
+		padding: 0;
 	}
 
 	.controls-row {
 		display: flex;
-		gap: var(--spacing-md);
-		justify-content: center;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
 	}
 
-	.icon-button {
-		background: none;
-		border: none;
+	/* Modern glassmorphic button base */
+	.control-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 12px;
+		color: rgba(255, 255, 255, 0.9);
 		cursor: pointer;
-		border-radius: var(--radius-full);
-		width: var(--touch-target-comfortable);
-		height: var(--touch-target-comfortable);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		color: var(--color-text-inverse);
-		transition: var(--transition-all);
-		box-shadow: var(--shadow-md);
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+		-webkit-tap-highlight-color: transparent;
+		min-width: 44px;
+		min-height: 44px;
+		padding: 0.5rem;
 	}
 
-	.icon-button:hover {
-		background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
+	.control-btn svg {
+		width: 20px;
+		height: 20px;
+		flex-shrink: 0;
+	}
+
+	.control-btn:hover {
+		background: rgba(255, 255, 255, 0.14);
+		border-color: rgba(255, 255, 255, 0.2);
+		transform: translateY(-1px);
+	}
+
+	.control-btn:active {
+		transform: scale(0.96);
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	.control-btn:disabled {
+		opacity: 0.3;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.control-btn:disabled:hover {
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.12);
+		transform: none;
+	}
+
+	/* Primary play/pause button - emphasis with color */
+	.primary-btn {
+		background: linear-gradient(135deg, #10b981, #059669);
+		border-color: rgba(255, 255, 255, 0.2);
+		color: white;
+		min-width: 48px;
+		min-height: 48px;
+		box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+	}
+
+	.primary-btn:hover {
+		background: linear-gradient(135deg, #059669, #047857);
+		box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 		transform: translateY(-2px);
-		box-shadow: var(--shadow-lg), var(--glow-primary);
 	}
 
-	.icon-button:active {
-		transform: translateY(0) scale(0.95);
-		box-shadow: var(--shadow-sm);
+	.primary-btn:active {
+		transform: scale(0.94);
+		box-shadow: 0 1px 4px rgba(16, 185, 129, 0.3);
 	}
 
-	.icon-button:focus-visible {
-		outline: 2px solid var(--color-focus);
-		outline-offset: 2px;
-	}
-
-	.icon-button svg {
-		width: 1.25rem;
-		height: 1.25rem;
-		fill: currentColor;
-	}
-
-	.speed-control {
+	/* Speed section - compact inline layout */
+	.speed-section {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
-		margin-top: var(--spacing-sm);
+		gap: 0.5rem;
+		flex: 1;
+		max-width: 240px;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 12px;
+		padding: 0.25rem;
 	}
 
-	.speed-slider-container {
-		flex: 1;
+	.speed-btn {
+		min-width: 36px;
+		min-height: 36px;
+		padding: 0.375rem;
+	}
+
+	.speed-btn svg {
+		width: 16px;
+		height: 16px;
+	}
+
+	.speed-display {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-xs);
-	}
-
-	.slider-with-buttons {
-		display: flex;
 		align-items: center;
-		position: relative;
-		height: 30px;
+		flex: 1;
+		min-width: 60px;
 	}
 
-	.slider-with-buttons input {
-		width: 100%;
-	}
-
-	.speed-feedback {
-		display: flex;
-		justify-content: center;
-		font-size: var(--font-size-xs);
-		color: var(--color-text-secondary);
+	.speed-label {
+		font-size: 0.625rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: rgba(255, 255, 255, 0.5);
+		line-height: 1;
 	}
 
 	.speed-value {
-		font-weight: var(--font-weight-bold);
-		color: var(--color-text-primary);
+		font-size: 1rem;
+		font-weight: 700;
+		color: #10b981;
+		line-height: 1.2;
+		font-variant-numeric: tabular-nums;
 	}
 
-	.speed-percentage {
-		margin-left: var(--spacing-xs);
-		opacity: 0.8;
+	/* Reset button */
+	.reset-btn {
+		min-width: 44px;
+		min-height: 44px;
 	}
 
-	.speed-button {
-		width: var(--touch-target-min);
-		height: var(--touch-target-min);
-		border-radius: var(--radius-full);
-		border: none;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-		color: var(--color-text-inverse);
+	.reset-btn svg {
+		width: 18px;
+		height: 18px;
+	}
+
+	/* Hidden slider for fine control */
+	.speed-slider {
+		width: 100%;
+		height: 4px;
+		-webkit-appearance: none;
+		appearance: none;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 2px;
+		outline: none;
 		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: var(--transition-all);
-		box-shadow: var(--shadow-sm);
-		align-self: center;
+		margin-top: 0.25rem;
 	}
 
-	.speed-button svg {
-		width: 1rem;
-		height: 1rem;
-		fill: currentColor;
+	.speed-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 16px;
+		height: 16px;
+		background: #10b981;
+		border-radius: 50%;
+		cursor: pointer;
+		box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+		transition: all 0.2s;
 	}
 
-	.speed-button:hover {
-		background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
-		transform: translateY(-1px);
-		box-shadow: var(--shadow-md), var(--glow-primary);
+	.speed-slider::-webkit-slider-thumb:hover {
+		transform: scale(1.2);
+		box-shadow: 0 0 12px rgba(16, 185, 129, 0.7);
 	}
 
-	.speed-button:active {
-		transform: translateY(0) scale(0.95);
-		box-shadow: var(--shadow-sm);
+	.speed-slider::-moz-range-thumb {
+		width: 16px;
+		height: 16px;
+		background: #10b981;
+		border: none;
+		border-radius: 50%;
+		cursor: pointer;
+		box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+		transition: all 0.2s;
 	}
 
-	.speed-button:focus-visible {
-		outline: 2px solid var(--color-focus);
+	.speed-slider::-moz-range-thumb:hover {
+		transform: scale(1.2);
+		box-shadow: 0 0 12px rgba(16, 185, 129, 0.7);
+	}
+
+	/* Focus styles for accessibility */
+	.control-btn:focus-visible {
+		outline: 2px solid #10b981;
 		outline-offset: 2px;
 	}
 
-	.speed-button:disabled {
-		background: var(--color-disabled);
-		cursor: not-allowed;
-		transform: none;
-		box-shadow: none;
-		opacity: 0.5;
+	.speed-slider:focus-visible {
+		outline: 2px solid #10b981;
+		outline-offset: 2px;
 	}
 
-	.keyboard-shortcuts {
-		display: flex;
-		justify-content: space-around;
-		font-size: var(--font-size-xs);
-		color: var(--color-text-tertiary);
-		margin-top: var(--spacing-xs);
-		gap: var(--spacing-sm);
+	/* Small mobile screens - more compact */
+	@media (max-width: 380px) {
+		.controls-row {
+			gap: 0.375rem;
+		}
+
+		.primary-btn {
+			min-width: 44px;
+			min-height: 44px;
+		}
+
+		.control-btn svg {
+			width: 18px;
+			height: 18px;
+		}
+
+		.speed-section {
+			max-width: 200px;
+		}
+
+		.speed-display {
+			min-width: 50px;
+		}
+
+		.speed-value {
+			font-size: 0.875rem;
+		}
+
+		.speed-label {
+			font-size: 0.5625rem;
+		}
 	}
 
-	/* Mobile optimization */
-	@media (max-width: 768px) {
-		.scroll-controls {
-			padding: var(--spacing-sm);
-			width: 100%;
-			box-sizing: border-box;
+	/* Larger screens - more breathing room */
+	@media (min-width: 640px) {
+		.controls-row {
+			gap: 0.75rem;
 		}
 
-		.icon-button {
-			width: var(--touch-target-min);
-			height: var(--touch-target-min);
+		.speed-section {
+			max-width: 280px;
+			gap: 0.75rem;
+		}
+	}
+
+	/* Reduced motion */
+	@media (prefers-reduced-motion: reduce) {
+		.control-btn,
+		.speed-slider::-webkit-slider-thumb,
+		.speed-slider::-moz-range-thumb {
+			transition: none;
 		}
 
-		.icon-button svg {
-			width: 1rem;
-			height: 1rem;
+		.control-btn:hover,
+		.primary-btn:hover {
+			transform: none;
 		}
 
-		.speed-button {
-			width: 40px;
-			height: 40px;
-		}
-
-		.speed-button svg {
-			width: 0.875rem;
-			height: 0.875rem;
-		}
-
-		.keyboard-shortcuts {
-			font-size: 0.625rem;
+		.control-btn:active,
+		.primary-btn:active {
+			transform: none;
 		}
 	}
 </style>

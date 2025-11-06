@@ -11,6 +11,54 @@
 
 	let { results, groupedResults, expandedGroups, onSelectTab, onToggleGroup }: Props = $props();
 
+	// Filter state
+	let selectedTypes = $state<Set<string>>(new Set(['Chords'])); // Default to Chords only
+	let availableTypes = $derived(() => {
+		const types = new Set<string>();
+		results.forEach((tab) => {
+			if (tab.type) types.add(tab.type);
+		});
+		return Array.from(types).sort();
+	});
+
+	// Filtered results
+	let filteredGroupedResults = $derived(() => {
+		if (selectedTypes.size === 0) return groupedResults;
+
+		const filtered = new Map<string, TabGroup>();
+		for (const [key, group] of groupedResults.entries()) {
+			if (selectedTypes.has(group.type)) {
+				filtered.set(key, group);
+			}
+		}
+		return filtered;
+	});
+
+	let filteredCount = $derived(() => {
+		let count = 0;
+		for (const group of filteredGroupedResults().values()) {
+			count += group.versions.length;
+		}
+		return count;
+	});
+
+	function toggleType(type: string) {
+		if (selectedTypes.has(type)) {
+			selectedTypes.delete(type);
+		} else {
+			selectedTypes.add(type);
+		}
+		selectedTypes = new Set(selectedTypes); // Trigger reactivity
+	}
+
+	function selectAllTypes() {
+		selectedTypes = new Set(availableTypes());
+	}
+
+	function clearAllTypes() {
+		selectedTypes = new Set();
+	}
+
 	function formatVotes(votes?: number): string {
 		if (!votes) return '';
 		if (votes >= 1000) {
@@ -21,17 +69,46 @@
 
 	function renderStars(rating?: number): string {
 		if (!rating) return '';
-		const filled = '★'.repeat(rating);
-		const empty = '☆'.repeat(5 - rating);
+		// Normalize rating to 0-5 scale if it's out of range
+		const normalizedRating = rating > 5 ? Math.round((rating / 100) * 5) : Math.round(rating);
+		const clampedRating = Math.max(0, Math.min(5, normalizedRating));
+		const filled = '★'.repeat(clampedRating);
+		const empty = '☆'.repeat(5 - clampedRating);
 		return filled + empty;
 	}
 </script>
 
 <div class="bulk-results-view">
-	<p class="results-count">Found {results.length} tabs</p>
+	<div class="filter-section">
+		<div class="filter-header">
+			<span class="filter-label">Filter by type:</span>
+			<div class="filter-actions">
+				<button class="filter-action-btn" onclick={selectAllTypes}>All</button>
+				<button class="filter-action-btn" onclick={clearAllTypes}>None</button>
+			</div>
+		</div>
+		<div class="filter-chips">
+			{#each availableTypes() as type}
+				<button
+					class="filter-chip"
+					class:active={selectedTypes.has(type)}
+					onclick={() => toggleType(type)}
+				>
+					{type}
+					{#if selectedTypes.has(type)}
+						<span class="check-icon">✓</span>
+					{/if}
+				</button>
+			{/each}
+		</div>
+	</div>
+
+	<p class="results-count">
+		Showing {filteredCount()} of {results.length} tabs
+	</p>
 
 	<div class="tabs-list">
-		{#each Array.from(groupedResults.values()) as group}
+		{#each Array.from(filteredGroupedResults().values()) as group}
 			{@const groupKey = `${group.baseTitle}|${group.type}`}
 			{@const isExpanded = expandedGroups.has(groupKey)}
 			{@const hasMultiple = group.versions.length > 1}
@@ -126,6 +203,86 @@
 		display: flex;
 		flex-direction: column;
 		overflow-y: auto;
+	}
+
+	.filter-section {
+		margin-bottom: 1.5rem;
+		padding: 1rem;
+		background-color: #f8f9fa;
+		border-radius: 8px;
+		border: 2px solid #e5e5e5;
+	}
+
+	.filter-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.75rem;
+	}
+
+	.filter-label {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #333;
+	}
+
+	.filter-actions {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.filter-action-btn {
+		background: transparent;
+		border: 1px solid #ccc;
+		padding: 0.25rem 0.75rem;
+		border-radius: 4px;
+		font-size: 0.8rem;
+		cursor: pointer;
+		color: #666;
+		transition: all 0.2s;
+	}
+
+	.filter-action-btn:hover {
+		background-color: #4caf50;
+		border-color: #4caf50;
+		color: white;
+	}
+
+	.filter-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.filter-chip {
+		background: white;
+		border: 2px solid #e5e5e5;
+		padding: 0.5rem 1rem;
+		border-radius: 20px;
+		font-size: 0.85rem;
+		cursor: pointer;
+		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-weight: 500;
+		color: #666;
+	}
+
+	.filter-chip:hover {
+		border-color: #4caf50;
+		background-color: #f8fdf8;
+	}
+
+	.filter-chip.active {
+		background-color: #4caf50;
+		border-color: #4caf50;
+		color: white;
+	}
+
+	.check-icon {
+		font-size: 0.9rem;
+		font-weight: bold;
 	}
 
 	.results-count {
@@ -288,31 +445,105 @@
 
 	/* Dark Mode */
 	@media (prefers-color-scheme: dark) {
+		.filter-section {
+			background-color: rgba(255, 255, 255, 0.05);
+			border-color: #3a3a3a;
+		}
+
+		.filter-label {
+			color: #e0e0e0;
+		}
+
+		.filter-action-btn {
+			border-color: #555;
+			color: #999;
+		}
+
+		.filter-action-btn:hover {
+			background-color: #66bb6a;
+			border-color: #66bb6a;
+			color: white;
+		}
+
+		.filter-chip {
+			background-color: #1e1e1e;
+			border-color: #3a3a3a;
+			color: #999;
+		}
+
+		.filter-chip:hover {
+			border-color: #66bb6a;
+			background-color: #2a3a2a;
+		}
+
+		.filter-chip.active {
+			background-color: #66bb6a;
+			border-color: #66bb6a;
+			color: white;
+		}
+
 		.results-count {
 			background-color: rgba(255, 255, 255, 0.05);
 			color: #ccc;
 		}
 
 		.tab-item {
-			background-color: #2a2a2a;
-			border-color: #444;
+			background-color: #1e1e1e;
+			border-color: #3a3a3a;
 		}
 
 		.tab-item:hover {
-			background-color: #2d3d2d;
+			background-color: #2a3a2a;
 			border-color: #66bb6a;
+		}
+
+		.tab-item.recommended {
+			background: linear-gradient(135deg, #1e2e1e 0%, #1e1e1e 100%);
+			border-color: #66bb6a;
+		}
+
+		.tab-item.recommended:hover {
+			background: linear-gradient(135deg, #2a3a2a 0%, #253525 100%);
+			border-color: #76cb7a;
+		}
+
+		.tab-item.alternate {
+			background-color: #1a1a1a;
+			border-color: #333;
+		}
+
+		.tab-item.alternate:hover {
+			background-color: #252525;
+			border-color: #555;
 		}
 
 		.tab-title {
 			color: #e0e0e0;
 		}
 
+		.tab-type {
+			color: #999;
+		}
+
+		.vote-count {
+			color: #666;
+		}
+
 		.tab-item svg {
-			color: #777;
+			color: #666;
 		}
 
 		.tab-item:hover svg {
 			color: #66bb6a;
+		}
+
+		.show-alternates-btn {
+			color: #999;
+		}
+
+		.show-alternates-btn:hover {
+			color: #66bb6a;
+			background-color: rgba(102, 187, 106, 0.1);
 		}
 	}
 </style>

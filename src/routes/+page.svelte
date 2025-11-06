@@ -129,12 +129,7 @@
 </svelte:head>
 
 <main class="container">
-	<header>
-		<div class="title-container">
-			<h1>Tab Scroll</h1>
-			<span class="version">{appVersion}</span>
-		</div>
-	</header>
+
 
 	<div class="tabs-container">
 		<ControlsRow

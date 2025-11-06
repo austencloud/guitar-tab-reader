@@ -31,6 +31,11 @@
 	let { children } = $props();
 	let childTunerState: TunerState | null = $state(null);
 
+	// Scroll-to-hide state
+	let lastScrollY = $state(0);
+	let isHeaderVisible = $state(true);
+	const scrollThreshold = 50; // Minimum scroll distance to trigger hide/show
+
 	// Get services from DI container (stored in $state to maintain reactivity)
 	let uiState = $state<UIState | undefined>(undefined);
 	let userState = $state<UserState | undefined>(undefined);
@@ -53,22 +58,49 @@
 	const currentTab = $derived(currentTabId ? $tabs.find((tab) => tab.id === currentTabId) : null);
 
 	// Initialize application on mount (SSR is disabled so this is safe)
-	onMount(async () => {
-		await initializeApp();
+	onMount(() => {
+		(async () => {
+			await initializeApp();
 
-		// Get services after initialization
-		uiState = useService<UIState>(TYPES.UIState);
-		userState = useService<UserState>(TYPES.UserState);
+			// Get services after initialization
+			uiState = useService<UIState>(TYPES.UIState);
+			userState = useService<UserState>(TYPES.UserState);
 
-		// Initialize session state
-		try {
-			sessionState = useSessionState();
-			sessionsEnabled = true;
-			console.log('✅ SessionState initialized successfully');
-		} catch (error) {
-			console.error('❌ Failed to initialize SessionState:', error);
-		}
+			// Initialize session state
+			try {
+				sessionState = useSessionState();
+				sessionsEnabled = true;
+				console.log('✅ SessionState initialized successfully');
+			} catch (error) {
+				console.error('❌ Failed to initialize SessionState:', error);
+			}
+		})();
+
+		// Set up scroll listener for hide/show navigation
+		window.addEventListener('scroll', handleScroll, { passive: true });
+
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+		};
 	});
+
+	function handleScroll() {
+		const currentScrollY = window.scrollY;
+		const scrollDelta = currentScrollY - lastScrollY;
+
+		// Only trigger if scrolled past threshold
+		if (Math.abs(scrollDelta) < scrollThreshold) return;
+
+		if (scrollDelta > 0 && currentScrollY > 100) {
+			// Scrolling down & past initial position - hide header/nav
+			isHeaderVisible = false;
+		} else if (scrollDelta < 0) {
+			// Scrolling up - show header/nav
+			isHeaderVisible = true;
+		}
+
+		lastScrollY = currentScrollY;
+	}
 
 	// Create a global tuner context
 	setContext('tuner', {
@@ -81,6 +113,34 @@
 				} else {
 					uiState.openModal('tuner');
 				}
+			}
+		}
+	});
+
+	// Create scroll visibility context for child routes
+	setContext('scrollVisibility', {
+		get visible() {
+			return isHeaderVisible;
+		},
+		hide: () => {
+			isHeaderVisible = false;
+		},
+		show: () => {
+			isHeaderVisible = true;
+		},
+		handleContainerScroll: (scrollTop: number, lastScroll: number) => {
+			// Handle scroll from child container (for tab pages with internal scroll)
+			const scrollDelta = scrollTop - lastScroll;
+			
+			// Only trigger if scrolled past threshold
+			if (Math.abs(scrollDelta) < scrollThreshold) return;
+
+			if (scrollDelta > 0 && scrollTop > 100) {
+				// Scrolling down - hide header/nav
+				isHeaderVisible = false;
+			} else if (scrollDelta < 0) {
+				// Scrolling up - show header/nav
+				isHeaderVisible = true;
 			}
 		}
 	});
@@ -200,14 +260,14 @@
 	<link rel="manifest" href="/manifest.webmanifest" />
 </svelte:head>
 
-<div class="app-container">
-	<header class="app-header">
+<div class="app-container tabscroll-app-container">
+	<header class="app-header tabscroll-app-header" class:header-hidden={!isHeaderVisible}>
 		{#if isViewingTab && currentTab}
 			<!-- Tab viewing mode - show back button and song info -->
 			<button class="back-button" onclick={goBackToLibrary} aria-label="Back to library">
 				<ArrowLeft size={20} />
 			</button>
-			<div class="tab-header-info">
+			<div class="tab-header-info">	
 				<h1 class="tab-title">{currentTab.title}</h1>
 				{#if currentTab.artist}
 					<p class="tab-artist">{currentTab.artist}</p>
@@ -229,11 +289,11 @@
 		{/if}
 	</header>
 
-	<div class="content-wrapper" use:handleContextMount>
+	<div class="content-wrapper tabscroll-content-wrapper" use:handleContextMount>
 		{@render children()}
 	</div>
 
-	<PrimaryNavigation onAddTab={handleOpenAddTab} onOpenSettings={toggleSettings} />
+	<PrimaryNavigation onAddTab={handleOpenAddTab} onOpenSettings={toggleSettings} {isHeaderVisible} />
 </div>
 
 {#if uiState}
@@ -270,7 +330,8 @@
 <style>
 	/* Global body styles are now in app.css */
 
-	.app-container {
+	.app-container,
+	.tabscroll-app-container {
 		width: 100%;
 		min-height: 100vh;
 		display: flex;
@@ -278,7 +339,8 @@
 		background: var(--color-background);
 	}
 
-	.app-header {
+	.app-header,
+	.tabscroll-app-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -291,6 +353,13 @@
 		top: 0;
 		z-index: 100;
 		backdrop-filter: var(--blur-sm);
+		transform: translateY(0);
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.app-header.header-hidden,
+	.tabscroll-app-header.header-hidden {
+		transform: translateY(-100%);
 	}
 
 	.back-button {
@@ -393,7 +462,8 @@
 		background-clip: text;
 	}
 
-	.content-wrapper {
+	.content-wrapper,
+	.tabscroll-content-wrapper {
 		width: 100%;
 		max-width: var(--container-lg);
 		padding: 0;
@@ -404,10 +474,18 @@
 
 	/* Landscape mode - add left padding for side navigation */
 	@media (orientation: landscape) and (max-height: 600px) {
-		.content-wrapper {
+		.content-wrapper,
+		.tabscroll-content-wrapper {
 			padding-left: 80px;
 			padding-bottom: 1rem;
 		}
 	}
 
+	/* Reduced motion - disable header animations */
+	@media (prefers-reduced-motion: reduce) {
+		.app-header,
+		.tabscroll-app-header {
+			transition: none;
+		}
+	}
 </style>

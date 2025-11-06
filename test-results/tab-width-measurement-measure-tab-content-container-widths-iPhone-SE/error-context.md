@@ -1,0 +1,43 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link "TabScroll" [ref=e6]:
+        - /url: /
+        - heading "TabScroll" [level=1] [ref=e7]
+    - generic [ref=e9]:
+      - heading "Tab Not Found" [level=1] [ref=e10]
+      - paragraph [ref=e11]: Sorry, the tab you're looking for doesn't exist or has been deleted.
+      - button "Back to Home" [ref=e12] [cursor=pointer]
+    - navigation [ref=e13]:
+      - button "Play" [ref=e14] [cursor=pointer]:
+        - img [ref=e16]
+        - generic [ref=e17]: Play
+      - button "Jam" [ref=e18] [cursor=pointer]:
+        - img [ref=e20]
+        - generic [ref=e21]: Jam
+      - button "Tune" [ref=e22] [cursor=pointer]:
+        - img [ref=e24]
+        - generic [ref=e25]: Tune
+      - button "Settings" [ref=e26] [cursor=pointer]:
+        - img [ref=e28]
+        - generic [ref=e29]: Settings
+  - generic [ref=e31]:
+    - button "Close" [ref=e32] [cursor=pointer]:
+      - img [ref=e33]
+    - generic [ref=e34]:
+      - img "TabScroll" [ref=e36]
+      - heading "Install TabScroll" [level=2] [ref=e37]
+      - paragraph [ref=e38]: Install this app on your device for a better experience!
+      - generic [ref=e39]:
+        - paragraph [ref=e40]: "To install this app on your iOS device:"
+        - list [ref=e41]:
+          - listitem [ref=e42]:
+            - text: Tap the Share button
+            - generic [ref=e43]: ⎋
+          - listitem [ref=e44]: Scroll down and tap "Add to Home Screen"
+          - listitem [ref=e45]: Tap "Add" in the top right corner
+      - button "Maybe Later" [ref=e46] [cursor=pointer]
+```

@@ -39,7 +39,38 @@ export class SmartImportService implements ISmartImportService {
 			while (true) {
 				const { done, value } = await reader.read();
 
-				if (done) break;
+				if (done) {
+					// Process any remaining data in buffer before exiting
+					if (buffer.trim()) {
+						console.log('📦 Processing remaining buffer:', buffer);
+						const lines = buffer.split('\n\n');
+						for (const line of lines) {
+							if (!line.trim() || !line.startsWith('data: ')) continue;
+
+							const data = JSON.parse(line.substring(6));
+							console.log('📦 Received SSE data (final):', data);
+
+							if (data.error) {
+								return {
+									success: false,
+									error: data.error,
+									suggestions: data.suggestions
+								};
+							}
+
+							if (data.needsDisambiguation) {
+								finalResult = data.disambiguationData;
+							}
+
+							if (data.success && data.result) {
+								console.log('✅ Import complete, result type:', data.result.type);
+								console.log('✅ Result data:', data.result);
+								finalResult = data.result;
+							}
+						}
+					}
+					break;
+				}
 
 				buffer += decoder.decode(value, { stream: true });
 
@@ -82,6 +113,8 @@ export class SmartImportService implements ISmartImportService {
 					}
 				}
 			}
+
+			console.log('🏁 Stream ended, final result:', finalResult);
 
 			return (
 				finalResult || {

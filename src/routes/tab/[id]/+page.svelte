@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, setContext } from 'svelte';
+	import { onMount, setContext, getContext } from 'svelte';
 	import { page } from '$app/state';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
@@ -10,9 +10,34 @@
 	let tabContainer = $state<HTMLDivElement | undefined>(undefined);
 	// let currentPosition = $state(0); // TODO: Use for scroll position tracking
 	let tunerOpen = $state(false);
+	let lastContainerScrollTop = $state(0);
 
 	const id = $derived(page.params.id);
 	const currentTab = $derived($tabs.find((tab) => tab.id === id));
+
+	// Get scroll visibility context from parent layout
+	const scrollVisibility = getContext<{ 
+		visible: boolean; 
+		hide: () => void; 
+		show: () => void;
+		handleContainerScroll: (scrollTop: number, lastScroll: number) => void;
+	}>('scrollVisibility');
+	const isControlsVisible = $derived(scrollVisibility?.visible ?? true);
+
+	function handleHideNavigation() {
+		// Hide the navigation when auto-scroll starts
+		scrollVisibility?.hide();
+	}
+
+	function handleContainerScroll(event: Event) {
+		const target = event.target as HTMLElement;
+		const currentScroll = target.scrollTop;
+		
+		// Notify layout of scroll position changes
+		scrollVisibility?.handleContainerScroll(currentScroll, lastContainerScrollTop);
+		
+		lastContainerScrollTop = currentScroll;
+	}
 
 	function goBack() {
 		goto('/');
@@ -62,8 +87,12 @@
 </svelte:head>
 
 {#if currentTab}
-	<div class="tab-view">
-		<div class="tab-container" bind:this={tabContainer}>
+	<div class="tab-view tabscroll-tab-page">
+		<div 
+			class="tab-container tabscroll-tab-container" 
+			bind:this={tabContainer}
+			onscroll={handleContainerScroll}
+		>
 			{#if tabContainer}
 				<TabViewer
 					content={currentTab.content}
@@ -74,9 +103,13 @@
 			{/if}
 		</div>
 
-		<div class="controls-container">
+		<div class="controls-container" class:controls-hidden={!isControlsVisible}>
 			{#if tabContainer}
-				<ScrollControls container={tabContainer} onscrollStateChange={handleScrollChange} />
+				<ScrollControls 
+					container={tabContainer} 
+					onscrollStateChange={handleScrollChange}
+					onhideNavigation={handleHideNavigation}
+				/>
 			{/if}
 		</div>
 
@@ -92,30 +125,44 @@
 {/if}
 
 <style>
-	.tab-view {
+	.tab-view,
+	.tabscroll-tab-page {
 		display: flex;
 		flex-direction: column;
-		min-height: calc(100vh - 5rem); /* Account for bottom nav */
+		height: 100vh; /* Fill viewport height */
 		background: var(--color-background);
 	}
 
-	.tab-container {
-		flex: 1;
+	.tab-container,
+	.tabscroll-tab-container {
+		flex: 1; /* Grow to fill available space */
 		overflow-y: auto;
-		overflow-x: hidden;
+		overflow-x: auto; /* Allow horizontal scrolling to preserve chord alignment */
 		padding: var(--spacing-md);
+		padding-bottom: calc(60px + 72px + env(safe-area-inset-bottom)); /* Space for controls + nav */
 		background: var(--color-background);
+		min-height: 0; /* Important for flex children to allow shrinking */
 	}
 
 	.controls-container {
-		padding: var(--spacing-sm) var(--spacing-md);
-		border-top: 1px solid var(--color-border-light);
-		position: sticky;
+		padding: 0.5rem 0.75rem;
+		padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		position: fixed;
+		bottom: 72px; /* Above nav bar (nav is ~72px tall with safe area) */
+		left: 0;
+		right: 0;
+		background: rgba(15, 15, 15, 0.85);
+		backdrop-filter: blur(20px) saturate(180%);
+		-webkit-backdrop-filter: blur(20px) saturate(180%);
+		z-index: 90; /* Below nav (100) but above content */
+		box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* When navigation is hidden, move controls to the very bottom */
+	.controls-container.controls-hidden {
 		bottom: 0;
-		background: var(--color-surface);
-		box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
-		z-index: 50;
-		transition: var(--transition-colors);
 	}
 
 	.not-found {
@@ -173,7 +220,8 @@
 		}
 
 		.controls-container {
-			padding: var(--spacing-xs) var(--spacing-sm);
+			padding: 0.375rem 0.5rem;
+			padding-bottom: calc(0.375rem + env(safe-area-inset-bottom));
 		}
 	}
 
@@ -184,7 +232,8 @@
 		}
 
 		.controls-container {
-			padding: var(--spacing-xs);
+			padding: 0.375rem 0.5rem;
+			padding-bottom: calc(0.375rem + env(safe-area-inset-bottom));
 		}
 
 		.not-found {
@@ -194,16 +243,29 @@
 
 	/* Landscape mobile optimization - maximize content space */
 	@media (max-height: 600px) and (orientation: landscape) {
-		.tab-view {
-			min-height: calc(100vh - 4rem);
-		}
-
 		.tab-container {
 			padding: var(--spacing-xs);
+			padding-bottom: calc(50px + 64px + env(safe-area-inset-bottom)); /* Smaller controls + nav in landscape */
 		}
 
 		.controls-container {
-			padding: var(--spacing-xs);
+			padding: 0.25rem 0.5rem;
+			padding-bottom: calc(0.25rem + env(safe-area-inset-bottom));
+			bottom: 64px; /* Nav is slightly shorter in landscape */
+		}
+
+		.controls-container.controls-hidden {
+			bottom: 0;
+		}
+	}
+
+	/* Larger screens - controls stay fixed but more comfortable */
+	@media (min-width: 1024px) {
+		.controls-container {
+			left: 50%;
+			transform: translateX(-50%);
+			max-width: var(--container-lg);
+			border-radius: 16px 16px 0 0;
 		}
 	}
 </style>

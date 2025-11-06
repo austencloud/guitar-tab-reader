@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { loadChordDictionary, findChordsInText, type ProcessedChord } from '$lib/utils/chordUtils';
-	import { stretchChordLyrics } from '$lib/utils/chordLayout';
 	import { browser } from '$app/environment';
 	import TabContentRenderer from './tabViewer/TabContentRenderer.svelte';
 	import ChordTooltip from './tabViewer/ChordTooltip.svelte';
@@ -25,6 +24,13 @@
 	let isMobile = $state(false);
 	let isTouch = $state(false);
 	let containerWidth = $state(0);
+	let resizeObserver: ResizeObserver | null = null;
+
+	// Pinch gesture state for font size control
+	let initialPinchDistance = $state(0);
+	let initialFontSize = $state(16);
+	let isPinching = $state(false);
+	let currentUserFontSize = $state(fontSize); // Track user's current font size preference
 
 	// Tooltip state
 	let tooltipVisible = $state(false);
@@ -34,7 +40,6 @@
 	let tooltipPlacement = $state<'above' | 'below'>('below');
 	let tooltipTimeout = $state<number | null>(null);
 	let tooltipComponent = $state<ChordTooltip>();
-	let resizeObserver: ResizeObserver | null = null;
 
 	// Modal state
 	let modalVisible = $state(false);
@@ -45,16 +50,45 @@
 
 	// --- Reactive Computations ---
 
+	// Calculate maximum safe font size (no overflow)
+	const maxSafeFontSize = $derived(() => {
+		if (!containerWidth || !content) return fontSize;
+		
+		// Find the longest line in the content
+		const lines = content.split('\n');
+		const longestLine = lines.reduce((longest, current) => 
+			current.length > longest.length ? current : longest, '');
+		
+		if (!longestLine.length) return fontSize;
+		
+		// Calculate maximum font size that fits without overflow
+		const availableWidth = containerWidth;
+		const charWidthRatio = 0.6; // Monospace character width ratio
+		const maxFontSize = availableWidth / (longestLine.length * charWidthRatio);
+		
+		// Return a reasonable maximum (don't let it get ridiculously large)
+		return Math.min(maxFontSize, 32);
+	});
+
+	// Calculate actual font size to use (user preference limited by max safe size)
+	const responsiveFontSize = $derived(() => {
+		const maxSafe = maxSafeFontSize();
+		const userPreferred = currentUserFontSize;
+		
+		// Use the smaller of user preference or max safe size, with 8px minimum
+		return Math.max(Math.min(userPreferred, maxSafe), 8);
+	});
+
 	const contentStyle = $derived(
-		`font-family: 'Courier New', monospace; font-size: ${fontSize}px; line-height: 1.5;`
+		`font-family: 'Courier New', monospace; font-size: ${responsiveFontSize()}px; line-height: 1.5;`
 	);
 
-	// Re-process content when it changes or dictionary loads
+	// Re-process content when it changes, dictionary loads, or font size changes
 	$effect(() => {
-		const widthKey = Math.round(containerWidth);
-
+		const actualFontSize = responsiveFontSize();
+		
 		if (browser && content && chordDictionaryLoaded) {
-			const newHash = hashString(`${content}|${fontSize}|${widthKey}`);
+			const newHash = hashString(`${content}|${actualFontSize}|${containerWidth}`);
 			if (newHash !== contentHash) {
 				contentHash = newHash;
 				processAndRenderContent();
@@ -63,6 +97,11 @@
 			processedContentHtml = '';
 			contentHash = '';
 		}
+	});
+
+	// Sync user font size with props changes
+	$effect(() => {
+		currentUserFontSize = fontSize;
 	});
 
 	// --- Lifecycle ---
@@ -80,6 +119,12 @@
 
 		await tick();
 
+		// Add non-passive touchmove listener to allow preventDefault for pinch gestures
+		if (container) {
+			container.addEventListener('touchmove', handleGestureTouchMove, { passive: false });
+		}
+
+		// Set up ResizeObserver to track container width for responsive font sizing
 		if (typeof ResizeObserver !== 'undefined' && container) {
 			containerWidth = container.clientWidth;
 			resizeObserver = new ResizeObserver((entries) => {
@@ -98,6 +143,9 @@
 
 	onDestroy(() => {
 		document.removeEventListener('click', handleDocumentClick);
+		if (container) {
+			container.removeEventListener('touchmove', handleGestureTouchMove);
+		}
 		if (tooltipTimeout !== null) window.clearTimeout(tooltipTimeout);
 		resizeObserver?.disconnect();
 	});
@@ -121,24 +169,9 @@
 			return;
 		}
 
-		let displayContent = content;
-		const viewerWidth = containerWidth || container?.clientWidth || 0;
-
-		if (viewerWidth >= 900) {
-			const approxChars = Math.max(
-				Math.floor(viewerWidth / Math.max(fontSize * 0.6, 1)),
-				0
-			);
-			if (approxChars > 0) {
-				displayContent = stretchChordLyrics(content, {
-					targetWidth: Math.max(approxChars - 2, 80)
-				});
-			}
-		}
-
-		const foundChords = findChordsInText(displayContent);
+		const foundChords = findChordsInText(content);
 		if (foundChords.length === 0) {
-			processedContentHtml = displayContent; // No chords, render plain text
+			processedContentHtml = content; // No chords, render plain text
 			chordsMap.clear();
 			return;
 		}
@@ -154,12 +187,12 @@
 		foundChords.sort((a, b) => a.startIndex - b.startIndex);
 
 		for (const chord of foundChords) {
-			result += escapeHtml(displayContent.substring(lastEnd, chord.startIndex));
+			result += escapeHtml(content.substring(lastEnd, chord.startIndex));
 			// Add tabindex="0" to make spans focusable
 			result += `<span class="chord" data-chord="${escapeHtml(chord.name)}" tabindex="0">${escapeHtml(chord.name)}</span>`;
 			lastEnd = chord.endIndex;
 		}
-		result += escapeHtml(displayContent.substring(lastEnd));
+		result += escapeHtml(content.substring(lastEnd));
 
 		processedContentHtml = result;
 
@@ -178,6 +211,56 @@
 	}
 
 	// --- Event Handlers ---
+
+	// Pinch gesture handlers for font size control
+	function getPinchDistance(touches: TouchList): number {
+		const touch1 = touches[0];
+		const touch2 = touches[1];
+		const dx = touch2.clientX - touch1.clientX;
+		const dy = touch2.clientY - touch1.clientY;
+		return Math.sqrt(dx * dx + dy * dy);
+	}
+
+	function handleGestureTouchStart(event: TouchEvent) {
+		if (event.touches.length === 2) {
+			// Two-finger pinch gesture
+			event.preventDefault(); // Prevent default zoom
+			isPinching = true;
+			initialPinchDistance = getPinchDistance(event.touches);
+			initialFontSize = currentUserFontSize;
+		} else if (event.touches.length === 1) {
+			// Single touch - handle chord interactions
+			handleInteractionStart(event);
+		}
+	}
+
+	function handleGestureTouchMove(event: TouchEvent) {
+		if (!isPinching || event.touches.length !== 2) return;
+		
+		event.preventDefault(); // Prevent scrolling/zooming
+		
+		const currentDistance = getPinchDistance(event.touches);
+		const distanceChange = currentDistance - initialPinchDistance;
+		
+		// Calculate font size change (1px change per 20px of pinch distance change)
+		const fontSizeChange = distanceChange / 20;
+		const newFontSize = initialFontSize + fontSizeChange;
+		const maxSafe = maxSafeFontSize();
+		
+		// Constrain to safe bounds (8px minimum, maxSafe maximum)
+		const constrainedSize = Math.max(8, Math.min(newFontSize, maxSafe));
+		
+		if (constrainedSize !== currentUserFontSize) {
+			currentUserFontSize = constrainedSize;
+		}
+	}
+
+	function handleGestureTouchEnd(event: TouchEvent) {
+		if (event.touches.length < 2) {
+			isPinching = false;
+			initialPinchDistance = 0;
+		}
+	}
 
 	function handleInteractionStart(event: MouseEvent | TouchEvent) {
 		const target = event.target as HTMLElement;
@@ -376,14 +459,15 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <!-- Main container for positioning and event delegation -->
 <div
-	class="tab-viewer"
+	class="tab-viewer tabscroll-tab-viewer"
 	bind:this={container}
 	role="region"
 	aria-label="Tab Content"
 	tabindex="-1"
 	onmouseenter={handleInteractionStart}
 	onmouseleave={handleInteractionEnd}
-	ontouchstart={handleInteractionStart}
+	ontouchstart={handleGestureTouchStart}
+	ontouchend={handleGestureTouchEnd}
 	onclick={handleChordClick}
 	onkeydown={handleKeyDown}
 	onfocusin={handleFocusIn}
@@ -412,11 +496,13 @@
 <ChordModal visible={modalVisible} chord={modalChord} onclose={handleModalClose} />
 
 <style>
-	.tab-viewer {
+	.tab-viewer,
+	.tabscroll-tab-viewer {
 		width: 100%;
+		box-sizing: border-box; /* Ensure padding is included in width calculation */
 		/* height: 100%; Removed */
 		overflow-y: auto; /* Allow parent to control scroll if needed */
-		overflow-x: auto;
+		overflow-x: auto; /* Allow horizontal scrolling for chord alignment preservation */
 		background-color: var(--viewer-bg, #f5f5f5);
 		color: var(--viewer-text, #333);
 		border-radius: 4px;

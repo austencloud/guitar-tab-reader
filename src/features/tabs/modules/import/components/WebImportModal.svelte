@@ -105,6 +105,9 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 		console.log('🎯 Result success:', result.success);
 		console.log('🎯 Result tabs:', result.tabs);
 
+		// Stop loading FIRST before changing views
+		state.isLoading = false;
+
 		if (result.success) {
 			// Store AI metadata if available
 			if (result._meta) {
@@ -149,8 +152,6 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 			state.errorMessage = result.error || 'Failed to process your request';
 			state.errorSuggestions = result.suggestions || [];
 		}
-
-		state.isLoading = false;
 	}
 
 	// Bulk Results - Select a tab
