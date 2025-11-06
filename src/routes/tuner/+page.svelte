@@ -1,10 +1,63 @@
 <script lang="ts">
+	import { onMount, onDestroy } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
-	import { GuitarTuner } from '$features/tuner/components';
+	import { Radio } from 'lucide-svelte';
+	import TuningMeter from '$features/tuner/components/TuningMeter.svelte';
+	import {
+		startTuner,
+		stopTuner,
+		tunerStatus,
+		isListening,
+		detectedCents
+	} from '$features/tuner/services/AudioProcessor';
+	import {
+		tunings,
+		selectedTuning as globalSelectedTuning,
+		getClosestString,
+		calculateCents
+	} from '$features/tuner/services/TuningDefinitions';
+	import type { StringDefinition } from '$features/tuner/services/types';
 
-	let showTuner = true;
+	let activeStrings = $state<StringDefinition[]>([]);
+	let closestString = $state<StringDefinition | null>(null);
+
+	// Update activeStrings when global tuning changes
+	$effect(() => {
+		const currentTuning = $globalSelectedTuning;
+		if (currentTuning && $tunings[currentTuning]) {
+			activeStrings = $tunings[currentTuning];
+		}
+	});
+
+	function handlePitch(frequency: number) {
+		closestString = getClosestString(frequency, activeStrings);
+
+		if (closestString) {
+			detectedCents.set(calculateCents(frequency, closestString.frequency));
+		}
+	}
+
+	function handleTuningChange(event: Event) {
+		const target = event.target as HTMLSelectElement;
+		globalSelectedTuning.set(target.value);
+	}
+
+	// Automatically start tuner when page loads
+	onMount(() => {
+		startTuner(handlePitch);
+	});
+
+	onDestroy(() => {
+		if ($isListening) {
+			stopTuner();
+		}
+	});
 </script>
+
+<svelte:head>
+	<title>Guitar Tuner | TabScroll</title>
+</svelte:head>
 
 <div class="tuner-page" in:fly={{ y: 20, duration: 300 }}>
 	<div class="tuner-header">
@@ -17,70 +70,80 @@
 			</svg>
 			<span>Back</span>
 		</button>
-		<h1>Guitar Tuner</h1>
-	</div>
-
-	<div class="tuner-container">
-		<GuitarTuner {showTuner} />
-	</div>
-
-	<div class="tuner-help">
-		<h2>How to use the tuner:</h2>
-		<ol>
-			<li>Click "Start" to activate your microphone</li>
-			<li>Play a single string on your guitar</li>
-			<li>The tuner will show which string you're playing and how in-tune it is</li>
-			<li>Adjust your tuning until the needle is centered (green)</li>
-		</ol>
-
-		<div class="tuner-info">
-			<div class="info-item">
-				<div class="info-icon flat">♭</div>
-				<p>String is flat (too low)</p>
-			</div>
-			<div class="info-item">
-				<div class="info-icon in-tune">✓</div>
-				<p>String is in tune</p>
-			</div>
-			<div class="info-item">
-				<div class="info-icon sharp">♯</div>
-				<p>String is sharp (too high)</p>
-			</div>
+		<div class="header-title">
+			<Radio size={24} class="header-icon" />
+			<h1>Guitar Tuner</h1>
 		</div>
 	</div>
+
+	<!-- Tuning Selector -->
+	<div class="tuning-selector">
+		<label for="tuning-select">Tuning</label>
+		<select id="tuning-select" value={$globalSelectedTuning} onchange={handleTuningChange}>
+			{#each Object.keys($tunings) as tuningName}
+				<option value={tuningName}>{tuningName}</option>
+			{/each}
+		</select>
+	</div>
+
+	<!-- Error Message -->
+	{#if $tunerStatus === 'error'}
+		<div class="tuner-error">
+			<Radio size={20} />
+			<p>Microphone access denied. Please allow microphone access to use the tuner.</p>
+		</div>
+	{/if}
+
+	<!-- Tuner Display -->
+	<div class="tuner-container">
+		<TuningMeter
+			detectedCents={$detectedCents}
+			{closestString}
+			strings={activeStrings}
+			statusMessage={!$isListening ? 'Initializing tuner...' : 'Play a string...'}
+		/>
+	</div>
+
 </div>
 
 <style>
 	.tuner-page {
+		height: calc(100vh - var(--banner-height, 79px) - var(--nav-height, 80px));
+		height: calc(100dvh - var(--banner-height, 79px) - var(--nav-height, 80px));
+		display: flex;
+		flex-direction: column;
 		max-width: 800px;
 		margin: 0 auto;
-		padding: var(--spacing-xl) var(--spacing-md);
+		padding: 0.75rem;
+		overflow: hidden;
 	}
 
 	.tuner-header {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-md);
-		margin-bottom: var(--spacing-xl);
+		gap: 0.75rem;
+		flex-shrink: 0;
+		padding-bottom: 0.5rem;
 	}
 
 	.back-button {
 		display: flex;
 		align-items: center;
-		gap: var(--spacing-sm);
-		min-height: var(--touch-target-min);
+		gap: 0.375rem;
+		min-height: 40px;
 		background: none;
 		border: none;
-		padding: var(--spacing-sm);
+		padding: 0.5rem;
 		cursor: pointer;
 		color: var(--color-primary);
-		font-weight: var(--font-weight-medium);
-		transition: var(--transition-transform);
-		border-radius: var(--radius-lg);
+		font-weight: 500;
+		transition: all 0.2s;
+		border-radius: 8px;
+		font-size: 0.875rem;
 	}
 
 	.back-button:hover {
-		transform: translateX(-3px);
+		transform: translateX(-2px);
 		background-color: var(--color-hover);
 	}
 
@@ -89,108 +152,116 @@
 		outline-offset: 2px;
 	}
 
+	.header-title {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex: 1;
+	}
+
+	.header-title :global(.header-icon) {
+		color: #f59e0b;
+	}
+
 	h1 {
 		margin: 0;
-		font-size: var(--font-size-3xl);
-		font-weight: var(--font-weight-bold);
+		font-size: 1.25rem;
+		font-weight: 700;
 		color: var(--color-text-primary);
+	}
+
+	/* Tuning Selector */
+	.tuning-selector {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-shrink: 0;
+		padding-bottom: 0.5rem;
+	}
+
+	.tuning-selector label {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--color-text-secondary);
+		white-space: nowrap;
+	}
+
+	.tuning-selector select {
+		flex: 1;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		background: var(--color-surface);
+		color: var(--color-text);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.tuning-selector select:hover {
+		border-color: var(--color-primary);
+	}
+
+	.tuning-selector select:focus {
+		outline: none;
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+	}
+
+	/* Error Message */
+	.tuner-error {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem;
+		background: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		border-radius: 8px;
+		color: #ef4444;
+		flex-shrink: 0;
+		margin-bottom: 0.5rem;
+	}
+
+	.tuner-error :global(svg) {
+		flex-shrink: 0;
+	}
+
+	.tuner-error p {
+		margin: 0;
+		font-size: 0.75rem;
+		line-height: 1.4;
 	}
 
 	.tuner-container {
-		margin: 0 auto;
-		max-width: 500px;
-	}
-
-	.tuner-help {
-		margin-top: var(--spacing-2xl);
-		padding: var(--spacing-lg);
-		background-color: var(--color-surface-low);
-		border-radius: var(--radius-xl);
-		border: 1px solid var(--color-border);
-		box-shadow: var(--shadow-sm);
-	}
-
-	.tuner-help h2 {
-		margin-top: 0;
-		font-size: var(--font-size-2xl);
-		font-weight: var(--font-weight-semibold);
-		color: var(--color-text-primary);
-	}
-
-	.tuner-help ol {
-		color: var(--color-text-secondary);
-		line-height: var(--line-height-relaxed);
-	}
-
-	.tuner-info {
-		display: flex;
-		justify-content: space-around;
-		flex-wrap: wrap;
-		margin-top: var(--spacing-xl);
-		gap: var(--spacing-md);
-	}
-
-	.info-item {
-		display: flex;
-		align-items: center;
-		gap: var(--spacing-sm);
-	}
-
-	.info-item p {
-		color: var(--color-text-secondary);
-		margin: 0;
-		font-size: var(--font-size-sm);
-	}
-
-	.info-icon {
-		width: 2rem;
-		height: 2rem;
-		border-radius: var(--radius-full);
+		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: var(--font-size-xl);
-		font-weight: var(--font-weight-bold);
+		min-height: 0;
+		overflow: hidden;
 	}
 
-	.info-icon.flat {
-		background-color: var(--color-info-bg);
-		color: var(--color-info);
-		border: 1px solid var(--color-info);
-	}
-
-	.info-icon.in-tune {
-		background-color: var(--color-success-bg);
-		color: var(--color-success);
-		border: 1px solid var(--color-success);
-	}
-
-	.info-icon.sharp {
-		background-color: var(--color-error-bg);
-		color: var(--color-error);
-		border: 1px solid var(--color-error);
-	}
-
-	@media (max-width: 600px) {
+	/* Responsive adjustments */
+	@media (min-width: 640px) {
 		.tuner-page {
-			padding: var(--spacing-md) var(--spacing-sm);
-		}
-
-		.tuner-header {
-			margin-bottom: var(--spacing-md);
+			padding: 1rem;
 		}
 
 		h1 {
-			font-size: var(--font-size-2xl);
+			font-size: 1.5rem;
 		}
 
-		.tuner-help {
-			padding: var(--spacing-md);
+		.tuning-selector label {
+			font-size: 1rem;
 		}
 
-		.tuner-info {
-			flex-direction: column;
-			align-items: flex-start;
+		.tuning-selector select {
+			padding: 0.75rem 1rem;
+			font-size: 1rem;
+		}
+
+		.back-button {
+			font-size: 1rem;
 		}
 	}
 </style>
