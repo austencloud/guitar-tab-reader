@@ -140,6 +140,7 @@
 		<ControlsRow
 			bind:searchQuery
 			onsearchchange={handleSearchChange}
+			onaddtab={handleOpenAddTabPanel}
 		/>
 
 		{#if sortedAndFilteredTabs.length === 0}

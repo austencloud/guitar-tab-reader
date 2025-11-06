@@ -9,7 +9,7 @@
 {#if !hasAnyTabs}
 	<div class="empty-state">
 		<h2>No tabs yet</h2>
-		<p>Tap the "Add" button in the navigation bar to get started</p>
+		<p>Get started by adding your first tab!</p>
 	</div>
 {:else}
 	<div class="no-results">

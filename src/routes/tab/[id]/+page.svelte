@@ -3,13 +3,27 @@
 	import { page } from '$app/state';
 	import { tabs } from '$lib/stores/tabs';
 	import { goto } from '$app/navigation';
-	import { ScrollControls, TabViewer, TuningDisplay } from '$features/tabs/components';
+	import {
+		ScrollControls,
+		TabViewer,
+		TuningDisplay,
+		LibrarySheet,
+		AddTabBottomSheet,
+		ImportTabModal,
+		WebImportModal
+	} from '$features/tabs/components';
 	import { GuitarTuner } from '$features/tuner/components';
 	import preferences from '$lib/stores/preferences';
+	import type { Tab } from '$lib/stores/tabs';
+	import { Library } from 'lucide-svelte';
 
 	let tabContainer = $state<HTMLDivElement | undefined>(undefined);
 	// let currentPosition = $state(0); // TODO: Use for scroll position tracking
 	let tunerOpen = $state(false);
+	let librarySheetOpen = $state(false);
+	let isAddTabPanelOpen = $state(false);
+	let isImportModalOpen = $state(false);
+	let isWebImportOpen = $state(false);
 
 	const id = $derived(page.params.id);
 	const currentTab = $derived($tabs.find((tab) => tab.id === id));
@@ -45,6 +59,56 @@
 		tunerOpen = false;
 	}
 
+	function handleOpenLibrary() {
+		librarySheetOpen = true;
+	}
+
+	function handleCloseLibrary() {
+		librarySheetOpen = false;
+	}
+
+	function handleOpenAddTab() {
+		isAddTabPanelOpen = true;
+	}
+
+	function handleCloseAddTabPanel() {
+		isAddTabPanelOpen = false;
+	}
+
+	function handleURLImport() {
+		isAddTabPanelOpen = false;
+		isWebImportOpen = true;
+	}
+
+	function handlePasteImport() {
+		isAddTabPanelOpen = false;
+		isImportModalOpen = true;
+	}
+
+	function handleImportSubmit(newTab: Tab) {
+		tabs.add(newTab);
+		isImportModalOpen = false;
+		setTimeout(() => {
+			goto(`/tab/${newTab.id}`, {});
+		}, 100);
+	}
+
+	function handleWebImportSubmit(newTab: Tab) {
+		tabs.add(newTab);
+		isWebImportOpen = false;
+		setTimeout(() => {
+			goto(`/tab/${newTab.id}`, {});
+		}, 100);
+	}
+
+	function closeImportModal() {
+		isImportModalOpen = false;
+	}
+
+	function closeWebImport() {
+		isWebImportOpen = false;
+	}
+
 	// Make sure we have access to the container after component is mounted
 	onMount(() => {
 		return () => {
@@ -68,7 +132,10 @@
 {#if currentTab}
 	<div class="tab-view">
 		<header>
-			<button class="back-btn" onclick={goBack} aria-label="Back to home"> ← Back </button>
+			<button class="library-btn" onclick={handleOpenLibrary} aria-label="Open library">
+				<Library size={20} />
+				<span>Library</span>
+			</button>
 			<div class="title-container">
 				<h1>{currentTab.title}</h1>
 				{#if currentTab.artist || currentTab.album}
@@ -121,6 +188,32 @@
 
 		<!-- Add GuitarTuner component here -->
 		<GuitarTuner showTuner={tunerOpen} onclose={handleCloseTuner} />
+
+		<!-- Library Sheet -->
+		<LibrarySheet
+			open={librarySheetOpen}
+			currentTabId={id}
+			onclose={handleCloseLibrary}
+			onopenAddTab={handleOpenAddTab}
+		/>
+
+		<!-- Add Tab Modals -->
+		<AddTabBottomSheet
+			open={isAddTabPanelOpen}
+			onclose={handleCloseAddTabPanel}
+			onURLImport={handleURLImport}
+			onPasteImport={handlePasteImport}
+		/>
+		<ImportTabModal
+			open={isImportModalOpen}
+			onclose={closeImportModal}
+			onimport={handleImportSubmit}
+		/>
+		<WebImportModal
+			open={isWebImportOpen}
+			onclose={closeWebImport}
+			onimport={handleWebImportSubmit}
+		/>
 	</div>
 {:else}
 	<div class="not-found">
@@ -199,11 +292,12 @@
 		color: var(--color-text-tertiary);
 	}
 
-	.back-btn,
+	.library-btn,
 	.edit-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		gap: 0.5rem;
 		padding: var(--spacing-sm);
 		background: var(--color-surface-variant);
 		border: 2px solid var(--color-border);
@@ -214,9 +308,11 @@
 		min-width: var(--touch-target-min);
 		min-height: var(--touch-target-min);
 		flex-shrink: 0;
+		font-size: 0.875rem;
+		font-weight: 500;
 	}
 
-	.back-btn:hover,
+	.library-btn:hover,
 	.edit-btn:hover {
 		background: var(--color-hover);
 		border-color: var(--color-primary);
@@ -224,7 +320,7 @@
 		box-shadow: var(--shadow-sm);
 	}
 
-	.back-btn:active,
+	.library-btn:active,
 	.edit-btn:active {
 		transform: translateY(0);
 		box-shadow: none;
@@ -318,11 +414,15 @@
 			font-size: var(--font-size-xs);
 		}
 
-		.back-btn,
+		.library-btn,
 		.edit-btn {
 			padding: var(--spacing-sm);
 			min-width: 40px;
 			min-height: 40px;
+		}
+
+		.library-btn span {
+			display: none;
 		}
 
 		.controls-container {
@@ -355,14 +455,13 @@
 			font-size: 0.625rem;
 		}
 
-		.back-btn,
+		.library-btn,
 		.edit-btn {
 			padding: 0.625rem;
 			min-width: var(--touch-target-min);
 			min-height: var(--touch-target-min);
 		}
 
-		.back-btn svg,
 		.edit-btn svg {
 			width: 18px;
 			height: 18px;
@@ -391,7 +490,7 @@
 			font-size: 0.875rem;
 		}
 
-		.back-btn,
+		.library-btn,
 		.edit-btn {
 			padding: 0.5rem;
 		}
