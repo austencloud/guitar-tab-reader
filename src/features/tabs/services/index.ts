@@ -3,6 +3,8 @@ import { TYPES } from '$core/di';
 import { TabParserService } from './implementations/TabParserService';
 import { createTabParser } from './implementations/TabParserFactory';
 import { TabState } from '../state/tab.svelte';
+import { UrlImportService, SmartImportService } from '../modules/import/services/implementations';
+import type { IUrlImportService, ISmartImportService } from '../modules/import/services/contracts';
 
 // Export types
 export * from './types';
@@ -37,4 +39,8 @@ export function registerTabServices(container: Container): void {
 
 	// Bind TabState
 	container.bind(TYPES.TabState).to(TabState).inSingletonScope();
+
+	// Bind import services
+	container.bind<IUrlImportService>(TYPES.IUrlImportService).to(UrlImportService).inSingletonScope();
+	container.bind<ISmartImportService>(TYPES.ISmartImportService).to(SmartImportService).inSingletonScope();
 }

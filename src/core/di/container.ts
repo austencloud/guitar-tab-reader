@@ -6,8 +6,7 @@ import { Container } from 'inversify';
  * This container is configured and initialized at application startup
  */
 export const container = new Container({
-	defaultScope: 'Singleton',
-	skipBaseClassChecks: true
+	defaultScope: 'Singleton'
 });
 
 /**

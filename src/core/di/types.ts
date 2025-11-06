@@ -12,6 +12,10 @@ export const TYPES = {
 	ChordService: Symbol.for('ChordService'),
 	AutoScrollService: Symbol.for('AutoScrollService'),
 
+	// Tab import services
+	IUrlImportService: Symbol.for('IUrlImportService'),
+	ISmartImportService: Symbol.for('ISmartImportService'),
+
 	// Tuner feature services
 	AudioProcessor: Symbol.for('AudioProcessor'),
 	PitchDetector: Symbol.for('PitchDetector'),
