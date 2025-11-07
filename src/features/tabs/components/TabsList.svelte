@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Tab } from '$lib/stores/tabs';
+	import type { Tab } from '$lib/state/tabs.svelte';
 	import TabsListHeader from './TabsListHeader.svelte';
 	import TabListItem from './TabListItem.svelte';
 
@@ -12,15 +12,16 @@
 		sortOrder: SortOrder;
 		ontoggle: (field: SortField) => void;
 		onselect: (id: string) => void;
+		onscroll?: (event: Event) => void;
 	}
 
-	let { tabs, sortBy, sortOrder, ontoggle, onselect }: Props = $props();
+	let { tabs, sortBy, sortOrder, ontoggle, onselect, onscroll }: Props = $props();
 </script>
 
 <div class="tabs-list">
 	<TabsListHeader {sortBy} {sortOrder} {ontoggle} />
 
-	<div class="tabs-items-container">
+	<div class="tabs-items-container" onscroll={onscroll}>
 		{#each tabs as tab, idx (tab.id)}
 			<TabListItem {tab} index={idx} {onselect} />
 		{/each}
