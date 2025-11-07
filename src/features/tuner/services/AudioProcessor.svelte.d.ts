@@ -1,0 +1,18 @@
+import type { TunerStatus, NoteInfo } from './types';
+import { type SignalStrength } from './SignalProcessor';
+export declare function getTunerStatus(): TunerStatus;
+export declare function getDetectedNote(): NoteInfo | null;
+export declare function getDetectedFrequency(): number;
+export declare function getDetectedCents(): number;
+export declare function getIsListening(): boolean;
+export declare function getCurrentSignalStrength(): SignalStrength;
+export declare function getCurrentSignalStrengthPercentage(): number;
+export declare const tunerStatus: TunerStatus;
+export declare const detectedNote: NoteInfo | null;
+export declare const detectedFrequency: number;
+export declare const detectedCents: number;
+export declare const isListening: boolean;
+export declare const signalStrength: SignalStrength;
+export declare const signalStrengthPercentage: number;
+export declare function startTuner(onPitchCallback: (frequency: number) => void): Promise<void>;
+export declare function stopTuner(): void;
