@@ -1,5 +1,5 @@
 <script lang="ts">
-	import preferences from '$lib/stores/preferences';
+	import { preferences } from '$lib/state/preferences.svelte';
 </script>
 
 <div class="chord-diagram-toggle">
@@ -11,8 +11,8 @@
 		<label class="switch">
 			<input
 				type="checkbox"
-				checked={$preferences.showChordDiagrams}
-				onchange={() => preferences.setShowChordDiagrams(!$preferences.showChordDiagrams)}
+				checked={preferences.showChordDiagrams}
+				onchange={() => preferences.setShowChordDiagrams(!preferences.showChordDiagrams)}
 			/>
 			<span class="slider"></span>
 		</label>

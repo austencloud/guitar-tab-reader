@@ -1,19 +1,19 @@
 <script lang="ts">
-	import preferences from '$lib/stores/preferences';
+	import { preferences } from '$lib/state/preferences.svelte';
 
 	const MIN_FONT_SIZE = 10;
 	const MAX_FONT_SIZE = 22;
 	const FONT_SIZE_STEP = 1;
 
 	function increaseFontSize() {
-		if ($preferences.fontSize < MAX_FONT_SIZE) {
-			preferences.setFontSize($preferences.fontSize + FONT_SIZE_STEP);
+		if (preferences.fontSize < MAX_FONT_SIZE) {
+			preferences.setFontSize(preferences.fontSize + FONT_SIZE_STEP);
 		}
 	}
 
 	function decreaseFontSize() {
-		if ($preferences.fontSize > MIN_FONT_SIZE) {
-			preferences.setFontSize($preferences.fontSize - FONT_SIZE_STEP);
+		if (preferences.fontSize > MIN_FONT_SIZE) {
+			preferences.setFontSize(preferences.fontSize - FONT_SIZE_STEP);
 		}
 	}
 
@@ -33,7 +33,7 @@
 			<button
 				class="control-btn"
 				onclick={decreaseFontSize}
-				disabled={$preferences.fontSize <= MIN_FONT_SIZE}
+				disabled={preferences.fontSize <= MIN_FONT_SIZE}
 				aria-label="Decrease font size"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -46,14 +46,14 @@
 				min={MIN_FONT_SIZE}
 				max={MAX_FONT_SIZE}
 				step={FONT_SIZE_STEP}
-				value={$preferences.fontSize}
+				value={preferences.fontSize}
 				oninput={handleFontSizeChange}
 				aria-label="Font size"
 			/>
 			<button
 				class="control-btn"
 				onclick={increaseFontSize}
-				disabled={$preferences.fontSize >= MAX_FONT_SIZE}
+				disabled={preferences.fontSize >= MAX_FONT_SIZE}
 				aria-label="Increase font size"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -63,8 +63,8 @@
 		</div>
 	</div>
 	<div class="adjuster-preview">
-		<div class="preview-value">{$preferences.fontSize}px</div>
-		<div class="preview-content" style="font-size: {$preferences.fontSize}px">
+		<div class="preview-value">{preferences.fontSize}px</div>
+		<div class="preview-content" style="font-size: {preferences.fontSize}px">
 			{`e|--3--2--0--|
 B|--0--3--1--|
 G|--0--2--0--|

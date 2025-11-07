@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { useSessionState } from '$lib/useSessionState.svelte';
 	import SessionBottomSheet from './SessionBottomSheet.svelte';
 	import CreateSessionModal from './CreateSessionModal.svelte';
@@ -14,7 +13,7 @@
 	let sessionState = $state<ReturnType<typeof useSessionState> | undefined>(undefined);
 	let mounted = $state(false);
 
-	onMount(() => {
+	$effect(() => {
 		try {
 			sessionState = useSessionState();
 			// Use microtask to ensure reactivity triggers

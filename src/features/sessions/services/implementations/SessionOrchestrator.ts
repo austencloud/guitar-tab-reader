@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { TYPES } from '$core/di/types';
-import type { Tab } from '$lib/stores/tabs';
+import type { Tab } from '$lib/state/tabs.svelte';
 import type { ISessionManager } from '../contracts/ISessionManager';
 import type { ISessionLifecycleService } from '../contracts/ISessionLifecycleService';
 import type { IQueueManagementService } from '../contracts/IQueueManagementService';

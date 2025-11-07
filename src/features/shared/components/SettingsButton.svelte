@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { spring } from 'svelte/motion';
-
 	interface Props {
 		onclick?: () => void;
 	}
@@ -8,18 +6,46 @@
 	let { onclick }: Props = $props();
 
 	let hovered = $state(false);
+	let rotation = $state(0);
+	let animationFrame: number | null = null;
+	let velocity = $state(0);
 
-	const rotation = spring(0, {
-		stiffness: 0.1,
-		damping: 0.25
-	});
+	// Spring animation constants
+	const STIFFNESS = 0.1;
+	const DAMPING = 0.25;
+
+	// Spring physics animation
+	function animateSpring(target: number) {
+		function animate() {
+			const delta = target - rotation;
+			const springForce = delta * STIFFNESS;
+			velocity += springForce;
+			velocity *= DAMPING;
+			rotation += velocity;
+
+			// Continue animation if there's still movement
+			if (Math.abs(velocity) > 0.01 || Math.abs(delta) > 0.01) {
+				animationFrame = requestAnimationFrame(animate);
+			} else {
+				rotation = target;
+				velocity = 0;
+			}
+		}
+
+		if (animationFrame !== null) {
+			cancelAnimationFrame(animationFrame);
+		}
+		animationFrame = requestAnimationFrame(animate);
+	}
 
 	$effect(() => {
-		if (hovered) {
-			rotation.set(45);
-		} else {
-			rotation.set(0);
-		}
+		animateSpring(hovered ? 45 : 0);
+
+		return () => {
+			if (animationFrame !== null) {
+				cancelAnimationFrame(animationFrame);
+			}
+		};
 	});
 
 	function handleClick() {
@@ -37,7 +63,7 @@
 	<svg
 		xmlns="http://www.w3.org/2000/svg"
 		viewBox="0 0 24 24"
-		style="transform: rotate({$rotation}deg);"
+		style="transform: rotate({rotation}deg);"
 	>
 		<path
 			fill="currentColor"

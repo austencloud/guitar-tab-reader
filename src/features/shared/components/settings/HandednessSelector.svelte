@@ -1,5 +1,5 @@
 <script lang="ts">
-	import preferences from '$lib/stores/preferences';
+	import { preferences } from '$lib/state/preferences.svelte';
 </script>
 
 <div class="handedness-selector">
@@ -10,10 +10,10 @@
 	<div class="selector-buttons">
 		<button
 			class="hand-btn left-hand"
-			class:active={$preferences.isLeftHanded}
+			class:active={preferences.isLeftHanded}
 			onclick={() => preferences.setLeftHanded(true)}
 			aria-label="Left-handed"
-			aria-pressed={$preferences.isLeftHanded}
+			aria-pressed={preferences.isLeftHanded}
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
 				<path
@@ -25,10 +25,10 @@
 		</button>
 		<button
 			class="hand-btn right-hand"
-			class:active={!$preferences.isLeftHanded}
+			class:active={!preferences.isLeftHanded}
 			onclick={() => preferences.setLeftHanded(false)}
 			aria-label="Right-handed"
-			aria-pressed={!$preferences.isLeftHanded}
+			aria-pressed={!preferences.isLeftHanded}
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
 				<path

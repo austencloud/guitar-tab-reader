@@ -32,7 +32,7 @@
 	}
 </script>
 
-<BottomSheet open={isOpen} {onClose} title="Jam Sessions">
+<BottomSheet open={isOpen} onOpenChange={(open) => !open && onClose()} title="Jam Sessions">
 	<div class="session-options">
 		<button class="option-card primary" onclick={handleCreateSession}>
 			<div class="option-icon">

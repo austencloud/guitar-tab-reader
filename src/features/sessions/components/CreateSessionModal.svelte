@@ -57,8 +57,8 @@
 </script>
 
 {#if sessionState?.showCreateModal}
-	<div class="modal-overlay" onclick={handleClose}>
-		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+	<div class="modal-overlay" onclick={handleClose} onkeydown={(e) => e.key === 'Escape' && handleClose()} role="button" tabindex="-1">
+		<div class="modal-content" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
 			<div class="modal-header">
 				<h2>Create Jam Session</h2>
 				<button class="close-button" onclick={handleClose} aria-label="Close">
@@ -74,7 +74,6 @@
 						type="text"
 						bind:value={sessionName}
 						placeholder="Sunday Jam"
-						autofocus
 						required
 						autocomplete="off"
 						data-lpignore="true"

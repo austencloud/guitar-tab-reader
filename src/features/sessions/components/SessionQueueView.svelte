@@ -104,8 +104,8 @@
 </script>
 
 {#if sessionState?.showQueueView && sessionState?.currentSession}
-	<div class="queue-overlay" onclick={handleClose}>
-		<div class="queue-container" onclick={(e) => e.stopPropagation()}>
+	<div class="queue-overlay" onclick={handleClose} onkeydown={(e) => e.key === 'Escape' && handleClose()} role="button" tabindex="-1">
+		<div class="queue-container" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
 			<!-- Header -->
 			<div class="queue-header">
 				<div class="header-content">
@@ -180,6 +180,7 @@
 								ondragleave={handleDragLeave}
 								ondrop={(e) => handleDrop(e, index)}
 								ondragend={handleDragEnd}
+								role="listitem"
 							>
 								<div class="drag-handle">
 									<div class="handle-bars">

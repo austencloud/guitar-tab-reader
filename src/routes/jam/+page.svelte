@@ -3,28 +3,28 @@
 	import { goto } from '$app/navigation';
 	import { Music2, Plus, UserPlus, History, Users, Clock, Play } from 'lucide-svelte';
 	import { useSessionState } from '$lib/useSessionState.svelte';
-	import { isAppInitialized } from '$lib/app';
-	import { onMount } from 'svelte';
+	import { initializeApp } from '$lib/app';
 
 	let sessionState = $state<ReturnType<typeof useSessionState> | undefined>(undefined);
 	let mounted = $state(false);
 
-	onMount(() => {
-		// Wait for app initialization
-		const checkInit = setInterval(() => {
-			if (isAppInitialized()) {
-				clearInterval(checkInit);
-				try {
-					sessionState = useSessionState();
-					mounted = true;
-				} catch (error) {
-					console.error('Failed to initialize session state:', error);
-				}
-			}
-		}, 50);
+	$effect(() => {
+		let disposed = false;
 
-		// Cleanup
-		return () => clearInterval(checkInit);
+		(async () => {
+			try {
+				await initializeApp();
+				if (disposed) return;
+				sessionState = useSessionState();
+				mounted = true;
+			} catch (error) {
+				console.error('Failed to initialize session state:', error);
+			}
+		})();
+
+		return () => {
+			disposed = true;
+		};
 	});
 
 	function handleCreateSession() {
@@ -413,4 +413,3 @@
 		}
 	}
 </style>
-

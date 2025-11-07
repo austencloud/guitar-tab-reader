@@ -1,15 +1,15 @@
 <script lang="ts">
-	import preferences from '$lib/stores/preferences';
+	import { preferences } from '$lib/state/preferences.svelte';
 </script>
 
 <div class="handedness-toggle">
 	<label>
 		<input
 			type="checkbox"
-			checked={$preferences.isLeftHanded}
-			on:change={(e) => preferences.setLeftHanded(e.currentTarget.checked)}
+			checked={preferences.isLeftHanded}
+			onchange={(e) => preferences.setLeftHanded(e.currentTarget.checked)}
 		/>
-		<span>{$preferences.isLeftHanded ? 'Left-handed' : 'Right-handed'}</span>
+		<span>{preferences.isLeftHanded ? 'Left-handed' : 'Right-handed'}</span>
 	</label>
 </div>
 

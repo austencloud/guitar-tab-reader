@@ -246,13 +246,5 @@ export class SessionLifecycleService implements ISessionLifecycleService {
 		console.warn('[SessionLifecycle] Using simplified peer discovery (code as peer ID)');
 		return code;
 	}
-
-	// ============================================================================
-	// Internal Methods (used by SessionSyncService)
-	// ============================================================================
-
-	updateCurrentSession(session: Session): void {
-		this.currentSession = session;
-	}
 }
 

@@ -1,4 +1,4 @@
-import type { Tab } from '$lib/stores/tabs';
+import type { Tab } from '$lib/state/tabs.svelte';
 /**
  * Core session types for collaborative jam sessions
  */
