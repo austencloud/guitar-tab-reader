@@ -1,8 +1,6 @@
 <script lang="ts">
 	import type { StringDefinition } from '../services/types';
-	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
-	import { onMount } from 'svelte';
 	import NoteInfoDisplay from './NoteInfoDisplay.svelte';
 	import MeterDisplay from './MeterDisplay.svelte';
 	import StringButtons from './StringButtons.svelte';
@@ -23,32 +21,61 @@
 
 	const TUNED_THRESHOLD = 10;
 
-	const needleRotation = tweened(0, {
-		duration: 300,
-		easing: cubicOut
-	});
+	// Modern Svelte 5: Use $state with manual animation instead of tweened
+	let needleRotation = $state(0);
+	let animationFrame: number | null = null;
 
 	let mounted = $state(false);
 	let lastDetectedCents = $state(0);
 
 	const isCurrentlyTuned = $derived(!!(closestString && Math.abs(detectedCents) < TUNED_THRESHOLD));
 
+	// Smooth animation function using requestAnimationFrame
+	function animateRotation(target: number, duration: number = 300) {
+		const start = needleRotation;
+		const startTime = performance.now();
+
+		function animate(currentTime: number) {
+			const elapsed = currentTime - startTime;
+			const progress = Math.min(elapsed / duration, 1);
+			const easedProgress = cubicOut(progress);
+
+			needleRotation = start + (target - start) * easedProgress;
+
+			if (progress < 1) {
+				animationFrame = requestAnimationFrame(animate);
+			}
+		}
+
+		if (animationFrame !== null) {
+			cancelAnimationFrame(animationFrame);
+		}
+		animationFrame = requestAnimationFrame(animate);
+	}
+
 	$effect(() => {
 		if (mounted) {
 			if (isCurrentlyTuned) {
-				needleRotation.set(0, { duration: 100 });
+				animateRotation(0, 100);
 				lastDetectedCents = 0;
 			} else if (closestString) {
 				const targetRotation = Math.max(-45, Math.min(45, detectedCents));
 				if (Math.abs(detectedCents - lastDetectedCents) > 1) {
-					needleRotation.set(targetRotation);
+					animateRotation(targetRotation);
 					lastDetectedCents = detectedCents;
 				}
 			} else {
-				needleRotation.set(0);
+				animateRotation(0);
 				lastDetectedCents = 0;
 			}
 		}
+
+		// Cleanup animation on unmount
+		return () => {
+			if (animationFrame !== null) {
+				cancelAnimationFrame(animationFrame);
+			}
+		};
 	});
 
 	const tuningState = $derived(
@@ -92,7 +119,8 @@
 		}, 1500);
 	}
 
-	onMount(() => {
+	// Set mounted flag using $effect
+	$effect(() => {
 		mounted = true;
 	});
 </script>
@@ -103,7 +131,7 @@
 	<MeterDisplay
 		detectedCents={closestString ? detectedCents : 0}
 		{isCurrentlyTuned}
-		needleRotationStore={needleRotation}
+		{needleRotation}
 	/>
 
 	<StringButtons {strings} {closestString} onplayNote={(string) => playReferenceNote(string)} />

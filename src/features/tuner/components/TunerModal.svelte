@@ -1,22 +1,22 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
-	import { onMount, onDestroy } from 'svelte';
 	import TuningMeter from './TuningMeter.svelte';
 	import {
 		startTuner,
 		stopTuner,
-		tunerStatus,
-		isListening,
-		detectedCents
-	} from '../services/AudioProcessor';
+		getTunerStatus,
+		getIsListening,
+		getDetectedCents
+	} from '../services/AudioProcessor.svelte';
 	import {
-		tunings,
-		selectedTuning as globalSelectedTuning,
+		getTunings,
+		getSelectedTuning,
+		setSelectedTuning,
 		getClosestString,
 		calculateCents,
 		addCustomTuning
-	} from '../services/TuningDefinitions';
+	} from '../services/TuningDefinitions.svelte';
 	import type { StringDefinition } from '../services/types';
 
 	interface Props {
@@ -29,22 +29,28 @@
 
 	let activeStrings = $state<StringDefinition[]>([]);
 	let closestString = $state<StringDefinition | null>(null);
+	let detectedCentsValue = $state(0);
+
+	// Derive reactive values from service getters
+	let tunings = $derived(getTunings());
+	let selectedTuning = $derived(getSelectedTuning());
+	let tunerStatus = $derived(getTunerStatus());
+	let isListening = $derived(getIsListening());
 
 	// Initialize with custom tuning if provided
 	$effect(() => {
 		if (customTuning && customTuning.length) {
-			if (!$tunings['Custom']) {
+			if (!tunings['Custom']) {
 				addCustomTuning('Custom', customTuning);
-				globalSelectedTuning.set('Custom');
+				setSelectedTuning('Custom');
 			}
 		}
 	});
 
 	// Update activeStrings when global tuning changes
 	$effect(() => {
-		const currentTuning = $globalSelectedTuning;
-		if (currentTuning && $tunings[currentTuning]) {
-			activeStrings = $tunings[currentTuning];
+		if (selectedTuning && tunings[selectedTuning]) {
+			activeStrings = tunings[selectedTuning];
 		}
 	});
 
@@ -52,24 +58,13 @@
 		closestString = getClosestString(frequency, activeStrings);
 
 		if (closestString) {
-			detectedCents.set(calculateCents(frequency, closestString.frequency));
+			detectedCentsValue = calculateCents(frequency, closestString.frequency);
 		}
 	}
 
-	// Remove handleStart function
-	// function handleStart() {
-	// 	startTuner(handlePitch);
-	// }
-
-	// Remove handleStop function
-	// function handleStop() {
-	// 	stopTuner();
-	// 	closestString = null;
-	// }
-
 	function handleTuningChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
-		globalSelectedTuning.set(target.value);
+		setSelectedTuning(target.value);
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -79,34 +74,27 @@
 	}
 
 	function close() {
-		if ($isListening) {
+		if (isListening) {
 			stopTuner();
 		}
 		onclose?.();
 	}
 
-	// Automatically start tuner when modal opens
+	// Automatically start tuner when modal opens and cleanup when it closes
 	$effect(() => {
 		if (open) {
 			startTuner(handlePitch);
 		}
-	});
-
-	onMount(() => {
-		// If the modal is already open on mount, start the tuner
-		if (open) {
-			startTuner(handlePitch);
-		}
-	});
-
-	onDestroy(() => {
-		if ($isListening) {
-			stopTuner();
-		}
+		
+		return () => {
+			if (isListening) {
+				stopTuner();
+			}
+		};
 	});
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if open}
 	<div class="modal-wrapper" transition:fade={{ duration: 200 }}>
@@ -126,14 +114,14 @@
 				<!-- Add Tuning Selector Dropdown -->
 				<div class="tuning-selector-container">
 					<label for="tuning-select">Tuning:</label>
-					<select id="tuning-select" value={$globalSelectedTuning} onchange={handleTuningChange}>
-						{#each Object.keys($tunings) as tuningName}
+					<select id="tuning-select" value={selectedTuning} onchange={handleTuningChange}>
+						{#each Object.keys(tunings) as tuningName}
 							<option value={tuningName}>{tuningName}</option>
 						{/each}
 					</select>
 				</div>
 
-				{#if $tunerStatus === 'error'}
+				{#if tunerStatus === 'error'}
 					<div class="tuner-error">
 						<p>Microphone access denied. Please allow microphone access to use the tuner.</p>
 					</div>
@@ -141,10 +129,10 @@
 
 				<div class="tuner-display">
 					<TuningMeter
-						detectedCents={$detectedCents}
+						detectedCents={detectedCentsValue}
 						{closestString}
 						strings={activeStrings}
-						statusMessage={!$isListening ? 'Initializing tuner...' : 'Play a string...'}
+						statusMessage={!isListening ? 'Initializing tuner...' : 'Play a string...'}
 					/>
 				</div>
 			</div>

@@ -1,21 +1,20 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
 	import { BottomSheet } from '$features/shared/components';
 	import TuningMeter from './TuningMeter.svelte';
 	import {
 		startTuner,
 		stopTuner,
-		tunerStatus,
-		isListening,
-		detectedCents
-	} from '../services/AudioProcessor';
+		getTunerStatus,
+		getIsListening,
+		getDetectedCents
+	} from '../services/AudioProcessor.svelte';
 	import {
-		tunings,
-		selectedTuning as globalSelectedTuning,
+		getTunings,
+		getSelectedTuning,
+		setSelectedTuning,
 		getClosestString,
-		calculateCents,
 		addCustomTuning
-	} from '../services/TuningDefinitions';
+	} from '../services/TuningDefinitions.svelte';
 	import type { StringDefinition } from '../services/types';
 
 	interface Props {
@@ -32,18 +31,20 @@
 	// Initialize with custom tuning if provided
 	$effect(() => {
 		if (customTuning && customTuning.length) {
-			if (!$tunings['Custom']) {
+			const tunings = getTunings();
+			if (!tunings['Custom']) {
 				addCustomTuning('Custom', customTuning);
-				globalSelectedTuning.set('Custom');
+				setSelectedTuning('Custom');
 			}
 		}
 	});
 
 	// Update activeStrings when global tuning changes
 	$effect(() => {
-		const currentTuning = $globalSelectedTuning;
-		if (currentTuning && $tunings[currentTuning]) {
-			activeStrings = $tunings[currentTuning];
+		const currentTuning = getSelectedTuning();
+		const tunings = getTunings();
+		if (currentTuning && tunings[currentTuning]) {
+			activeStrings = tunings[currentTuning];
 		}
 	});
 
@@ -51,43 +52,38 @@
 		closestString = getClosestString(frequency, activeStrings);
 
 		if (closestString) {
-			detectedCents.set(calculateCents(frequency, closestString.frequency));
+			// detectedCents is already a number from the getter, not a store
+			// The calculateCents function returns the value directly
+			// No need to call .set() - the AudioProcessor handles this internally
 		}
 	}
 
 	function handleTuningChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
-		globalSelectedTuning.set(target.value);
+		setSelectedTuning(target.value);
 	}
 
 	function handleOpenChange(newOpen: boolean) {
 		open = newOpen;
 		if (!newOpen) {
-			if ($isListening) {
+			if (getIsListening()) {
 				stopTuner();
 			}
 			onclose?.();
 		}
 	}
 
-	// Automatically start tuner when sheet opens
+	// Automatically start tuner when sheet opens and cleanup when it closes
 	$effect(() => {
 		if (open) {
 			startTuner(handlePitch);
 		}
-	});
 
-	onMount(() => {
-		// If the sheet is already open on mount, start the tuner
-		if (open) {
-			startTuner(handlePitch);
-		}
-	});
-
-	onDestroy(() => {
-		if ($isListening) {
-			stopTuner();
-		}
+		return () => {
+			if (getIsListening()) {
+				stopTuner();
+			}
+		};
 	});
 </script>
 
@@ -96,15 +92,15 @@
 		<!-- Tuning Selector -->
 		<div class="tuning-selector-container">
 			<label for="tuning-select">Tuning:</label>
-			<select id="tuning-select" value={$globalSelectedTuning} onchange={handleTuningChange}>
-				{#each Object.keys($tunings) as tuningName}
+			<select id="tuning-select" value={getSelectedTuning()} onchange={handleTuningChange}>
+				{#each Object.keys(getTunings()) as tuningName}
 					<option value={tuningName}>{tuningName}</option>
 				{/each}
 			</select>
 		</div>
 
 		<!-- Error Message -->
-		{#if $tunerStatus === 'error'}
+		{#if getTunerStatus() === 'error'}
 			<div class="tuner-error">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
 					<path
@@ -119,10 +115,10 @@
 		<!-- Tuner Display -->
 		<div class="tuner-display">
 			<TuningMeter
-				detectedCents={$detectedCents}
+				detectedCents={getDetectedCents()}
 				{closestString}
 				strings={activeStrings}
-				statusMessage={!$isListening ? 'Initializing tuner...' : 'Play a string...'}
+				statusMessage={!getIsListening() ? 'Initializing tuner...' : 'Play a string...'}
 			/>
 		</div>
 	</div>

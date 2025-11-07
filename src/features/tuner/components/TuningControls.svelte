@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { tunings } from '../services/TuningDefinitions';
-	import { isListening } from '../services/AudioProcessor';
+	import { getTunings, getSelectedTuning } from '../services/TuningDefinitions.svelte';
+	import { getIsListening } from '../services/AudioProcessor.svelte';
 
 	interface Props {
 		selectedTuning?: string;
@@ -11,8 +11,12 @@
 
 	let { selectedTuning = 'Standard', onstart, onstop, ontuningChange }: Props = $props();
 
+	// Derive reactive values from service getters
+	let tunings = $derived(getTunings());
+	let isListening = $derived(getIsListening());
+
 	function toggleTuner() {
-		if ($isListening) {
+		if (isListening) {
 			onstop?.();
 		} else {
 			onstart?.();
@@ -31,7 +35,7 @@
 	<div class="control-group">
 		<label for="tuning-select" class="control-label">Guitar Tuning:</label>
 		<select id="tuning-select" bind:value={selectedTuning} aria-describedby="tuning-help">
-			{#each Object.keys($tunings) as tuning}
+			{#each Object.keys(tunings) as tuning}
 				<option value={tuning}>{tuning}</option>
 			{/each}
 		</select>
@@ -40,16 +44,16 @@
 
 	<button
 		class="tuner-toggle"
-		class:active={$isListening}
+		class:active={isListening}
 		onclick={toggleTuner}
-		aria-pressed={$isListening}
+		aria-pressed={isListening}
 		aria-describedby="tuner-status"
 	>
-		<span class="button-text">{$isListening ? 'Stop Tuner' : 'Start Tuner'}</span>
+		<span class="button-text">{isListening ? 'Stop Tuner' : 'Start Tuner'}</span>
 	</button>
 
 	<div id="tuner-status" class="sr-only" aria-live="polite">
-		{$isListening ? 'Tuner is listening for audio input' : 'Tuner is stopped'}
+		{isListening ? 'Tuner is listening for audio input' : 'Tuner is stopped'}
 	</div>
 </div>
 

@@ -1,20 +1,11 @@
 <script lang="ts">
-	import { derived } from 'svelte/store';
-	import type { Tweened } from 'svelte/motion';
-
 	interface Props {
 		detectedCents?: number;
 		isCurrentlyTuned?: boolean;
-		needleRotationStore: Tweened<number>;
+		needleRotation: number;
 	}
 
-	let { detectedCents = 0, isCurrentlyTuned = false, needleRotationStore }: Props = $props();
-
-	// Derive rotation value from the store for use in template
-	const needleRotation = derived(
-		needleRotationStore,
-		($needleRotationStore) => $needleRotationStore
-	);
+	let { detectedCents = 0, isCurrentlyTuned = false, needleRotation }: Props = $props();
 
 	// Calculate segment intensity based on cents
 	function getSegmentIntensity(cents: number, index: number): number {
@@ -56,7 +47,7 @@
 	</div>
 
 	<div class="needle-container">
-		<div class="needle" style="transform: rotate({$needleRotation}deg)"></div>
+		<div class="needle" style="transform: rotate({needleRotation}deg)"></div>
 		<div class="needle-center"></div>
 	</div>
 

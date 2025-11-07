@@ -1,57 +1,66 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { Radio } from 'lucide-svelte';
 	import TuningMeter from '$features/tuner/components/TuningMeter.svelte';
+	import SignalStrengthMeter from '$features/tuner/components/SignalStrengthMeter.svelte';
+	import CalibrationSettings from '$features/tuner/components/CalibrationSettings.svelte';
 	import {
 		startTuner,
 		stopTuner,
 		tunerStatus,
 		isListening,
-		detectedCents
-	} from '$features/tuner/services/AudioProcessor';
+		signalStrength,
+		signalStrengthPercentage
+	} from '$features/tuner/services/AudioProcessor.svelte';
 	import {
-		tunings,
-		selectedTuning as globalSelectedTuning,
+		standardTunings,
 		getClosestString,
-		calculateCents
-	} from '$features/tuner/services/TuningDefinitions';
+		calculateCents,
+		getTunings,
+		getSelectedTuning,
+		setSelectedTuning
+	} from '$features/tuner/services/TuningDefinitions.svelte';
 	import type { StringDefinition } from '$features/tuner/services/types';
 
 	let activeStrings = $state<StringDefinition[]>([]);
 	let closestString = $state<StringDefinition | null>(null);
+	let currentCents = $state<number>(0);
+	let currentSelectedTuning = $state<string>(getSelectedTuning());
 
-	// Update activeStrings when global tuning changes
+	// Update activeStrings when tuning changes
 	$effect(() => {
-		const currentTuning = $globalSelectedTuning;
-		if (currentTuning && $tunings[currentTuning]) {
-			activeStrings = $tunings[currentTuning];
+		const tuningsMap = getTunings();
+		if (currentSelectedTuning && tuningsMap[currentSelectedTuning]) {
+			activeStrings = tuningsMap[currentSelectedTuning];
 		}
 	});
 
 	function handlePitch(frequency: number) {
 		closestString = getClosestString(frequency, activeStrings);
-
+		
 		if (closestString) {
-			detectedCents.set(calculateCents(frequency, closestString.frequency));
+			currentCents = calculateCents(frequency, closestString.frequency);
+		} else {
+			currentCents = 0;
 		}
 	}
 
 	function handleTuningChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
-		globalSelectedTuning.set(target.value);
+		currentSelectedTuning = target.value;
+		setSelectedTuning(target.value);
 	}
 
-	// Automatically start tuner when page loads
-	onMount(() => {
+	// Automatically start tuner when page loads and cleanup on unmount
+	$effect(() => {
 		startTuner(handlePitch);
-	});
-
-	onDestroy(() => {
-		if ($isListening) {
-			stopTuner();
-		}
+		
+		return () => {
+			if (isListening) {
+				stopTuner();
+			}
+		};
 	});
 </script>
 
@@ -79,15 +88,23 @@
 	<!-- Tuning Selector -->
 	<div class="tuning-selector">
 		<label for="tuning-select">Tuning</label>
-		<select id="tuning-select" value={$globalSelectedTuning} onchange={handleTuningChange}>
-			{#each Object.keys($tunings) as tuningName}
+		<select id="tuning-select" value={currentSelectedTuning} onchange={handleTuningChange}>
+			{#each Object.keys(standardTunings) as tuningName}
 				<option value={tuningName}>{tuningName}</option>
 			{/each}
 		</select>
 	</div>
 
+	<!-- Calibration Settings -->
+	<CalibrationSettings />
+
+	<!-- Signal Strength Meter -->
+	{#if isListening}
+		<SignalStrengthMeter strength={signalStrength} percentage={signalStrengthPercentage} />
+	{/if}
+
 	<!-- Error Message -->
-	{#if $tunerStatus === 'error'}
+	{#if tunerStatus === 'error'}
 		<div class="tuner-error">
 			<Radio size={20} />
 			<p>Microphone access denied. Please allow microphone access to use the tuner.</p>
@@ -97,10 +114,10 @@
 	<!-- Tuner Display -->
 	<div class="tuner-container">
 		<TuningMeter
-			detectedCents={$detectedCents}
+			detectedCents={currentCents}
 			{closestString}
 			strings={activeStrings}
-			statusMessage={!$isListening ? 'Initializing tuner...' : 'Play a string...'}
+			statusMessage={!isListening ? 'Initializing tuner...' : 'Play a string...'}
 		/>
 	</div>
 
