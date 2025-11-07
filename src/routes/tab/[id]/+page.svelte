@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { onMount, setContext, getContext } from 'svelte';
+	import { setContext, getContext } from 'svelte';
 	import { page } from '$app/state';
-	import { tabs } from '$lib/stores/tabs';
+	import { tabs } from '$lib/state/tabs.svelte';
 	import { goto } from '$app/navigation';
 	import { ScrollControls, TabViewer } from '$features/tabs/components';
 	import { GuitarTuner } from '$features/tuner/components';
-	import preferences from '$lib/stores/preferences';
+	import { preferences } from '$lib/state/preferences.svelte';
 
 	let tabContainer = $state<HTMLDivElement | undefined>(undefined);
 	// let currentPosition = $state(0); // TODO: Use for scroll position tracking
@@ -13,16 +13,17 @@
 	let lastContainerScrollTop = $state(0);
 
 	const id = $derived(page.params.id);
-	const currentTab = $derived($tabs.find((tab) => tab.id === id));
+	const currentTab = $derived(tabs.tabs.find((tab) => tab.id === id));
 
 	// Get scroll visibility context from parent layout
-	const scrollVisibility = getContext<{ 
-		visible: boolean; 
-		hide: () => void; 
+	const scrollVisibility = getContext<{
+		getVisible: () => boolean;
+		hide: () => void;
 		show: () => void;
 		handleContainerScroll: (scrollTop: number, lastScroll: number) => void;
 	}>('scrollVisibility');
-	const isControlsVisible = $derived(scrollVisibility?.visible ?? true);
+	// Call the function in a $derived context to establish reactive tracking
+	const isControlsVisible = $derived(scrollVisibility?.getVisible() ?? true);
 
 	function handleHideNavigation() {
 		// Hide the navigation when auto-scroll starts
@@ -66,13 +67,6 @@
 		tunerOpen = false;
 	}
 
-	// Make sure we have access to the container after component is mounted
-	onMount(() => {
-		return () => {
-			// Cleanup if needed
-		};
-	});
-
 	// Provide tuner state context
 	setContext('tunerState', {
 		get open() {
@@ -96,7 +90,7 @@
 			{#if tabContainer}
 				<TabViewer
 					content={currentTab.content}
-					fontSize={$preferences.fontSize}
+					fontSize={preferences.fontSize}
 					showChordDiagrams={true}
 					onopenTuner={handleOpenTuner}
 				/>
