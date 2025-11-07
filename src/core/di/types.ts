@@ -12,6 +12,11 @@ export const TYPES = {
 	ChordService: Symbol.for('ChordService'),
 	AutoScrollService: Symbol.for('AutoScrollService'),
 
+	// Tab viewer services
+	ITabContentProcessor: Symbol.for('ITabContentProcessor'),
+	IChordDictionaryService: Symbol.for('IChordDictionaryService'),
+	IResponsiveFontCalculator: Symbol.for('IResponsiveFontCalculator'),
+
 	// Tab import services
 	IUrlImportService: Symbol.for('IUrlImportService'),
 	ISmartImportService: Symbol.for('ISmartImportService'),
@@ -30,6 +35,13 @@ export const TYPES = {
 	UserState: Symbol.for('UserState'),
 	PersistenceManager: Symbol.for('PersistenceManager'),
 	StorageService: Symbol.for('StorageService'),
+
+	// Layout services
+	LayoutState: Symbol.for('LayoutState'),
+	ModalOrchestrator: Symbol.for('ModalOrchestrator'),
+	ScrollBehaviorService: Symbol.for('ScrollBehaviorService'),
+	NavigationCoordinator: Symbol.for('NavigationCoordinator'),
+	ContextManager: Symbol.for('ContextManager'),
 
 	// Session feature services
 	PeerConnection: Symbol.for('PeerConnection'),

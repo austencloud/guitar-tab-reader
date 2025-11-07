@@ -15,7 +15,13 @@ export { AudioProcessorService } from './implementations/AudioProcessorService';
 export { PitchDetectorService } from './implementations/PitchDetectorService';
 
 // Export tuning definitions
-export * from './TuningDefinitions';
+export * from './TuningDefinitions.svelte';
+
+// Export signal processing utilities
+export * from './SignalProcessor';
+
+// Export calibration settings
+export * from './CalibrationSettings.svelte';
 
 /**
  * Register all tuner-related services in the DI container

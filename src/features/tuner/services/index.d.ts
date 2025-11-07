@@ -4,7 +4,9 @@ export type { IAudioProcessor } from './contracts/IAudioProcessor';
 export type { IPitchDetector } from './contracts/IPitchDetector';
 export { AudioProcessorService } from './implementations/AudioProcessorService';
 export { PitchDetectorService } from './implementations/PitchDetectorService';
-export * from './TuningDefinitions';
+export * from './TuningDefinitions.svelte';
+export * from './SignalProcessor';
+export * from './CalibrationSettings.svelte';
 /**
  * Register all tuner-related services in the DI container
  */
