@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { tabs } from '$lib/stores/tabs';
+	import { tabs } from '$lib/state/tabs.svelte';
 	import { goto } from '$app/navigation';
 	import { Plus, X } from 'lucide-svelte';
-	import type { Tab } from '$lib/stores/tabs';
+	import type { Tab } from '$lib/state/tabs.svelte';
 
 	interface Props {
 		open: boolean;
@@ -22,7 +22,7 @@
 
 	// Filter and sort tabs
 	let sortedAndFilteredTabs = $derived(
-		[...$tabs]
+		[...tabs.tabs]
 			.filter((tab) => {
 				if (!searchQuery) return true;
 				const query = searchQuery.toLowerCase();
@@ -153,7 +153,7 @@
 				<div class="tabs-items">
 					{#if sortedAndFilteredTabs.length === 0}
 						<div class="empty-state">
-							{#if $tabs.length === 0}
+							{#if tabs.tabs.length === 0}
 								<p>No tabs yet. Tap "Add Tab" to get started!</p>
 							{:else}
 								<p>No matching tabs found</p>
@@ -166,8 +166,10 @@
 								class:active={currentTabId === tab.id}
 								onclick={() => handleSelectTab(tab.id)}
 							>
-								<div class="tab-title">{tab.title}</div>
-								<div class="tab-artist">{tab.artist || '-'}</div>
+								<div class="tab-info">
+									<div class="tab-title">{tab.title}</div>
+									<div class="tab-artist">{tab.artist || 'Unknown Artist'}</div>
+								</div>
 								<div class="tab-date">
 									{new Date(tab.updatedAt ?? tab.createdAt).toLocaleDateString(undefined, {
 										month: 'short',
@@ -367,8 +369,8 @@
 
 	.tab-item {
 		display: grid;
-		grid-template-columns: 2fr 1.5fr 1fr;
-		gap: 0.5rem;
+		grid-template-columns: 1fr auto;
+		gap: 1rem;
 		padding: 1rem;
 		background: var(--color-surface-high);
 		border: 1px solid var(--color-border);
@@ -378,6 +380,7 @@
 		transition: all 0.2s;
 		text-align: left;
 		position: relative;
+		align-items: center;
 	}
 
 	.tab-item:hover {
@@ -391,6 +394,13 @@
 		background: var(--color-primary-dim);
 	}
 
+	.tab-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		min-width: 0;
+	}
+
 	.tab-title {
 		font-weight: 500;
 		color: var(--color-text-primary);
@@ -401,15 +411,19 @@
 
 	.tab-artist {
 		color: var(--color-text-secondary);
+		font-size: 0.875rem;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		font-style: italic;
 	}
 
 	.tab-date {
 		color: var(--color-text-tertiary);
 		font-size: 0.875rem;
 		text-align: right;
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	.now-playing-badge {

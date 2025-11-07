@@ -21,7 +21,6 @@
 			onkeypress={onKeyPress}
 			placeholder="https://tabs.ultimate-guitar.com/tab/..."
 			disabled={isLoading}
-			autofocus
 		/>
 		<p class="hint">Paste the full URL from Ultimate Guitar's website</p>
 	</div>

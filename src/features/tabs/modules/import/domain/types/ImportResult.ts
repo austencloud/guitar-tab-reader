@@ -1,4 +1,5 @@
 import type { ProgressLogEntry } from './ProgressLogEntry';
+import type { ScrapedTab } from './ScrapedTab';
 
 /**
  * Import result types
@@ -14,7 +15,7 @@ export interface ImportResult {
 		content: string;
 		url?: string;
 	};
-	tabs?: any[];
+	tabs?: ScrapedTab[];
 	count?: number;
 	error?: string;
 	suggestions?: string[];
@@ -22,7 +23,7 @@ export interface ImportResult {
 	ambiguityReason?: string;
 	possibleArtist?: string;
 	possibleSong?: string;
-	searchResults?: any[];
+	searchResults?: ScrapedTab[];
 	fallback?: boolean;
 	message?: string;
 	_meta?: {

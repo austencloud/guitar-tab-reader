@@ -1,10 +1,18 @@
 <script lang="ts">
-	import { onMount, onDestroy, tick } from 'svelte';
-	import { loadChordDictionary, findChordsInText, type ProcessedChord } from '$lib/utils/chordUtils';
+	import { tick } from 'svelte';
 	import { browser } from '$app/environment';
+	import { useService } from '$lib/useService.svelte';
+	import { TYPES } from '$core/di';
+	import type { ProcessedChord } from '$lib/utils/chordDb';
+	import type { ITabContentProcessor } from '../services/contracts/ITabContentProcessor';
+	import type { IChordDictionaryService } from '../services/contracts/IChordDictionaryService';
+	import type { IResponsiveFontCalculator } from '../services/contracts/IResponsiveFontCalculator';
+	import { createTabViewerState } from '../state/tab-viewer-state.svelte';
 	import TabContentRenderer from './tabViewer/TabContentRenderer.svelte';
 	import ChordTooltip from './tabViewer/ChordTooltip.svelte';
 	import ChordModal from './tabViewer/ChordModal.svelte';
+	import GestureHandler from './tabViewer/GestureHandler.svelte';
+	import ChordInteractionLayer from './tabViewer/ChordInteractionLayer.svelte';
 
 	interface Props {
 		content?: string;
@@ -15,68 +23,45 @@
 
 	let { content = '', fontSize = 14, showChordDiagrams = true, onopenTuner }: Props = $props();
 
-	// Internal state
+	// Resolve services from DI container (lazily to avoid initialization race)
+	let contentProcessor = $state<ITabContentProcessor>();
+	let chordDictionaryService = $state<IChordDictionaryService>();
+	let fontCalculator = $state<IResponsiveFontCalculator>();
+
+	// Create component state
+	const viewerState = createTabViewerState();
+
+	// Component refs
 	let container = $state<HTMLDivElement>();
-	let processedContentHtml = $state('');
-	let chordsMap = $state(new Map<string, ProcessedChord>());
 	let chordDictionaryLoaded = $state(false);
-	let contentHash = $state('');
-	let isMobile = $state(false);
-	let isTouch = $state(false);
-	let containerWidth = $state(0);
 	let resizeObserver: ResizeObserver | null = null;
-
-	// Pinch gesture state for font size control
-	let initialPinchDistance = $state(0);
-	let initialFontSize = $state(16);
-	let isPinching = $state(false);
-	let currentUserFontSize = $state(fontSize); // Track user's current font size preference
-
-	// Tooltip state
-	let tooltipVisible = $state(false);
-	let tooltipX = $state(0);
-	let tooltipY = $state(0);
-	let tooltipChord = $state<ProcessedChord | null>(null);
-	let tooltipPlacement = $state<'above' | 'below'>('below');
-	let tooltipTimeout = $state<number | null>(null);
+	let tooltipTimeout: number | null = null;
 	let tooltipComponent = $state<ChordTooltip>();
-
-	// Modal state
-	let modalVisible = $state(false);
-	let modalChord = $state<ProcessedChord | null>(null);
+	let gestureHandler = $state<GestureHandler>();
+	let chordInteractionLayer = $state<ChordInteractionLayer>();
 
 	const TOOLTIP_DELAY = 150;
 	const TOOLTIP_HIDE_DELAY = 300;
 
 	// --- Reactive Computations ---
 
-	// Calculate maximum safe font size (no overflow)
+	// Calculate maximum safe font size using service
 	const maxSafeFontSize = $derived(() => {
-		if (!containerWidth || !content) return fontSize;
-		
-		// Find the longest line in the content
-		const lines = content.split('\n');
-		const longestLine = lines.reduce((longest, current) => 
-			current.length > longest.length ? current : longest, '');
-		
-		if (!longestLine.length) return fontSize;
-		
-		// Calculate maximum font size that fits without overflow
-		const availableWidth = containerWidth;
-		const charWidthRatio = 0.6; // Monospace character width ratio
-		const maxFontSize = availableWidth / (longestLine.length * charWidthRatio);
-		
-		// Return a reasonable maximum (don't let it get ridiculously large)
-		return Math.min(maxFontSize, 32);
+		if (!fontCalculator) return viewerState.currentUserFontSize;
+		return fontCalculator.calculateMaxSafeFontSize(
+			content,
+			viewerState.containerWidth,
+			viewerState.currentUserFontSize
+		);
 	});
 
-	// Calculate actual font size to use (user preference limited by max safe size)
+	// Calculate responsive font size using service
 	const responsiveFontSize = $derived(() => {
-		const maxSafe = maxSafeFontSize();
-		const userPreferred = currentUserFontSize;
-		
-		// Use the smaller of user preference or max safe size, with 8px minimum
-		return Math.max(Math.min(userPreferred, maxSafe), 8);
+		if (!fontCalculator) return viewerState.currentUserFontSize;
+		return fontCalculator.calculateResponsiveFontSize(
+			viewerState.currentUserFontSize,
+			maxSafeFontSize()
+		);
 	});
 
 	const contentStyle = $derived(
@@ -86,236 +71,162 @@
 	// Re-process content when it changes, dictionary loads, or font size changes
 	$effect(() => {
 		const actualFontSize = responsiveFontSize();
-		
-		if (browser && content && chordDictionaryLoaded) {
-			const newHash = hashString(`${content}|${actualFontSize}|${containerWidth}`);
-			if (newHash !== contentHash) {
-				contentHash = newHash;
+
+		if (browser && content && chordDictionaryLoaded && contentProcessor) {
+			const newHash = contentProcessor.hashContent(`${content}|${actualFontSize}|${viewerState.containerWidth}`);
+			if (newHash !== viewerState.contentHash) {
+				viewerState.contentHash = newHash;
 				processAndRenderContent();
 			}
 		} else if (!content) {
-			processedContentHtml = '';
-			contentHash = '';
+			viewerState.processedContentHtml = '';
+			viewerState.contentHash = '';
 		}
 	});
 
 	// Sync user font size with props changes
 	$effect(() => {
-		currentUserFontSize = fontSize;
+		viewerState.currentUserFontSize = fontSize;
 	});
 
-	// --- Lifecycle ---
+	// --- Lifecycle using $effect ---
+	$effect(() => {
+		(async () => {
+			// Initialize services first
+			contentProcessor = useService<ITabContentProcessor>(TYPES.ITabContentProcessor);
+			chordDictionaryService = useService<IChordDictionaryService>(TYPES.IChordDictionaryService);
+			fontCalculator = useService<IResponsiveFontCalculator>(TYPES.IResponsiveFontCalculator);
 
-	onMount(async () => {
-		isMobile = window.matchMedia('(max-width: 768px)').matches;
-		document.addEventListener('click', handleDocumentClick);
-		document.addEventListener(
-			'touchstart',
-			() => {
-				isTouch = true;
-			},
-			{ once: true, passive: true }
-		);
+			viewerState.isMobile = window.matchMedia('(max-width: 768px)').matches;
+			document.addEventListener('click', handleDocumentClick);
+			document.addEventListener(
+				'touchstart',
+				() => {
+					viewerState.isTouch = true;
+				},
+				{ once: true, passive: true }
+			);
 
-		await tick();
+			await tick();
 
-		// Add non-passive touchmove listener to allow preventDefault for pinch gestures
-		if (container) {
-			container.addEventListener('touchmove', handleGestureTouchMove, { passive: false });
-		}
+			// Add non-passive touchmove listener to allow preventDefault for pinch gestures
+			if (container) {
+				container.addEventListener('touchmove', handleGestureTouchMove, { passive: false });
+			}
 
-		// Set up ResizeObserver to track container width for responsive font sizing
-		if (typeof ResizeObserver !== 'undefined' && container) {
-			containerWidth = container.clientWidth;
-			resizeObserver = new ResizeObserver((entries) => {
-				for (const entry of entries) {
-					if (entry.target === container) {
-						containerWidth = entry.contentRect.width;
+			// Set up ResizeObserver to track container width for responsive font sizing
+			if (typeof ResizeObserver !== 'undefined' && container) {
+				viewerState.containerWidth = container.clientWidth;
+				resizeObserver = new ResizeObserver((entries) => {
+					for (const entry of entries) {
+						if (entry.target === container) {
+							viewerState.containerWidth = entry.contentRect.width;
+						}
 					}
-				}
-			});
-			resizeObserver.observe(container);
-		}
+				});
+				resizeObserver.observe(container);
+			}
 
-		await loadChordDictionary();
-		chordDictionaryLoaded = true; // Triggers reactive processing
-	});
+			await chordDictionaryService!.loadDictionary();
+			chordDictionaryLoaded = true; // Triggers reactive processing
+		})();
 
-	onDestroy(() => {
-		document.removeEventListener('click', handleDocumentClick);
-		if (container) {
-			container.removeEventListener('touchmove', handleGestureTouchMove);
-		}
-		if (tooltipTimeout !== null) window.clearTimeout(tooltipTimeout);
-		resizeObserver?.disconnect();
+		return () => {
+			// Cleanup
+			document.removeEventListener('click', handleDocumentClick);
+			if (container) {
+				container.removeEventListener('touchmove', handleGestureTouchMove);
+			}
+			if (tooltipTimeout !== null) window.clearTimeout(tooltipTimeout);
+			resizeObserver?.disconnect();
+		};
 	});
 
 	// --- Core Logic ---
 
-	function hashString(str: string): string {
-		let hash = 0;
-		for (let i = 0; i < str.length; i++) {
-			const char = str.charCodeAt(i);
-			hash = (hash << 5) - hash + char;
-			hash |= 0; // Convert to 32bit integer
-		}
-		return hash.toString();
-	}
-
 	async function processAndRenderContent() {
-		if (!content) {
-			processedContentHtml = '';
-			chordsMap.clear();
+		if (!content || !contentProcessor) {
+			viewerState.processedContentHtml = '';
+			viewerState.chordsMap.clear();
 			return;
 		}
 
-		const foundChords = findChordsInText(content);
+		const foundChords = contentProcessor.findChords(content);
 		if (foundChords.length === 0) {
-			processedContentHtml = content; // No chords, render plain text
-			chordsMap.clear();
+			viewerState.processedContentHtml = content; // No chords, render plain text
+			viewerState.chordsMap.clear();
 			return;
 		}
 
 		// Store chord data
-		chordsMap.clear();
-		foundChords.forEach((chord) => chordsMap.set(chord.name, chord));
+		viewerState.chordsMap.clear();
+		foundChords.forEach((chord) => viewerState.chordsMap.set(chord.name, chord));
 
-		// Generate HTML with spans
-		let result = '';
-		let lastEnd = 0;
-		// Sort by start index to process in order
-		foundChords.sort((a, b) => a.startIndex - b.startIndex);
+		// Generate HTML with chord spans
+		viewerState.processedContentHtml = contentProcessor.generateHtmlWithChords(content, foundChords);
 
-		for (const chord of foundChords) {
-			result += escapeHtml(content.substring(lastEnd, chord.startIndex));
-			// Add tabindex="0" to make spans focusable
-			result += `<span class="chord" data-chord="${escapeHtml(chord.name)}" tabindex="0">${escapeHtml(chord.name)}</span>`;
-			lastEnd = chord.endIndex;
-		}
-		result += escapeHtml(content.substring(lastEnd));
-
-		processedContentHtml = result;
-
-		// Wait for DOM update before potentially attaching handlers if needed (delegation preferred)
+		// Wait for DOM update
 		await tick();
-		// Event delegation handles clicks/hovers now
-	}
-
-	function escapeHtml(unsafe: string): string {
-		return unsafe
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#039;');
 	}
 
 	// --- Event Handlers ---
 
-	// Pinch gesture handlers for font size control
-	function getPinchDistance(touches: TouchList): number {
-		const touch1 = touches[0];
-		const touch2 = touches[1];
-		const dx = touch2.clientX - touch1.clientX;
-		const dy = touch2.clientY - touch1.clientY;
-		return Math.sqrt(dx * dx + dy * dy);
-	}
-
+	// Delegate gesture events to GestureHandler component
 	function handleGestureTouchStart(event: TouchEvent) {
 		if (event.touches.length === 2) {
-			// Two-finger pinch gesture
-			event.preventDefault(); // Prevent default zoom
-			isPinching = true;
-			initialPinchDistance = getPinchDistance(event.touches);
-			initialFontSize = currentUserFontSize;
+			gestureHandler?.handleTouchStart(event);
 		} else if (event.touches.length === 1) {
-			// Single touch - handle chord interactions
-			handleInteractionStart(event);
+			chordInteractionLayer?.handleInteractionStart(event);
 		}
 	}
 
 	function handleGestureTouchMove(event: TouchEvent) {
-		if (!isPinching || event.touches.length !== 2) return;
-		
-		event.preventDefault(); // Prevent scrolling/zooming
-		
-		const currentDistance = getPinchDistance(event.touches);
-		const distanceChange = currentDistance - initialPinchDistance;
-		
-		// Calculate font size change (1px change per 20px of pinch distance change)
-		const fontSizeChange = distanceChange / 20;
-		const newFontSize = initialFontSize + fontSizeChange;
-		const maxSafe = maxSafeFontSize();
-		
-		// Constrain to safe bounds (8px minimum, maxSafe maximum)
-		const constrainedSize = Math.max(8, Math.min(newFontSize, maxSafe));
-		
-		if (constrainedSize !== currentUserFontSize) {
-			currentUserFontSize = constrainedSize;
-		}
+		gestureHandler?.handleTouchMove(event);
 	}
 
 	function handleGestureTouchEnd(event: TouchEvent) {
-		if (event.touches.length < 2) {
-			isPinching = false;
-			initialPinchDistance = 0;
-		}
+		gestureHandler?.handleTouchEnd(event);
 	}
 
+	// Delegate chord interaction events to ChordInteractionLayer component
 	function handleInteractionStart(event: MouseEvent | TouchEvent) {
-		const target = event.target as HTMLElement;
-		if (!target.classList.contains('chord') || !showChordDiagrams) return;
-
-		const chordName = target.dataset.chord;
-		if (!chordName) return;
-
-		const chord = chordsMap.get(chordName);
-		if (!chord) return;
-
-		if (event.type === 'touchstart') {
-			event.preventDefault(); // Prevent mouse events on touch devices
-			isTouch = true;
-			// Toggle behavior for touch
-			if (tooltipVisible && tooltipChord?.name === chordName) {
-				hideTooltip(0); // Hide immediately if tapping the same chord again
-			} else {
-				showTooltip(chord, target);
-			}
-		} else if (event.type === 'mouseenter' && !isTouch) {
-			showTooltip(chord, target);
-		}
+		chordInteractionLayer?.handleInteractionStart(event);
 	}
 
 	function handleInteractionEnd(event: MouseEvent | TouchEvent) {
-		const target = event.target as HTMLElement;
-		if (event.type === 'mouseleave' && !isTouch && target.classList.contains('chord')) {
-			hideTooltip();
-		}
-		// Touch end doesn't hide the tooltip, it stays until document click
+		chordInteractionLayer?.handleInteractionEnd(event);
 	}
 
 	function handleChordClick(event: MouseEvent) {
-		const target = event.target as HTMLElement;
-		if (!target.classList.contains('chord') || !showChordDiagrams) return;
+		chordInteractionLayer?.handleChordClick(event);
+	}
 
-		const chordName = target.dataset.chord;
-		if (!chordName) return;
+	function handleFocusIn(event: FocusEvent) {
+		chordInteractionLayer?.handleFocusIn(event);
+	}
 
-		const chord = chordsMap.get(chordName);
-		if (!chord) {
-			console.warn(`Chord data not found for: ${chordName}`);
-			return;
-		}
+	function handleFocusOut(event: FocusEvent) {
+		chordInteractionLayer?.handleFocusOut(event);
+	}
 
-		modalChord = chord;
-		modalVisible = true;
-		hideTooltip(0); // Hide tooltip immediately when modal opens
-		event.stopPropagation(); // Prevent document click handler from closing modal instantly
+	// Handle font size changes from gesture handler
+	function handleFontSizeChange(newSize: number) {
+		viewerState.currentUserFontSize = newSize;
+	}
+
+	// Handle touch detection from chord interaction layer
+	function handleTouchDetected() {
+		viewerState.isTouch = true;
+	}
+
+	// Handle modal display from chord interaction layer
+	function handleShowModal(chord: ProcessedChord) {
+		viewerState.showModal(chord);
 	}
 
 	function handleDocumentClick(event: MouseEvent) {
 		// Hide tooltip on any click outside the tooltip itself or a chord span
-		if (tooltipVisible) {
+		if (viewerState.tooltipVisible) {
 			const target = event.target as Node;
 			const tooltipEl = tooltipComponent?.getElement();
 			const isClickInsideTooltip = tooltipEl?.contains(target);
@@ -328,8 +239,6 @@
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
-		const target = event.target as HTMLElement;
-
 		// Global keyboard shortcuts
 		if (event.key === 't' && (event.ctrlKey || event.metaKey)) {
 			event.preventDefault();
@@ -337,45 +246,8 @@
 			return;
 		}
 
-		if (!target.classList.contains('chord')) return;
-
-		// Trigger click (modal) on Enter or Space
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault(); // Prevent space from scrolling page
-			// Create a synthetic mouse event for keyboard activation
-			const syntheticEvent = new MouseEvent('click', {
-				bubbles: true,
-				cancelable: true,
-				view: window
-			});
-			Object.defineProperty(syntheticEvent, 'target', {
-				value: event.target,
-				enumerable: true
-			});
-			handleChordClick(syntheticEvent);
-		}
-	}
-
-	function handleFocusIn(event: FocusEvent) {
-		const target = event.target as HTMLElement;
-		if (!target.classList.contains('chord') || !showChordDiagrams) return;
-
-		const chordName = target.dataset.chord;
-		if (!chordName) return;
-		const chord = chordsMap.get(chordName);
-		if (!chord) return;
-
-		// Show tooltip on focus, like mouseenter but without delay
-		isTouch = false; // Ensure tooltip shows
-		showTooltip(chord, target);
-	}
-
-	function handleFocusOut(event: FocusEvent) {
-		const target = event.target as HTMLElement;
-		if (!target.classList.contains('chord')) return;
-
-		// Hide tooltip on blur, like mouseleave
-		hideTooltip();
+		// Delegate chord-related keyboard events to ChordInteractionLayer
+		chordInteractionLayer?.handleKeyDown(event);
 	}
 
 	// --- Tooltip Logic ---
@@ -385,27 +257,26 @@
 
 		tooltipTimeout = window.setTimeout(
 			async () => {
-				tooltipChord = chord;
-				tooltipVisible = true;
+				viewerState.tooltipChord = chord;
+				viewerState.tooltipVisible = true;
 
 				// Calculate position after tooltip is rendered and measured
 				await tick();
 				positionTooltip(targetElement);
 			},
-			isTouch ? 0 : TOOLTIP_DELAY
+			viewerState.isTouch ? 0 : TOOLTIP_DELAY
 		); // Show immediately on touch
 	}
 
 	function hideTooltip(delay: number = TOOLTIP_HIDE_DELAY) {
 		if (tooltipTimeout !== null) window.clearTimeout(tooltipTimeout);
 		tooltipTimeout = window.setTimeout(() => {
-			tooltipVisible = false;
-			tooltipChord = null;
+			viewerState.clearTooltip();
 		}, delay);
 	}
 
 	function positionTooltip(targetElement: HTMLElement) {
-		if (!tooltipVisible || !tooltipComponent || !container) return;
+		if (!viewerState.tooltipVisible || !tooltipComponent || !container) return;
 
 		const tooltipEl = tooltipComponent.getElement();
 		if (!tooltipEl) return;
@@ -421,7 +292,7 @@
 		// Adjust X to stay within container bounds
 		const minX = 10;
 		const maxX = containerRect.width - tooltipRect.width - 10;
-		tooltipX = Math.max(minX, Math.min(maxX, desiredX - tooltipRect.width / 2));
+		viewerState.tooltipX = Math.max(minX, Math.min(maxX, desiredX - tooltipRect.width / 2));
 
 		// Decide placement (above/below) and set Y
 		const spaceAbove = targetRect.top - containerRect.top;
@@ -430,31 +301,50 @@
 		const margin = 10; // Space between target and tooltip
 
 		if (spaceBelow >= tooltipHeight + margin || spaceBelow > spaceAbove) {
-			tooltipY = desiredY + targetRect.height + margin;
-			tooltipPlacement = 'below';
+			viewerState.tooltipY = desiredY + targetRect.height + margin;
+			viewerState.tooltipPlacement = 'below';
 		} else {
-			tooltipY = desiredY - tooltipHeight - margin;
-			tooltipPlacement = 'above';
+			viewerState.tooltipY = desiredY - tooltipHeight - margin;
+			viewerState.tooltipPlacement = 'above';
 		}
 
 		// Ensure Y is also within bounds (might be less critical depending on layout)
-		tooltipY = Math.max(0, Math.min(containerRect.height - tooltipHeight, tooltipY));
+		viewerState.tooltipY = Math.max(0, Math.min(containerRect.height - tooltipHeight, viewerState.tooltipY));
 	}
 
 	function handleTooltipMouseEnter() {
-		if (!isTouch) hideTooltip(999999); // Effectively cancel hide timeout on hover
+		if (!viewerState.isTouch) hideTooltip(999999); // Effectively cancel hide timeout on hover
 	}
 
 	function handleTooltipMouseLeave() {
-		if (!isTouch) hideTooltip(); // Start hide timeout when leaving tooltip
+		if (!viewerState.isTouch) hideTooltip(); // Start hide timeout when leaving tooltip
 	}
 
 	// --- Modal Logic ---
 	function handleModalClose() {
-		modalVisible = false;
-		modalChord = null;
+		viewerState.clearModal();
 	}
 </script>
+
+<!-- Gesture Handler (invisible component for pinch-to-zoom) -->
+<GestureHandler
+	bind:this={gestureHandler}
+	currentFontSize={viewerState.currentUserFontSize}
+	maxFontSize={maxSafeFontSize()}
+	onfontSizeChange={handleFontSizeChange}
+/>
+
+<!-- Chord Interaction Layer (invisible component for chord events) -->
+<ChordInteractionLayer
+	bind:this={chordInteractionLayer}
+	chordsMap={viewerState.chordsMap}
+	{showChordDiagrams}
+	isTouch={viewerState.isTouch}
+	onshowTooltip={showTooltip}
+	onhideTooltip={hideTooltip}
+	onshowModal={handleShowModal}
+	ontouchDetected={handleTouchDetected}
+/>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <!-- Main container for positioning and event delegation -->
@@ -474,16 +364,16 @@
 	onfocusout={handleFocusOut}
 >
 	{#if chordDictionaryLoaded}
-		<TabContentRenderer content={processedContentHtml} style={contentStyle} />
+		<TabContentRenderer content={viewerState.processedContentHtml} style={contentStyle} />
 
 		<ChordTooltip
 			bind:this={tooltipComponent}
-			visible={tooltipVisible}
-			chord={tooltipChord}
-			x={tooltipX}
-			y={tooltipY}
-			placement={tooltipPlacement}
-			{isMobile}
+			visible={viewerState.tooltipVisible}
+			chord={viewerState.tooltipChord}
+			x={viewerState.tooltipX}
+			y={viewerState.tooltipY}
+			placement={viewerState.tooltipPlacement}
+			isMobile={viewerState.isMobile}
 			onmouseenter={handleTooltipMouseEnter}
 			onmouseleave={handleTooltipMouseLeave}
 		/>
@@ -493,7 +383,7 @@
 	{/if}
 </div>
 
-<ChordModal visible={modalVisible} chord={modalChord} onclose={handleModalClose} />
+<ChordModal visible={viewerState.modalVisible} chord={viewerState.modalChord} onclose={handleModalClose} />
 
 <style>
 	.tab-viewer,

@@ -18,7 +18,25 @@
 	<div class="options-container">
 		<h3>What did you mean?</h3>
 
-		{#if data.suggestions && data.suggestions.length > 0}
+		{#if data.searchResults && data.searchResults.length > 0}
+			<div class="search-results-section">
+				<h4>Select the song you want:</h4>
+				{#each data.searchResults.slice(0, 10) as result}
+					<button class="search-result-option" onclick={() => onChoice('suggestion', `${result.artist} - ${result.title}`)}>
+						<div class="result-content">
+							<span class="result-title">{result.title}</span>
+							<span class="result-artist">by {result.artist}</span>
+						</div>
+						{#if result.rating && result.votes}
+							<div class="result-rating">
+								<span class="rating-stars">⭐ {result.rating}</span>
+								<span class="rating-votes">({result.votes} votes)</span>
+							</div>
+						{/if}
+					</button>
+				{/each}
+			</div>
+		{:else if data.suggestions && data.suggestions.length > 0}
 			<div class="suggestions-section">
 				<h4>Did you mean:</h4>
 				{#each data.suggestions as suggestion}
@@ -113,6 +131,79 @@
 		background-color: #fff3e0;
 		border-radius: 8px;
 		border: 1px solid #ffe0b2;
+	}
+
+	.search-results-section {
+		margin-bottom: 1.5rem;
+		padding: 1rem;
+		background-color: #f0f7ff;
+		border-radius: 8px;
+		border: 1px solid #cce4ff;
+	}
+
+	.search-results-section h4 {
+		font-size: 0.9rem;
+		color: #1976d2;
+		margin: 0 0 0.75rem 0;
+		font-weight: 600;
+	}
+
+	.search-result-option {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.75rem 1rem;
+		background-color: white;
+		border: 2px solid #bbdefb;
+		border-radius: 8px;
+		margin-bottom: 0.5rem;
+		cursor: pointer;
+		transition: all 0.2s;
+		width: 100%;
+		text-align: left;
+	}
+
+	.search-result-option:hover {
+		background-color: #e3f2fd;
+		border-color: #2196f3;
+		transform: translateX(4px);
+	}
+
+	.result-content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.result-title {
+		font-weight: 600;
+		color: #333;
+		font-size: 0.95rem;
+	}
+
+	.result-artist {
+		font-size: 0.85rem;
+		color: #666;
+	}
+
+	.result-rating {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.1rem;
+		font-size: 0.8rem;
+	}
+
+	.rating-stars {
+		color: #ff9800;
+		font-weight: 600;
+	}
+
+	.rating-votes {
+		color: #999;
+		font-size: 0.75rem;
 	}
 
 	.suggestions-section h4 {
@@ -219,6 +310,33 @@
 		.suggestions-section {
 			background-color: rgba(255, 152, 0, 0.1);
 			border-color: rgba(255, 152, 0, 0.3);
+		}
+
+		.search-results-section {
+			background-color: rgba(33, 150, 243, 0.1);
+			border-color: rgba(33, 150, 243, 0.3);
+		}
+
+		.search-results-section h4 {
+			color: #64b5f6;
+		}
+
+		.search-result-option {
+			background-color: #2a2a2a;
+			border-color: #42a5f5;
+		}
+
+		.search-result-option:hover {
+			background-color: rgba(33, 150, 243, 0.15);
+			border-color: #64b5f6;
+		}
+
+		.result-title {
+			color: #e0e0e0;
+		}
+
+		.result-artist {
+			color: #aaa;
 		}
 
 		.suggestions-section h4 {

@@ -76,6 +76,10 @@
 		const empty = '☆'.repeat(5 - clampedRating);
 		return filled + empty;
 	}
+
+	function formatArtistName(artist?: string): string {
+		return artist?.trim() ? artist : 'Unknown artist';
+	}
 </script>
 
 <div class="bulk-results-view">
@@ -123,6 +127,9 @@
 								<span class="recommended-badge">Recommended</span>
 							{/if}
 						</div>
+						<div class="tab-artist-row">
+							<span class="tab-artist">by {formatArtistName(group.recommendedVersion.artist)}</span>
+						</div>
 						<div class="tab-meta-row">
 							<span class="tab-type">{group.type}</span>
 							{#if group.recommendedVersion.rating}
@@ -165,6 +172,9 @@
 									<div class="tab-info">
 										<div class="tab-title-row">
 											<span class="tab-title">{altVersion.title}</span>
+										</div>
+										<div class="tab-artist-row">
+											<span class="tab-artist">by {formatArtistName(altVersion.artist)}</span>
 										</div>
 										<div class="tab-meta-row">
 											{#if altVersion.rating}
@@ -376,6 +386,22 @@
 		margin-bottom: 0.25rem;
 	}
 
+	.tab-artist-row {
+		display: flex;
+		align-items: center;
+		font-size: 0.85rem;
+		margin-bottom: 0.25rem;
+	}
+
+	.tab-artist {
+		color: #475569;
+		font-style: italic;
+		white-space: nowrap;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
 	.tab-meta-row {
 		display: flex;
 		align-items: center;
@@ -525,6 +551,10 @@
 			color: #999;
 		}
 
+		.tab-artist {
+			color: #ccc;
+		}
+
 		.vote-count {
 			color: #666;
 		}
@@ -547,4 +577,3 @@
 		}
 	}
 </style>
-

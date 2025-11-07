@@ -2,7 +2,6 @@
 	// Import the new parser and types
 	import { createTabParser, type ParsedTab as NewParsedTab } from '$features/tabs/services';
 	import SvgSectionRenderer from './tabVisualizer/SvgSectionRenderer.svelte';
-	import { onMount } from 'svelte';
 
 	interface Props {
 		content: string;
@@ -41,8 +40,8 @@
 		}
 	});
 
-	// ... onMount/onDestroy remain largely the same ...
-	onMount(() => {
+	// Set up ResizeObserver and initial parsing using $effect
+	$effect(() => {
 		resizeObserver = new ResizeObserver((entries) => {
 			for (const entry of entries) {
 				if (entry.target === container) {

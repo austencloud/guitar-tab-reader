@@ -12,15 +12,9 @@
 </script>
 
 <div class="tabs-header">
-	<button class="sort-button" onclick={() => ontoggle('title')}>
-		Title
-		{#if sortBy === 'title'}
-			<span class="sort-indicator">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-		{/if}
-	</button>
-	<button class="sort-button" onclick={() => ontoggle('artist')}>
-		Artist
-		{#if sortBy === 'artist'}
+	<button class="sort-button title-artist" onclick={() => ontoggle('title')}>
+		Title / Artist
+		{#if sortBy === 'title' || sortBy === 'artist'}
 			<span class="sort-indicator">{sortOrder === 'asc' ? '↑' : '↓'}</span>
 		{/if}
 	</button>
@@ -35,7 +29,8 @@
 <style>
 	.tabs-header {
 		display: grid;
-		grid-template-columns: 3fr 2fr 2fr;
+		grid-template-columns: 1fr auto;
+		gap: var(--spacing-lg);
 		padding: var(--spacing-md) var(--spacing-lg);
 		background: var(--color-surface-low);
 		border-bottom: 1px solid var(--color-border);
@@ -92,17 +87,12 @@
 	/* Tablet breakpoint - 768px */
 	@media (max-width: 768px) {
 		.tabs-header {
-			grid-template-columns: 2fr 1.5fr 1fr;
 			padding: var(--spacing-sm) var(--spacing-md);
 		}
 	}
 
 	/* Mobile breakpoint - 480px */
 	@media (max-width: 480px) {
-		.tabs-header {
-			grid-template-columns: 1.5fr 1fr;
-		}
-
 		.sort-button.last-update {
 			display: none;
 		}
@@ -110,6 +100,10 @@
 		.sort-button {
 			padding: var(--spacing-xs) var(--spacing-sm);
 			font-size: 0.625rem;
+		}
+		
+		.tabs-header {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>

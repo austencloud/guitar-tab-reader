@@ -1,5 +1,5 @@
 <script lang="ts">
-	import preferences from '$lib/stores/preferences';
+	import { preferences } from '$lib/state/preferences.svelte';
 
 	interface Props {
 		name: string;
@@ -54,18 +54,18 @@
 
 	// Adjust positions based on handedness
 	const displayPositions = $derived(
-		$preferences.isLeftHanded ? [...positions].reverse() : positions
+		preferences.isLeftHanded ? [...positions].reverse() : positions
 	);
 </script>
 
 <div class="chord-diagram" style="--width: {width}px; --height: {height}px;">
 	<div class="chord-name">{name}</div>
-	<svg {width} {height} viewBox="0 0 {width} {height}">
+	<svg {width} {height} viewBox="-15 0 {width + 15} {height}" style="margin: 0 auto; display: block; overflow: visible;">
 		<!-- Strings -->
 		{#each Array(6) as _, i (i)}
 			{@const x = stringSpacing + i * stringSpacing}
-			{@const isThickString = $preferences.isLeftHanded ? i === 5 : i === 0}
-			{@const isThinString = $preferences.isLeftHanded ? i === 0 : i === 5}
+			{@const isThickString = preferences.isLeftHanded ? i === 5 : i === 0}
+			{@const isThinString = preferences.isLeftHanded ? i === 0 : i === 5}
 			<line
 				x1={x}
 				y1={10}
@@ -103,44 +103,21 @@
 				fill="#000"
 			/>
 		{:else}
+			<!-- Fret number indicator - positioned left with better visibility -->
 			<text
-				x={10}
+				x={0}
 				y={fretNumberY + 5}
-				fill="#000"
+				fill="#ffffff"
 				font-size={currentSize.fontSize}
-				text-anchor="middle">{baseFret}</text
+				font-weight="bold"
+				text-anchor="start"
+				stroke="#000"
+				stroke-width="0.5"
+				paint-order="stroke">{baseFret}</text
 			>
 		{/if}
 
-		<!-- Finger positions -->
-		{#each displayPositions as position, i (i)}
-			{@const stringIndex = 5 - i}
-			{@const x = stringSpacing + stringIndex * stringSpacing}
-			{#if position > 0}
-				{@const y = 10 + (position - (showNut ? 0 : baseFret - 1) - 0.5) * fretSpacing}
-				<circle cx={x} cy={y} r={currentSize.dotRadius} fill="#1976d2" />
-			{:else if position === 0}
-				<circle
-					cx={x}
-					cy={5}
-					r={currentSize.dotRadius / 2}
-					fill="transparent"
-					stroke="#000"
-					stroke-width={currentSize.lineWidth}
-				/>
-			{:else}
-				<text
-					{x}
-					y={5}
-					text-anchor="middle"
-					dominant-baseline="middle"
-					font-size={currentSize.fontSize}
-					fill="#000">×</text
-				>
-			{/if}
-		{/each}
-
-		<!-- Barre if present -->
+		<!-- Barre if present (draw first so it's behind other dots) -->
 		{#if barre !== undefined}
 			{@const barrePositions = displayPositions.map((p, i) => ({ pos: p, string: 5 - i }))}
 			{@const barredStrings = barrePositions.filter((p) => p.pos === barre)}
@@ -148,7 +125,7 @@
 				{@const firstString = Math.min(...barredStrings.map((s) => s.string))}
 				{@const lastString = Math.max(...barredStrings.map((s) => s.string))}
 				{@const barreWidth = (lastString - firstString) * stringSpacing}
-				{@const barreY = 10 + (barre - (showNut ? 0 : baseFret - 1) - 0.5) * fretSpacing}
+				{@const barreY = 10 + (barre - 0.5) * fretSpacing}
 				{@const barreX = stringSpacing + firstString * stringSpacing}
 				<rect
 					x={barreX}
@@ -161,6 +138,35 @@
 				/>
 			{/if}
 		{/if}
+
+		<!-- Finger positions (skip dots that are part of the barre) -->
+		{#each displayPositions as position, i (i)}
+			{@const stringIndex = 5 - i}
+			{@const x = stringSpacing + stringIndex * stringSpacing}
+			{@const isBarred = barre !== undefined && position === barre}
+			{#if position > 0 && !isBarred}
+				{@const y = 10 + (position - 0.5) * fretSpacing}
+				<circle cx={x} cy={y} r={currentSize.dotRadius} fill="#1976d2" />
+			{:else if position === 0}
+				<circle
+					cx={x}
+					cy={5}
+					r={currentSize.dotRadius / 2}
+					fill="transparent"
+					stroke="#000"
+					stroke-width={currentSize.lineWidth}
+				/>
+			{:else if position < 0}
+				<text
+					{x}
+					y={5}
+					text-anchor="middle"
+					dominant-baseline="middle"
+					font-size={currentSize.fontSize}
+					fill="#000">×</text
+				>
+			{/if}
+		{/each}
 	</svg>
 </div>
 
@@ -169,7 +175,10 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		width: var(--width);
+		justify-content: center;
+		width: 100%;
+		max-width: var(--width);
+		margin: 0 auto;
 	}
 
 	.chord-name {
@@ -180,6 +189,7 @@
 
 	svg {
 		display: block;
+		margin: 0 auto;
 	}
 
 	/* Dark theme support */

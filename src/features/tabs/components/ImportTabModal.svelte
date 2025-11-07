@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { importTab, type TabImportOptions } from '$lib/utils/tabImporter';
-	import type { Tab } from '$lib/stores/tabs';
+	import type { Tab } from '$lib/state/tabs.svelte';
 	import { BottomSheet } from '$features/shared/components';
 
 	interface Props {

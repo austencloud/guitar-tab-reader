@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
 	import { AutoScrollController, scrollToPosition } from '$lib/utils/autoScroll';
 
 	let {
@@ -107,8 +106,19 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		// Only handle keyboard events when the container is in focus/view
-		if (!container || !isElementInViewport(container)) return;
+		// Don't handle keyboard events if container doesn't exist
+		if (!container) return;
+
+		// Don't intercept spacebar if user is typing in an input field
+		const target = event.target as HTMLElement;
+		const isInputFocused =
+			target.tagName === 'INPUT' ||
+			target.tagName === 'TEXTAREA' ||
+			target.isContentEditable;
+		if (isInputFocused) return;
+
+		// Only handle keyboard events when the container is at least partially visible
+		if (!isElementPartiallyInViewport(container)) return;
 
 		if (event.code === 'Space') {
 			event.preventDefault(); // Prevent page scrolling
@@ -122,13 +132,14 @@
 		}
 	}
 
-	function isElementInViewport(el: HTMLElement) {
+	function isElementPartiallyInViewport(el: HTMLElement) {
 		const rect = el.getBoundingClientRect();
+		// Check if element is at least partially visible (intersects with viewport)
 		return (
-			rect.top >= 0 &&
-			rect.left >= 0 &&
-			rect.bottom <= window.innerHeight &&
-			rect.right <= window.innerWidth
+			rect.bottom > 0 &&
+			rect.right > 0 &&
+			rect.top < window.innerHeight &&
+			rect.left < window.innerWidth
 		);
 	}
 
@@ -157,18 +168,17 @@
 		}
 	});
 
-	onMount(() => {
+	// Set up keyboard listener and cleanup
+	$effect(() => {
 		window.addEventListener('keydown', handleKeydown);
+		
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
+			// Clean up scroll controller on unmount
+			if (scrollController) {
+				scrollController.stop();
+			}
 		};
-	});
-
-	// Clean up on component destroy
-	onDestroy(() => {
-		if (scrollController) {
-			scrollController.stop();
-		}
 	});
 </script>
 

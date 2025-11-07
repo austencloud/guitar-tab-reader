@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import type { Tab } from '$lib/stores/tabs';
+	import type { Tab } from '$lib/state/tabs.svelte';
 
 	interface Props {
 		tab: Tab;
@@ -29,10 +29,12 @@
 	onkeydown={handleKeydown}
 	tabindex="0"
 	role="button"
-	aria-label="Open tab: {tab.title}"
+	aria-label="Open tab: {tab.title} by {tab.artist || 'Unknown Artist'}"
 >
-	<div class="tab-title">{tab.title}</div>
-	<div class="tab-artist">{tab.artist || '-'}</div>
+	<div class="tab-info">
+		<div class="tab-title">{tab.title}</div>
+		<div class="tab-artist">{tab.artist || 'Unknown Artist'}</div>
+	</div>
 	<div class="tab-date">
 		{new Date(tab.updatedAt ?? 0).toLocaleDateString(undefined, {
 			year: 'numeric',
@@ -45,7 +47,8 @@
 <style>
 	.tab-item {
 		display: grid;
-		grid-template-columns: 3fr 2fr 2fr;
+		grid-template-columns: 1fr auto;
+		gap: var(--spacing-lg);
 		padding: var(--spacing-md) var(--spacing-lg);
 		margin-bottom: var(--spacing-sm);
 		background: var(--color-surface-low);
@@ -78,6 +81,13 @@
 		outline-offset: 2px;
 	}
 
+	.tab-info {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-xs);
+		min-width: 0;
+	}
+
 	.tab-title {
 		font-weight: var(--font-weight-semibold);
 		color: var(--color-text-primary);
@@ -93,6 +103,7 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		font-style: italic;
 	}
 
 	.tab-date {
@@ -100,6 +111,8 @@
 		text-align: right;
 		font-size: var(--font-size-xs);
 		font-weight: var(--font-weight-medium);
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	@keyframes fadeIn {
@@ -116,7 +129,6 @@
 	/* Tablet breakpoint - 768px */
 	@media (max-width: 768px) {
 		.tab-item {
-			grid-template-columns: 2fr 1.5fr 1fr;
 			padding: var(--spacing-md);
 		}
 	}
@@ -124,7 +136,6 @@
 	/* Mobile breakpoint - 480px */
 	@media (max-width: 480px) {
 		.tab-item {
-			grid-template-columns: 1.5fr 1fr;
 			padding: var(--spacing-sm) var(--spacing-md);
 			margin-bottom: 0.25rem;
 			border-radius: var(--radius-md);

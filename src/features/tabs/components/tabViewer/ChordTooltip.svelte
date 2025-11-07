@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import ChordDiagram from '../ChordDiagram.svelte';
-	import type { ProcessedChord } from '$lib/utils/chordUtils';
+	import type { ProcessedChord } from '$lib/utils/chordDb';
 
 	interface Props {
 		visible?: boolean;
@@ -27,6 +27,29 @@
 
 	let element = $state<HTMLDivElement>();
 
+	// Convert first ChordPosition to old format for tooltip
+	function convertToOldFormat(chord: ProcessedChord) {
+		const position = chord.positions[0]; // Always use first position for tooltip
+		if (!position) return { positions: [], barre: undefined, baseFret: 1 };
+
+		// frets is already an array of numbers from the chord database
+		// Just use it directly (it's already in the correct format)
+		const positions = position.frets;
+
+		// Get first barre if exists
+		const barre = position.barres && position.barres.length > 0 ? position.barres[0] : undefined;
+
+		return {
+			positions,
+			barre,
+			baseFret: position.baseFret || 1
+		};
+	}
+
+	const chordData = $derived(
+		chord ? convertToOldFormat(chord) : { positions: [], barre: undefined, baseFret: 1 }
+	);
+
 	// Expose the element for positioning calculations
 	export function getElement() {
 		return element;
@@ -49,9 +72,9 @@
 	>
 		<ChordDiagram
 			name={chord.name}
-			positions={chord.positions}
-			barre={chord.barre}
-			baseFret={chord.baseFret || 1}
+			positions={chordData.positions}
+			barre={chordData.barre}
+			baseFret={chordData.baseFret}
 			size={isMobile ? 'sm' : 'md'}
 		/>
 	</div>

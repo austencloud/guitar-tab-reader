@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Tab } from '$lib/stores/tabs';
+	import type { Tab } from '$lib/state/tabs.svelte';
 	import { BottomSheet } from '$features/shared/components';
 
 	interface Props {
@@ -312,13 +312,6 @@
 		border-bottom: 1px solid var(--color-border);
 	}
 
-	.panel-header h2 {
-		margin: 0;
-		font-size: var(--font-size-xl);
-		color: var(--color-text-primary);
-		font-weight: var(--font-weight-semibold);
-	}
-
 	.close-btn {
 		background: none;
 		border: none;
@@ -342,11 +335,6 @@
 	.close-btn:focus-visible {
 		outline: 2px solid var(--color-focus);
 		outline-offset: 2px;
-	}
-
-	.close-btn svg {
-		width: 20px;
-		height: 20px;
 	}
 
 	.panel-content {

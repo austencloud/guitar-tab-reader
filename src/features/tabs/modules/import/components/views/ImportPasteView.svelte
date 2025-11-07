@@ -43,7 +43,6 @@
 			bind:value={content}
 			rows="15"
 			placeholder="Paste tab content here..."
-			autofocus
 		></textarea>
 	</div>
 

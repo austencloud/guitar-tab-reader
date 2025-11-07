@@ -39,7 +39,9 @@ export interface ISmartImportService {
 	): Promise<{
 		success: boolean;
 		tab?: any;
+		tabs?: any[];
 		error?: string;
+		suggestions?: string[];
 	}>;
 }
 

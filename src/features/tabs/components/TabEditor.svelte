@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tabs } from '$lib/stores/tabs';
+	import { tabs } from '$lib/state/tabs.svelte';
 
 	interface Props {
 		id?: string | null;

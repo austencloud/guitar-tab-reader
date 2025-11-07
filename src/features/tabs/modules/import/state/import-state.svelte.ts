@@ -3,7 +3,8 @@ import type {
 	ImportView,
 	DisambiguationData,
 	AIMetadata,
-	ProgressLogEntry
+	ProgressLogEntry,
+	ScrapedTab
 } from '../domain/types';
 
 /**
@@ -14,16 +15,22 @@ export function createImportState() {
 	// View state
 	let currentView = $state<ImportView>('smart');
 
+	// Search mode for the new dual/triple search UI
+	let searchMode = $state<'artist' | 'song' | 'smart'>('smart');
+
 	// Input state
 	let tabUrl = $state('');
 	let smartQuery = $state('');
+	let artistQuery = $state(''); // For explicit artist search
+	let songQuery = $state(''); // For explicit song search
+	let songArtistQuery = $state(''); // Artist name when searching for a song
 	let pastedContent = $state('');
 	let tabTitle = $state('');
 	let tabArtist = $state('');
 
 	// Results state
 	let disambiguationData = $state<DisambiguationData | null>(null);
-	let bulkResults = $state<any[]>([]);
+	let bulkResults = $state<ScrapedTab[]>([]);
 	let groupedResults = $state<Map<string, TabGroup>>(new Map());
 	let expandedGroups = $state<Set<string>>(new Set());
 
@@ -50,6 +57,14 @@ export function createImportState() {
 			currentView = value;
 		},
 
+		// Search mode
+		get searchMode() {
+			return searchMode;
+		},
+		set searchMode(value: 'artist' | 'song' | 'smart') {
+			searchMode = value;
+		},
+
 		// Input state
 		get tabUrl() {
 			return tabUrl;
@@ -63,6 +78,27 @@ export function createImportState() {
 		},
 		set smartQuery(value: string) {
 			smartQuery = value;
+		},
+
+		get artistQuery() {
+			return artistQuery;
+		},
+		set artistQuery(value: string) {
+			artistQuery = value;
+		},
+
+		get songQuery() {
+			return songQuery;
+		},
+		set songQuery(value: string) {
+			songQuery = value;
+		},
+
+		get songArtistQuery() {
+			return songArtistQuery;
+		},
+		set songArtistQuery(value: string) {
+			songArtistQuery = value;
 		},
 
 		get pastedContent() {
@@ -97,7 +133,7 @@ export function createImportState() {
 		get bulkResults() {
 			return bulkResults;
 		},
-		set bulkResults(value: any[]) {
+		set bulkResults(value: ScrapedTab[]) {
 			bulkResults = value;
 		},
 
@@ -175,8 +211,12 @@ export function createImportState() {
 		// Actions
 		reset() {
 			currentView = 'smart';
+			searchMode = 'smart';
 			tabUrl = '';
 			smartQuery = '';
+			artistQuery = '';
+			songQuery = '';
+			songArtistQuery = '';
 			pastedContent = '';
 			tabTitle = '';
 			tabArtist = '';

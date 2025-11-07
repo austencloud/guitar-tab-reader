@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import type { ISmartImportService } from '../contracts/ISmartImportService';
-import type { ImportResult } from '../../domain/types';
+import type { ImportResult, ScrapedTab } from '../../domain/types';
 
 /**
  * Smart import service implementation
@@ -122,7 +122,7 @@ export class SmartImportService implements ISmartImportService {
 					error: 'No result received from server'
 				}
 			);
-		} catch (error) {
+		} catch {
 			return {
 				success: false,
 				error: 'Network error. Please check your connection and try again.'
@@ -132,7 +132,7 @@ export class SmartImportService implements ISmartImportService {
 
 	async fetchArtistTabs(artistName: string): Promise<{
 		success: boolean;
-		tabs?: any[];
+		tabs?: ScrapedTab[];
 		error?: string;
 	}> {
 		if (!artistName.trim()) {
@@ -162,7 +162,7 @@ export class SmartImportService implements ISmartImportService {
 					error: data.error || 'Could not find tabs for this artist'
 				};
 			}
-		} catch (error) {
+		} catch {
 			return {
 				success: false,
 				error: 'Network error. Please check your connection and try again.'
@@ -175,8 +175,10 @@ export class SmartImportService implements ISmartImportService {
 		artistName?: string
 	): Promise<{
 		success: boolean;
-		tab?: any;
+		tab?: ScrapedTab;
+		tabs?: ScrapedTab[];
 		error?: string;
+		suggestions?: string[];
 	}> {
 		if (!songName.trim()) {
 			return {
@@ -186,40 +188,68 @@ export class SmartImportService implements ISmartImportService {
 		}
 
 		try {
-			// Search for the specific song by fetching artist tabs
-			const response = await fetch('/api/scrape-artist', {
+			// Use the proper song search endpoint (scrape-title)
+			const response = await fetch('/api/scrape-title', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ artistName: artistName || songName })
+				body: JSON.stringify({ 
+					song: songName.trim(),
+					artist: artistName?.trim() || undefined
+				})
 			});
 
 			const data = await response.json();
 
-			if (data.success && data.tabs.length > 0) {
-				// Find the matching tab
-				const songLower = songName.toLowerCase();
-				const matchingTab = data.tabs.find((tab: any) =>
-					tab.title.toLowerCase().includes(songLower)
-				);
+			if (data.success && data.tabs && data.tabs.length > 0) {
+				// If we found results
+				if (artistName && artistName.trim()) {
+					// Artist was specified - try to find exact match
+					const artistLower = artistName.toLowerCase();
+					const exactMatch = data.tabs.find((tab: ScrapedTab) =>
+						tab.artist.toLowerCase().includes(artistLower) ||
+						artistLower.includes(tab.artist.toLowerCase())
+					);
 
-				if (matchingTab) {
-					return {
-						success: true,
-						tab: matchingTab
-					};
+					if (exactMatch) {
+						// Found exact artist match
+						return {
+							success: true,
+							tab: exactMatch
+						};
+					} else {
+						// Artist specified but no exact match - show all results
+						return {
+							success: false,
+							tabs: data.tabs,
+							error: `Could not find "${songName}" by ${artistName}. Here are similar results:`,
+							suggestions: data.tabs.slice(0, 5).map((tab: ScrapedTab) => `${tab.artist} - ${tab.title}`)
+						};
+					}
 				} else {
-					return {
-						success: false,
-						error: `Could not find "${songName}"`
-					};
+					// No artist specified - return all results
+					if (data.tabs.length === 1) {
+						// Only one result, return it
+						return {
+							success: true,
+							tab: data.tabs[0]
+						};
+					} else {
+						// Multiple results - let user choose
+						return {
+							success: false,
+							tabs: data.tabs,
+							error: `Found ${data.tabs.length} versions of "${songName}" by different artists. Please select one:`,
+							suggestions: data.tabs.slice(0, 5).map((tab: ScrapedTab) => `${tab.artist} - ${tab.title}`)
+						};
+					}
 				}
 			} else {
 				return {
 					success: false,
-					error: 'Could not find this song'
+					error: data.error || `Could not find "${songName}"${artistName ? ` by ${artistName}` : ''}`
 				};
 			}
-		} catch (error) {
+		} catch {
 			return {
 				success: false,
 				error: 'Network error. Please check your connection and try again.'

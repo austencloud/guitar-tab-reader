@@ -44,7 +44,6 @@
 			onkeypress={onKeyPress}
 			placeholder="e.g., Fish in a Birdcage, Wonderwall by Oasis, or paste a URL..."
 			disabled={isLoading}
-			autofocus
 		/>
 		<p class="hint">
 			Type an artist name to get all their tabs, or specify a song to import just that one!

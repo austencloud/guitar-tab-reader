@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { scale } from 'svelte/transition';
 	import ChordDiagram from '../ChordDiagram.svelte';
-	import type { ProcessedChord } from '$lib/utils/chordUtils';
+	import type { ProcessedChord } from '$lib/utils/chordDb';
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 
 	interface Props {
 		visible?: boolean;
@@ -10,6 +11,49 @@
 	}
 
 	let { visible = false, chord = null, onclose }: Props = $props();
+	let currentPositionIndex = $state(0);
+
+	// Convert ChordPosition to old format
+	function convertToOldFormat(chord: ProcessedChord, index: number) {
+		const position = chord.positions[index];
+		if (!position) return { positions: [], barre: undefined, baseFret: 1 };
+
+		// frets is already an array of numbers from the chord database
+		// Just use it directly (it's already in the correct format)
+		const positions = position.frets;
+
+		// Get first barre if exists
+		const barre = position.barres && position.barres.length > 0 ? position.barres[0] : undefined;
+
+		return {
+			positions,
+			barre,
+			baseFret: position.baseFret || 1
+		};
+	}
+
+	const chordData = $derived(
+		chord ? convertToOldFormat(chord, currentPositionIndex) : { positions: [], barre: undefined, baseFret: 1 }
+	);
+
+	function nextPosition() {
+		if (chord && currentPositionIndex < chord.positions.length - 1) {
+			currentPositionIndex++;
+		}
+	}
+
+	function previousPosition() {
+		if (currentPositionIndex > 0) {
+			currentPositionIndex--;
+		}
+	}
+
+	// Reset position index when chord changes
+	$effect(() => {
+		if (chord) {
+			currentPositionIndex = 0;
+		}
+	});
 
 	function closeModal() {
 		onclose?.();
@@ -64,14 +108,53 @@
 			aria-labelledby="chord-modal-title"
 			tabindex="-1"
 		>
-			<h3 id="chord-modal-title">{chord.name}</h3>
+			<div class="modal-header">
+				<h3 id="chord-modal-title">{chord.name}</h3>
+				{#if chord.fullName && chord.fullName !== chord.name}
+					<p class="chord-full-name">{chord.fullName}</p>
+				{/if}
+			</div>
+
+			<!-- Navigation controls for multiple voicings -->
+			{#if chord.positions.length > 1}
+				<div class="navigation-header">
+					<button
+						class="nav-button"
+						onclick={previousPosition}
+						disabled={currentPositionIndex === 0}
+						aria-label="Previous voicing"
+					>
+						<ChevronLeft size={20} />
+					</button>
+
+					<span class="position-indicator">
+						Position {currentPositionIndex + 1} of {chord.positions.length}
+					</span>
+
+					<button
+						class="nav-button"
+						onclick={nextPosition}
+						disabled={currentPositionIndex === chord.positions.length - 1}
+						aria-label="Next voicing"
+					>
+						<ChevronRight size={20} />
+					</button>
+				</div>
+			{/if}
+
 			<ChordDiagram
 				name={chord.name}
-				positions={chord.positions}
-				barre={chord.barre}
-				baseFret={chord.baseFret}
+				positions={chordData.positions}
+				barre={chordData.barre}
+				baseFret={chordData.baseFret}
+				size="lg"
 			/>
-			<button onclick={closeModal}>Close</button>
+
+			{#if chordData.baseFret > 1}
+				<p class="base-fret-info">Starting at fret {chordData.baseFret}</p>
+			{/if}
+
+			<button class="close-button" onclick={closeModal}>Close</button>
 		</div>
 	</div>
 {/if}
@@ -106,16 +189,28 @@
 		outline: none;
 	}
 
+	.modal-header {
+		text-align: center;
+		margin-bottom: var(--spacing-md);
+	}
+
 	.chord-modal-content h3 {
 		margin-top: 0;
-		margin-bottom: var(--spacing-lg);
+		margin-bottom: var(--spacing-xs);
 		font-size: var(--font-size-2xl);
 		font-weight: var(--font-weight-bold);
 		color: var(--color-text-primary);
 		letter-spacing: var(--letter-spacing-tight);
 	}
 
-	.chord-modal-content button {
+	.chord-full-name {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		font-style: italic;
+	}
+
+	.close-button {
 		margin-top: var(--spacing-lg);
 		padding: var(--spacing-sm) var(--spacing-xl);
 		background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
@@ -143,5 +238,50 @@
 	.chord-modal-content button:focus-visible {
 		outline: 2px solid var(--color-focus);
 		outline-offset: 2px;
+	}
+
+	.navigation-header {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--spacing-md);
+		margin-bottom: var(--spacing-md);
+	}
+
+	.nav-button {
+		background: var(--color-surface-medium);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--spacing-xs);
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: var(--transition-all);
+		color: var(--color-text-primary);
+	}
+
+	.nav-button:hover:not(:disabled) {
+		background: var(--color-surface-high);
+		border-color: var(--color-primary);
+	}
+
+	.nav-button:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.position-indicator {
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		min-width: 120px;
+		text-align: center;
+	}
+
+	.base-fret-info {
+		margin-top: var(--spacing-sm);
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		font-style: italic;
 	}
 </style>

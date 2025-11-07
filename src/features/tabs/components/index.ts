@@ -29,6 +29,8 @@ export { default as EmptyState } from './EmptyState.svelte';
 export { default as ChordModal } from './tabViewer/ChordModal.svelte';
 export { default as ChordTooltip } from './tabViewer/ChordTooltip.svelte';
 export { default as TabContentRenderer } from './tabViewer/TabContentRenderer.svelte';
+export { default as GestureHandler } from './tabViewer/GestureHandler.svelte';
+export { default as ChordInteractionLayer } from './tabViewer/ChordInteractionLayer.svelte';
 
 // TabVisualizer subcomponents
 export { default as SvgChordDiagramRenderer } from './tabVisualizer/SvgChordDiagramRenderer.svelte';

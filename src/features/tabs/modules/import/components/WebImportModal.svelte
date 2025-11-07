@@ -1,18 +1,18 @@
 <script lang="ts">
-	import type { Tab } from '$lib/stores/tabs';
+	import type { Tab } from '$lib/state/tabs.svelte';
 	import { groupTabVersions } from '$lib/utils/tabVersions';
 	import { BottomSheet } from '$features/shared/components';
 	import { getService, TYPES } from '$core/di';
 	import type { IUrlImportService, ISmartImportService } from '../services/contracts';
 	import { createImportState } from '../state/import-state.svelte';
-	import ImportMenuView from './views/ImportMenuView.svelte';
-	import ImportUrlView from './views/ImportUrlView.svelte';
-	import ImportSmartView from './views/ImportSmartView.svelte';
-	import ImportPasteView from './views/ImportPasteView.svelte';
-	import ImportDisambiguationView from './views/ImportDisambiguationView.svelte';
-	import ImportBulkResultsView from './views/ImportBulkResultsView.svelte';
+import ImportUrlView from './views/ImportUrlView.svelte';
+import ImportDualSearchView from './views/ImportDualSearchView.svelte';
+import ImportPasteView from './views/ImportPasteView.svelte';
+import ImportDisambiguationView from './views/ImportDisambiguationView.svelte';
+import ImportBulkResultsView from './views/ImportBulkResultsView.svelte';
 import ImportPreviewView from './views/ImportPreviewView.svelte';
 import ImportActivityLog from './ImportActivityLog.svelte';
+import type { ImportView } from '../domain/types';
 
 	interface Props {
 		open?: boolean;
@@ -43,16 +43,57 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 	// Create state
 	const state = createImportState();
 
-	// View title mapping
-	const viewTitles = {
-		menu: 'Import from Web',
-		url: 'Paste Tab URL',
-		smart: 'Import Tab',
-		paste: 'Paste Tab Content',
-		disambiguation: 'Clarify Your Request',
-		'bulk-results': 'Choose a Tab',
-		preview: 'Preview & Edit'
-	};
+type PrimaryMode = 'smart' | 'url' | 'paste';
+
+const primaryModes: Array<{ id: PrimaryMode; label: string; description: string }> = [
+	{
+		id: 'smart',
+		label: 'AI Search',
+		description: 'Let AI find the right tab'
+	},
+	{
+		id: 'url',
+		label: 'Import Link',
+		description: 'Fetch a tab from Ultimate Guitar'
+	},
+	{
+		id: 'paste',
+		label: 'Paste Text',
+		description: 'Drop in tab content you already have'
+	}
+];
+
+const primaryModeLookup = primaryModes.reduce(
+	(acc, mode) => {
+		acc[mode.id] = mode;
+		return acc;
+	},
+	{} as Record<PrimaryMode, { id: PrimaryMode; label: string; description: string }>
+);
+
+const PRIMARY_VIEW_SET = new Set<ImportView>(['smart', 'url', 'paste']);
+
+const viewTitles: Record<ImportView, string> = {
+	menu: 'Choose how you want to add a tab',
+	url: 'Import from a link',
+	smart: 'Find tabs with AI',
+	paste: 'Paste tab content',
+	disambiguation: 'Clarify Your Request',
+	'bulk-results': 'Choose a Tab',
+	preview: 'Preview & Edit'
+};
+
+function getPrimaryMode(view: ImportView): PrimaryMode {
+	if (view === 'url') return 'url';
+	if (view === 'paste') return 'paste';
+	return 'smart';
+}
+
+function selectPrimaryMode(mode: PrimaryMode) {
+	state.navigateToView(mode);
+	state.clearError();
+	state.isLoading = false;
+}
 
 	// Keyboard event handlers
 	function handleUrlKeyPress(e: KeyboardEvent) {
@@ -86,6 +127,26 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 
 	// Smart Import
 	async function handleSmartImport() {
+		// Construct query based on search mode
+		let query = '';
+		
+		if (state.searchMode === 'artist') {
+			query = state.artistQuery.trim();
+		} else if (state.searchMode === 'song') {
+			if (state.songArtistQuery.trim()) {
+				query = `${state.songQuery.trim()} by ${state.songArtistQuery.trim()}`;
+			} else {
+				query = state.songQuery.trim();
+			}
+		} else {
+			query = state.smartQuery.trim();
+		}
+
+		if (!query) {
+			state.errorMessage = 'Please enter a search query';
+			return;
+		}
+
 		state.isLoading = true;
 		state.loadingMessage = 'Analyzing your request...';
 		state.loadingLogs = [];
@@ -97,7 +158,58 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 			console.log(`📊 Progress: ${step}${details ? ` - ${details}` : ''}`);
 		};
 
-		const result = await getSmartImportService().processQuery(state.smartQuery, onProgress);
+		// For artist mode, force artist bulk import
+		if (state.searchMode === 'artist') {
+			const result = await getSmartImportService().fetchArtistTabs(query);
+			state.isLoading = false;
+			
+			if (result.success) {
+				state.bulkResults = result.tabs || [];
+				state.groupedResults = groupTabVersions(state.bulkResults);
+				state.currentView = 'bulk-results';
+			} else {
+				state.errorMessage = result.error || 'Could not find tabs for this artist';
+			}
+			return;
+		}
+
+		// For song mode, force song search
+		if (state.searchMode === 'song') {
+			const result = await getSmartImportService().searchSong(
+				state.songQuery.trim(),
+				state.songArtistQuery.trim() || undefined
+			);
+			state.isLoading = false;
+			
+			if (result.success && result.tab) {
+				// Fetch the full tab content
+				const fetchResult = await getUrlImportService().fetchFromUrl(result.tab.url);
+				
+				if (fetchResult.success) {
+					state.setPreviewData(
+						fetchResult.title || result.tab.title,
+						fetchResult.artist || result.tab.artist,
+						fetchResult.content || ''
+					);
+				} else {
+					state.errorMessage = fetchResult.error || 'Failed to fetch tab';
+				}
+			} else {
+				// Show disambiguation with search results if available
+				if (result.tabs && result.tabs.length > 0) {
+					state.bulkResults = result.tabs;
+					state.groupedResults = groupTabVersions(state.bulkResults);
+					state.currentView = 'bulk-results';
+				} else {
+					state.errorMessage = result.error || 'Could not find this song';
+					state.errorSuggestions = result.suggestions || [];
+				}
+			}
+			return;
+		}
+
+		// Smart mode - use AI
+		const result = await getSmartImportService().processQuery(query, onProgress);
 		state.loadingLogs = result.progressLog || [];
 
 		console.log('🎯 Import result received:', result);
@@ -264,13 +376,12 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 
 	// Navigation
 	function goBack() {
-		if (state.currentView === 'preview' || state.currentView === 'bulk-results') {
-			state.currentView = 'smart';
-		} else if (state.currentView === 'disambiguation') {
-			state.currentView = 'smart';
+		if (state.currentView === 'preview' && state.hasBulkResults) {
+			state.navigateToView('bulk-results');
 		} else {
-			state.currentView = 'smart';
+			state.navigateToView('smart');
 		}
+		state.isLoading = false;
 		state.clearError();
 	}
 
@@ -284,45 +395,67 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 	<div class="web-import-content">
 		<div class="modal-header">
 			<div class="header-left">
-				{#if state.currentView !== 'smart'}
-					<button class="back-btn" onclick={goBack} aria-label="Go back">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path d="M19 12H5M12 19l-7-7 7-7" />
-						</svg>
-					</button>
-				{/if}
-				<h2>{viewTitles[state.currentView]}</h2>
+				{#if !PRIMARY_VIEW_SET.has(state.currentView)}
+				<button class="back-btn" onclick={goBack} aria-label="Go back">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M19 12H5M12 19l-7-7 7-7" />
+					</svg>
+				</button>
+			{/if}
+			<div class="header-text">
+				<h2>Add a Tab</h2>
+				<p class="header-tagline">AI search · Import link · Paste text</p>
+				<p class="header-status">
+					{#if PRIMARY_VIEW_SET.has(state.currentView)}
+						{@const activeMode = getPrimaryMode(state.currentView)}
+						{primaryModeLookup[activeMode].label}
+					{:else}
+						{viewTitles[state.currentView]}
+					{/if}
+				</p>
 			</div>
-			<button class="close-btn" onclick={resetAndClose} aria-label="Close">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-				>
-					<path d="M18 6L6 18M6 6l12 12" />
-				</svg>
-			</button>
 		</div>
+		<button class="close-btn" onclick={resetAndClose} aria-label="Close">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="24"
+				height="24"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<path d="M18 6L6 18M6 6l12 12" />
+			</svg>
+		</button>
+	</div>
+
+	<div class="mode-switcher" role="group" aria-label="Select how to add a tab">
+		{#each primaryModes as mode}
+			{@const activeMode = getPrimaryMode(state.currentView)}
+			<button
+				type="button"
+				class="mode-pill"
+				class:active={activeMode === mode.id}
+				aria-pressed={activeMode === mode.id}
+				onclick={() => selectPrimaryMode(mode.id)}
+			>
+				<span class="mode-label">{mode.label}</span>
+				<span class="mode-description">{mode.description}</span>
+			</button>
+		{/each}
+	</div>
 
 		<div class="modal-content">
-			{#if state.currentView === 'menu'}
-				<ImportMenuView
-					onSelectUrl={() => state.navigateToView('url')}
-					onSelectSmart={() => state.navigateToView('smart')}
-				/>
-			{:else if state.currentView === 'url'}
+			{#if state.currentView === 'url'}
 				<ImportUrlView
 					bind:url={state.tabUrl}
 					isLoading={state.isLoading}
@@ -332,15 +465,23 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 					onKeyPress={handleUrlKeyPress}
 				/>
 			{:else if state.currentView === 'smart'}
-				<ImportSmartView
-					bind:query={state.smartQuery}
+				<ImportDualSearchView
+					bind:searchMode={state.searchMode}
+					bind:artistQuery={state.artistQuery}
+					bind:songQuery={state.songQuery}
+					bind:songArtistQuery={state.songArtistQuery}
+					bind:smartQuery={state.smartQuery}
 					isLoading={state.isLoading}
 					loadingMessage={state.loadingMessage}
 					progressLog={state.loadingLogs}
 					errorMessage={state.errorMessage}
 					errorSuggestions={state.errorSuggestions}
 					aiMetadata={state.aiMetadata}
-					onQueryChange={(query) => (state.smartQuery = query)}
+					onSearchModeChange={(mode) => (state.searchMode = mode)}
+					onArtistQueryChange={(query) => (state.artistQuery = query)}
+					onSongQueryChange={(song) => (state.songQuery = song)}
+					onSongArtistQueryChange={(artist) => (state.songArtistQuery = artist)}
+					onSmartQueryChange={(query) => (state.smartQuery = query)}
 					onSubmit={handleSmartImport}
 					onKeyPress={handleSmartKeyPress}
 					onShowPaste={() => state.navigateToView('paste')}
@@ -414,6 +555,28 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 		gap: 0.75rem;
 	}
 
+	.header-text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.header-tagline {
+		margin: 0;
+		font-size: 0.875rem;
+		color: #6b7280;
+	}
+
+	.header-status {
+		margin: 0;
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: #111827;
+		opacity: 0.8;
+	}
+
 	.back-btn,
 	.close-btn {
 		background: none;
@@ -439,6 +602,57 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 		color: #333;
 	}
 
+	.mode-switcher {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		gap: 0.75rem;
+		padding: 0.75rem 1.5rem;
+		border-bottom: 1px solid #f1f5f9;
+		background: #f8fafc;
+	}
+
+	.mode-pill {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.25rem;
+		padding: 0.75rem 1rem;
+		border-radius: 12px;
+		border: 1px solid #e2e8f0;
+		background: white;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		text-align: left;
+		color: #111827;
+	}
+
+	.mode-pill:hover {
+		border-color: #cbd5f5;
+		box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+		transform: translateY(-1px);
+	}
+
+	.mode-pill.active {
+		border-color: #4f46e5;
+		background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(59, 130, 246, 0.08));
+		color: #1e3a8a;
+		box-shadow: 0 6px 18px rgba(79, 70, 229, 0.15);
+	}
+
+	.mode-pill.active .mode-label {
+		color: inherit;
+	}
+
+	.mode-label {
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+
+	.mode-description {
+		font-size: 0.75rem;
+		color: #475569;
+	}
+
 	.modal-content {
 		flex: 1;
 		overflow-y: auto;
@@ -456,6 +670,15 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 			color: #e0e0e0;
 		}
 
+		.header-tagline {
+			color: #94a3b8;
+		}
+
+		.header-status {
+			color: #cbd5f5;
+			opacity: 1;
+		}
+
 		.back-btn,
 		.close-btn {
 			color: #aaa;
@@ -464,6 +687,46 @@ import ImportActivityLog from './ImportActivityLog.svelte';
 		.back-btn:hover,
 		.close-btn:hover {
 			color: #e0e0e0;
+		}
+
+		.mode-switcher {
+			border-bottom-color: rgba(148, 163, 184, 0.3);
+			background: rgba(15, 23, 42, 0.6);
+		}
+
+		.mode-pill {
+			background: rgba(15, 23, 42, 0.8);
+			border-color: rgba(148, 163, 184, 0.35);
+			color: #e2e8f0;
+		}
+
+		.mode-pill:hover {
+			border-color: rgba(148, 163, 184, 0.6);
+		}
+
+		.mode-pill.active {
+			border-color: rgba(165, 180, 252, 0.8);
+			background: linear-gradient(
+				135deg,
+				rgba(129, 140, 248, 0.25),
+				rgba(59, 130, 246, 0.25)
+			);
+			color: #cbd5f5;
+		}
+
+		.mode-description {
+			color: rgba(203, 213, 225, 0.8);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.mode-switcher {
+			grid-template-columns: 1fr;
+			padding: 0.75rem 1rem;
+		}
+
+		.header-left {
+			align-items: flex-start;
 		}
 	}
 </style>

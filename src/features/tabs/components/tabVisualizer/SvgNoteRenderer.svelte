@@ -87,14 +87,13 @@
 			animationFrameId = null;
 			highlightOffset = 0; // Reset offset
 		}
-	});
-
-	// Cleanup animation frame on component destroy
-	import { onDestroy } from 'svelte';
-	onDestroy(() => {
-		if (animationFrameId) {
-			cancelAnimationFrame(animationFrameId);
-		}
+		
+		// Cleanup animation frame on component destroy
+		return () => {
+			if (animationFrameId) {
+				cancelAnimationFrame(animationFrameId);
+			}
+		};
 	});
 </script>
 
