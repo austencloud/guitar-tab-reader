@@ -241,7 +241,7 @@ import { ImportTabModal, WebImportModal } from '$features/tabs/components';
 		{/if}
 	</header>
 
-	<div class="content-wrapper tabscroll-content-wrapper" use:handleContextMount>
+	<div class="content-wrapper tabscroll-content-wrapper" class:header-hidden={layoutState?.isHeaderVisible === false} use:handleContextMount>
 		<PageTransition>
 			{@render children()}
 		</PageTransition>
@@ -307,8 +307,10 @@ import { ImportTabModal, WebImportModal } from '$features/tabs/components';
 		border-bottom: 1px solid var(--color-border);
 		background: var(--color-surface);
 		box-shadow: var(--shadow-md);
-		position: sticky;
+		position: fixed;
 		top: 0;
+		left: 0;
+		right: 0;
 		z-index: 100;
 		backdrop-filter: var(--blur-sm);
 		transform: translateY(0);
@@ -431,9 +433,17 @@ import { ImportTabModal, WebImportModal } from '$features/tabs/components';
 		width: 100%;
 		max-width: var(--container-lg);
 		padding: 0;
+		padding-top: 83px; /* Space for fixed header */
 		padding-bottom: 5rem; /* Space for bottom navigation bar */
 		margin: 0 auto;
 		flex: 1;
+		transition: padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* When header is hidden, remove top padding */
+	.content-wrapper.header-hidden,
+	.tabscroll-content-wrapper.header-hidden {
+		padding-top: 0;
 	}
 
 	/* Landscape mode - add left padding for side navigation */

@@ -1,13 +1,40 @@
 import type { ITabImporter } from '../contracts/ITabImporter';
 import type { IUltimateGuitarClient } from '../contracts/IUltimateGuitarClient';
 import type { Intent, TabImportResult, ProgressCallback } from '../types';
-import { getRecommendedTab } from '$lib/utils/tabVersions';
+import { getRecommendedTab, type TabInfo } from '$lib/utils/tabVersions';
 
 /**
  * Orchestrates tab import workflows based on intent
  */
 export class TabImporter implements ITabImporter {
 	constructor(private ugClient: IUltimateGuitarClient) {}
+
+	/**
+	 * Detects unique songs from search results (ignoring version numbers)
+	 * Returns array of unique {title, artist} combinations
+	 */
+	private getUniqueSongs(tabs: TabInfo[]): Array<{ title: string; artist: string }> {
+		const seen = new Set<string>();
+		const uniqueSongs: Array<{ title: string; artist: string }> = [];
+		
+		for (const tab of tabs) {
+			// Normalize title to detect versions (remove "ver 2", "*", etc.)
+			const normalizedTitle = tab.title
+				.toLowerCase()
+				.replace(/\s*\(ver\s*\d+\)\s*/gi, '')
+				.replace(/\s*\*\s*/g, '')
+				.trim();
+			
+			const key = `${normalizedTitle}|${tab.artist.toLowerCase()}`;
+			
+			if (!seen.has(key)) {
+				seen.add(key);
+				uniqueSongs.push({ title: tab.title, artist: tab.artist });
+			}
+		}
+		
+		return uniqueSongs;
+	}
 
 	async executeImport(intent: Intent, onProgress?: ProgressCallback): Promise<TabImportResult> {
 		if (intent.type === 'ARTIST_BULK_IMPORT') {
@@ -107,6 +134,25 @@ export class TabImporter implements ITabImporter {
 		const titleData = await this.ugClient.searchSong(intent.song!, intent.artist);
 
 		if (titleData.success && titleData.tabs.length > 0) {
+			// Check if we have multiple DIFFERENT songs (not just versions)
+			const uniqueSongs = this.getUniqueSongs(titleData.tabs);
+			
+			// If multiple distinct songs and no artist specified, present disambiguation
+			if (uniqueSongs.length > 1 && !intent.artist) {
+				console.log(`🔀 Found ${uniqueSongs.length} different songs matching "${intent.song}"`);
+				onProgress?.('Multiple songs found', `Found ${uniqueSongs.length} different songs...`);
+				
+				return {
+					success: true,
+					type: 'ambiguous',
+					query: intent.song!,
+					ambiguityReason: `Found ${uniqueSongs.length} different songs matching "${intent.song}"`,
+					suggestions: uniqueSongs.map(song => `${song.artist} - ${song.title}`),
+					searchResults: titleData.tabs.slice(0, 20),
+					_meta: intent._meta
+				};
+			}
+			
 			// Get the recommended version based on rating and votes
 			const matchingTab = getRecommendedTab(titleData.tabs);
 			console.log(
@@ -140,9 +186,41 @@ export class TabImporter implements ITabImporter {
 			}
 		}
 
-		// Fallback: If we have an artist, try bulk import instead
+		// Song not found - try fallback strategies
+		console.log(`⚠️ Song "${intent.song}" not found. Attempting fallback...`);
+		
+		// Fallback 1: If we have an artist, try bulk import
 		if (intent.artist) {
 			return this.fallbackToArtistBulk(intent, onProgress);
+		}
+
+		// Fallback 2: For single-word queries without artist, try as artist name
+		// This handles cases where the query might be an artist name that wasn't caught earlier
+		const words = intent.song!.trim().split(/\s+/);
+		if (words.length === 1) {
+			console.log(`🔄 Single-word query "${intent.song}" - trying as artist name fallback`);
+			onProgress?.(
+				'Trying alternate search',
+				`Couldn't find song "${intent.song}", searching for artist by that name...`
+			);
+			
+			const artistData = await this.ugClient.scrapeArtistTabs(intent.song!);
+			
+			if (artistData.success && artistData.tabs.length > 0) {
+				console.log(`✅ Fallback successful! Found ${artistData.tabs.length} tabs for artist "${intent.song}"`);
+				onProgress?.('Artist tabs found', `Found ${artistData.tabs.length} tabs for ${intent.song}`);
+				return {
+					success: true,
+					type: 'artist_bulk',
+					artist: intent.song,
+					tabs: artistData.tabs,
+					count: artistData.count,
+					message: `Couldn't find a song called "${intent.song}", but found ${artistData.count} tabs by artist "${intent.song}"`,
+					fallback: true,
+					originalQuery: intent.song,
+					_meta: intent._meta
+				};
+			}
 		}
 
 		// Final fallback: Could not find tabs at all

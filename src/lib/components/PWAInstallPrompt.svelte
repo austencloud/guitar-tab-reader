@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { X, Download } from 'lucide-svelte';
 
 	let showPrompt = $state(false);
@@ -7,7 +6,7 @@
 	let isIOS = $state(false);
 	let isStandalone = $state(false);
 
-	onMount(() => {
+	$effect(() => {
 		// Check if running in standalone mode
 		isStandalone =
 			window.matchMedia('(display-mode: standalone)').matches ||
@@ -33,14 +32,16 @@
 		}
 
 		// Listen for the beforeinstallprompt event
-		window.addEventListener('beforeinstallprompt', (e) => {
+		const handleBeforeInstall = (e: Event) => {
 			e.preventDefault();
 			deferredPrompt = e;
 			// Show the install prompt after a short delay
 			setTimeout(() => {
 				showPrompt = true;
 			}, 3000);
-		});
+		};
+
+		window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
 		// For iOS, show custom instructions after a delay
 		if (isIOS && !isStandalone) {
@@ -48,6 +49,10 @@
 				showPrompt = true;
 			}, 3000);
 		}
+
+		return () => {
+			window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+		};
 	});
 
 	async function handleInstall() {
@@ -79,8 +84,8 @@
 </script>
 
 {#if showPrompt}
-	<div class="pwa-prompt-overlay" onclick={handleDismiss}>
-		<div class="pwa-prompt" onclick={(e) => e.stopPropagation()}>
+	<div class="pwa-prompt-overlay" onclick={handleDismiss} onkeydown={(e) => e.key === 'Escape' && handleDismiss()} role="button" tabindex="-1">
+		<div class="pwa-prompt" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" tabindex="-1">
 			<button class="close-button" onclick={handleDismiss} aria-label="Close">
 				<X size={20} />
 			</button>

@@ -1,13 +1,7 @@
 import { browser } from '$app/environment';
-import { writable } from 'svelte/store';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
-
-interface ThemeState {
-	mode: ThemeMode;
-	resolvedTheme: ResolvedTheme;
-}
 
 const STORAGE_KEY = 'tabscroll-theme';
 
@@ -42,13 +36,6 @@ function resolveTheme(mode: ThemeMode): ResolvedTheme {
 	return mode;
 }
 
-// Initialize theme state using writable store for now
-const initialMode = loadThemeMode();
-const themeState = writable<ThemeState>({
-	mode: initialMode,
-	resolvedTheme: resolveTheme(initialMode)
-});
-
 // Apply theme to document
 function applyTheme(theme: ResolvedTheme) {
 	if (!browser) return;
@@ -82,75 +69,74 @@ function saveThemeMode(mode: ThemeMode) {
 	}
 }
 
-// Listen for system theme changes
-if (browser) {
-	const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-	mediaQuery.addEventListener('change', () => {
-		themeState.update((state) => {
-			if (state.mode === 'system') {
-				const newResolvedTheme = getSystemTheme();
-				applyTheme(newResolvedTheme);
-				return { ...state, resolvedTheme: newResolvedTheme };
-			}
-			return state;
-		});
-	});
+// Modern Svelte 5 runes-based theme state
+class ThemeState {
+	#mode = $state<ThemeMode>(loadThemeMode());
+	#resolvedTheme = $state<ResolvedTheme>(resolveTheme(loadThemeMode()));
 
-	// Apply initial theme
-	themeState.subscribe((state) => {
-		applyTheme(state.resolvedTheme);
-	});
-}
+	constructor() {
+		// Listen for system theme changes
+		if (browser) {
+			const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+			mediaQuery.addEventListener('change', () => {
+				if (this.#mode === 'system') {
+					this.#resolvedTheme = getSystemTheme();
+					applyTheme(this.#resolvedTheme);
+				}
+			});
 
-// Theme store interface
-export const theme = {
-	// Subscribe method for reactivity
-	subscribe: themeState.subscribe,
-
-	// Actions
-	setMode(mode: ThemeMode) {
-		const newResolvedTheme = resolveTheme(mode);
-		themeState.set({
-			mode,
-			resolvedTheme: newResolvedTheme
-		});
-		saveThemeMode(mode);
-		applyTheme(newResolvedTheme);
-	},
-
-	setLight() {
-		this.setMode('light');
-	},
-
-	setDark() {
-		this.setMode('dark');
-	},
-
-	setSystem() {
-		this.setMode('system');
-	},
-
-	toggle() {
-		// Get current state to determine toggle behavior
-		let currentState: ThemeState;
-		themeState.subscribe((state) => (currentState = state))();
-
-		if (currentState!.mode === 'system') {
-			// If system, override with opposite of current resolved theme
-			this.setMode(currentState!.resolvedTheme === 'dark' ? 'light' : 'dark');
-		} else {
-			// If manual mode, toggle between light and dark
-			this.setMode(currentState!.mode === 'dark' ? 'light' : 'dark');
+			// Apply initial theme
+			$effect(() => {
+				applyTheme(this.#resolvedTheme);
+			});
 		}
 	}
-};
+
+	get mode(): ThemeMode {
+		return this.#mode;
+	}
+
+	get resolvedTheme(): ResolvedTheme {
+		return this.#resolvedTheme;
+	}
+
+	setMode(mode: ThemeMode): void {
+		this.#mode = mode;
+		this.#resolvedTheme = resolveTheme(mode);
+		saveThemeMode(mode);
+		applyTheme(this.#resolvedTheme);
+	}
+
+	setLight(): void {
+		this.setMode('light');
+	}
+
+	setDark(): void {
+		this.setMode('dark');
+	}
+
+	setSystem(): void {
+		this.setMode('system');
+	}
+
+	toggle(): void {
+		if (this.#mode === 'system') {
+			// If system, override with opposite of current resolved theme
+			this.setMode(this.#resolvedTheme === 'dark' ? 'light' : 'dark');
+		} else {
+			// If manual mode, toggle between light and dark
+			this.setMode(this.#mode === 'dark' ? 'light' : 'dark');
+		}
+	}
+}
+
+// Export singleton instance
+export const theme = new ThemeState();
 
 // Initialize theme on import
 if (browser) {
 	// Ensure theme is applied on page load
-	let initialState: ThemeState;
-	themeState.subscribe((state) => (initialState = state))();
 	requestAnimationFrame(() => {
-		applyTheme(initialState!.resolvedTheme);
+		applyTheme(theme.resolvedTheme);
 	});
 }

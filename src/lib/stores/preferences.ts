@@ -1,4 +1,3 @@
-import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 interface UserPreferences {
@@ -15,7 +14,7 @@ const defaultPreferences: UserPreferences = {
 	showChordDiagrams: true
 };
 
-const loadPreferences = (): UserPreferences => {
+function loadPreferences(): UserPreferences {
 	if (!browser) return defaultPreferences;
 
 	try {
@@ -24,21 +23,56 @@ const loadPreferences = (): UserPreferences => {
 	} catch {
 		return defaultPreferences;
 	}
-};
+}
 
-const preferences = writable<UserPreferences>(loadPreferences());
-
-preferences.subscribe((value) => {
+function savePreferences(prefs: UserPreferences): void {
 	if (browser) {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
 	}
-});
+}
 
-export default {
-	subscribe: preferences.subscribe,
-	setLeftHanded: (isLeftHanded: boolean) =>
-		preferences.update((prefs) => ({ ...prefs, isLeftHanded })),
-	setFontSize: (fontSize: number) => preferences.update((prefs) => ({ ...prefs, fontSize })),
-	setShowChordDiagrams: (showChordDiagrams: boolean) =>
-		preferences.update((prefs) => ({ ...prefs, showChordDiagrams }))
-};
+// Modern Svelte 5 runes-based preferences state
+class PreferencesState {
+	#isLeftHanded = $state(loadPreferences().isLeftHanded);
+	#fontSize = $state(loadPreferences().fontSize);
+	#showChordDiagrams = $state(loadPreferences().showChordDiagrams);
+
+	get isLeftHanded(): boolean {
+		return this.#isLeftHanded;
+	}
+
+	get fontSize(): number {
+		return this.#fontSize;
+	}
+
+	get showChordDiagrams(): boolean {
+		return this.#showChordDiagrams;
+	}
+
+	setLeftHanded(value: boolean): void {
+		this.#isLeftHanded = value;
+		this.#save();
+	}
+
+	setFontSize(value: number): void {
+		this.#fontSize = value;
+		this.#save();
+	}
+
+	setShowChordDiagrams(value: boolean): void {
+		this.#showChordDiagrams = value;
+		this.#save();
+	}
+
+	#save(): void {
+		savePreferences({
+			isLeftHanded: this.#isLeftHanded,
+			fontSize: this.#fontSize,
+			showChordDiagrams: this.#showChordDiagrams
+		});
+	}
+}
+
+// Export singleton instance
+const preferences = new PreferencesState();
+export default preferences;

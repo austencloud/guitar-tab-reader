@@ -7,6 +7,18 @@
  */
 export type ProgressCallback = (step: string, details?: string) => void;
 
+/**
+ * Scraped tab information from Ultimate Guitar
+ */
+export interface ScrapedTab {
+	title: string;
+	artist: string;
+	url: string;
+	type: string;
+	rating?: number;
+	votes?: number;
+}
+
 export interface Intent {
 	type: 'ARTIST_BULK_IMPORT' | 'SINGLE_TAB_IMPORT' | 'AMBIGUOUS';
 	artist?: string;
@@ -51,12 +63,12 @@ export interface TabImportResult {
 		content: string;
 		url: string;
 	};
-	tabs?: any[];
+	tabs?: ScrapedTab[];
 	artist?: string;
 	count?: number;
 	message?: string;
 	error?: string;
-	alternateVersions?: any[];
+	alternateVersions?: ScrapedTab[];
 	fallback?: boolean;
 	originalQuery?: string;
 	autoCorrection?: {
@@ -64,6 +76,9 @@ export interface TabImportResult {
 		to: string;
 	};
 	suggestions?: string[];
+	query?: string;
+	ambiguityReason?: string;
+	searchResults?: ScrapedTab[];
 	_meta?: IntentMetadata;
 }
 

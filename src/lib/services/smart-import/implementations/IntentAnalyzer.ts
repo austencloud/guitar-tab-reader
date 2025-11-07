@@ -142,19 +142,36 @@ export class IntentAnalyzer implements IIntentAnalyzer {
 		if (
 			lowerQuery.includes('all') ||
 			lowerQuery.includes('tabs for') ||
-			lowerQuery.includes('everything')
+			lowerQuery.includes('everything by')
 		) {
-			const artist = query.replace(/get me|import|tabs? for|all|everything/gi, '').trim();
+			const artist = query.replace(/get me|import|tabs? for|all|everything by/gi, '').trim();
 			return {
 				type: 'ARTIST_BULK_IMPORT',
 				artist
 			};
 		}
 
-		// Default: assume it's an artist name for bulk import
+		// Check if it's a well-known band name (multi-word or famous single-word)
+		const famousBands = [
+			'metallica', 'nirvana', 'oasis', 'radiohead', 'muse', 'queen',
+			'acdc', 'kiss', 'tool', 'slayer', 'megadeth', 'anthrax'
+		];
+		
+		// Multi-word query is likely a band name
+		const wordCount = query.trim().split(/\s+/).length;
+		if (wordCount >= 2 || famousBands.includes(lowerQuery)) {
+			return {
+				type: 'ARTIST_BULK_IMPORT',
+				artist: query.trim()
+			};
+		}
+
+		// Default for single-word queries: search as song first
+		// The backend will handle fallback to artist if no song is found
 		return {
-			type: 'ARTIST_BULK_IMPORT',
-			artist: query.trim()
+			type: 'SINGLE_TAB_IMPORT',
+			song: query.trim(),
+			confidence: 'medium'
 		};
 	}
 
@@ -171,9 +188,12 @@ Reasoning: ${mbAnalysis.reasoning}
 ${mbAnalysis.topSongs.length > 0 ? `Top Songs Found:\n${mbAnalysis.topSongs.map((s) => `  • "${s.title}" by ${s.artist}`).join('\n')}` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**CRITICAL INSTRUCTION**: MusicBrainz is a comprehensive real-world music database.
-If MusicBrainz says isAmbiguous=true, you MUST use type "AMBIGUOUS" - do NOT override this with SINGLE_TAB_IMPORT or ARTIST_BULK_IMPORT.
-The database knows which terms are actually ambiguous in the real music world.
+**CRITICAL INSTRUCTIONS FOR MUSICBRAINZ DATA:**
+1. If MusicBrainz says isAmbiguous=true, you MUST use type "AMBIGUOUS"
+2. **If songMatches > 0 AND artistMatches == 0**: This is likely a SONG, not an artist! Use SINGLE_TAB_IMPORT
+3. **If songMatches > artistMatches**: Prefer SINGLE_TAB_IMPORT (search as song first)
+4. If MusicBrainz provides topSongs with only ONE clear artist, use that as artist+song for SINGLE_TAB_IMPORT
+5. The database knows which terms are actually ambiguous in the real music world - trust it!
 
 `
 			: '⚠️ MusicBrainz data unavailable - use your best judgment\n\n';
@@ -193,22 +213,36 @@ ${mbSection}Respond with ONLY a JSON object (no markdown, no explanation) with t
   "ambiguityReason": "why this is ambiguous (only if type is AMBIGUOUS)"
 }
 
-Rules:
-- If the query is clearly just an artist name (e.g., "Fish in a Birdcage", "The Beatles", "Metallica", "Nirvana"), use ARTIST_BULK_IMPORT
-- If it clearly mentions a specific song, use SINGLE_TAB_IMPORT. Song patterns include:
+Rules (PRIORITY ORDER - apply top rules first):
+
+**1. EXPLICIT SONG PATTERNS** → Always use SINGLE_TAB_IMPORT:
   * "{song} by {artist}" (e.g., "Wonderwall by Oasis", "Hello by Adele")
-  * "{artist} {song}" (e.g., "Green Day Basket Case", "Oasis Wonderwall")
   * "{artist} - {song}" (e.g., "Led Zeppelin - Stairway to Heaven")
-  * **IMPORTANT**: Single-word queries (e.g., "Hello", "Yesterday", "Creep", "Dreams", "Home", "Stay") should ALWAYS default to SINGLE_TAB_IMPORT unless they are clearly famous band names. Even common words like "Hello" are likely song titles in this guitar tab context.
-- **DEFAULT BEHAVIOR**: When in doubt between artist or song for ANY single word, ALWAYS prefer SINGLE_TAB_IMPORT with confidence "medium". Let the search engine decide if it exists. DO NOT mark as AMBIGUOUS just because a word is common.
-- If it's a Ultimate Guitar URL, use SINGLE_TAB_IMPORT and extract the URL
-- **RARELY use "AMBIGUOUS"** - Only use it if:
-  * The query contains obvious typos that need correction (e.g., "Beatels")
-  * The query is genuinely unclear with no actionable intent (e.g., "that song that goes...", "something by")
-  * The query is too vague to be actionable (e.g., "guitar tabs", "music", "songs")
-- Provide spelling corrections in "suggestions" if there are likely typos
-- For ambiguous queries, provide specific song/artist suggestions, not generic placeholders
-- When parsing "{artist} {song}" format, assume the first part is the artist and the rest is the song title
+  * "{artist} {song}" with 2+ words after artist (e.g., "Green Day Basket Case")
+  * Ultimate Guitar URLs → extract URL
+
+**2. FAMOUS BANDS (multi-word artist names)** → Use ARTIST_BULK_IMPORT:
+  * "The Beatles", "Led Zeppelin", "Pink Floyd", "Red Hot Chili Peppers"
+  * "Guns N' Roses", "System of a Down", "Rage Against the Machine"
+  * Multi-word names that are clearly bands
+
+**3. SINGLE-WORD QUERIES** → **CRITICAL DECISION POINT**:
+  * **IF MusicBrainz shows songMatches > 0 AND artistMatches == 0**: Use SINGLE_TAB_IMPORT (it's a song!)
+  * **IF MusicBrainz shows songMatches > artistMatches**: Use SINGLE_TAB_IMPORT (more likely a song)
+  * **IF MusicBrainz shows ONLY ONE topSong with artist**: Use SINGLE_TAB_IMPORT with that artist+song
+  * **DEFAULT for single words**: Use SINGLE_TAB_IMPORT with confidence "medium" (search as song first)
+  * **ONLY use ARTIST_BULK_IMPORT** if it's a well-known single-word band name (e.g., "Metallica", "Nirvana", "Oasis", "Radiohead")
+
+**4. AMBIGUOUS QUERIES** → Use AMBIGUOUS (but RARELY):
+  * MusicBrainz says isAmbiguous=true (MUST respect this!)
+  * Obvious typos that need correction (e.g., "Beatels")
+  * Genuinely unclear intent (e.g., "that song that goes...", "something by...")
+  * Too vague to be actionable (e.g., "guitar tabs", "music", "songs")
+
+**5. SPECIAL CASES:**
+  * Provide spelling corrections in "suggestions" if there are likely typos
+  * For ambiguous queries, provide specific song/artist suggestions, not generic placeholders
+  * When parsing "{artist} {song}" format, assume the first part is the artist and the rest is the song title
 
 **CRITICAL - Suggestion Formatting Rules:**
 Suggestions MUST be actionable statements that the user can directly select, NOT questions or conversational phrases.
@@ -278,17 +312,34 @@ Ambiguous cases (use sparingly):
 - Queries with obvious typos (e.g., "Beatels" instead of "Beatles")
 - Genuinely vague queries (e.g., "guitar tabs", "that song", "music")
 
-Examples:
-"Fish in a Birdcage" → {"type": "ARTIST_BULK_IMPORT", "artist": "Fish in a Birdcage", "confidence": "high"}
+Examples (showing priority-based decision making):
+
+**Explicit song patterns:**
 "Wonderwall by Oasis" → {"type": "SINGLE_TAB_IMPORT", "song": "Wonderwall", "artist": "Oasis", "confidence": "high"}
+"Led Zeppelin - Stairway to Heaven" → {"type": "SINGLE_TAB_IMPORT", "song": "Stairway to Heaven", "artist": "Led Zeppelin", "confidence": "high"}
 "Green Day Basket Case" → {"type": "SINGLE_TAB_IMPORT", "song": "Basket Case", "artist": "Green Day", "confidence": "high"}
-"Oasis Wonderwall" → {"type": "SINGLE_TAB_IMPORT", "song": "Wonderwall", "artist": "Oasis", "confidence": "high"}
+
+**Famous multi-word bands:**
+"The Beatles" → {"type": "ARTIST_BULK_IMPORT", "artist": "The Beatles", "confidence": "high"}
+"Fish in a Birdcage" → {"type": "ARTIST_BULK_IMPORT", "artist": "Fish in a Birdcage", "confidence": "high"}
+"Red Hot Chili Peppers" → {"type": "ARTIST_BULK_IMPORT", "artist": "Red Hot Chili Peppers", "confidence": "high"}
+
+**Single-word queries (DEFAULT TO SONG unless famous band):**
 "Hello" → {"type": "SINGLE_TAB_IMPORT", "song": "Hello", "confidence": "medium"}
-"Oasis" → {"type": "SINGLE_TAB_IMPORT", "song": "Oasis", "confidence": "medium"} (try as song first; if no results, fallback happens server-side)
 "Yesterday" → {"type": "SINGLE_TAB_IMPORT", "song": "Yesterday", "confidence": "medium"}
+"Cotton" → {"type": "SINGLE_TAB_IMPORT", "song": "Cotton", "confidence": "medium"} (will find Mountain Goats song)
+"Creep" → {"type": "SINGLE_TAB_IMPORT", "song": "Creep", "confidence": "medium"}
+"Dreams" → {"type": "SINGLE_TAB_IMPORT", "song": "Dreams", "confidence": "medium"}
+"Metallica" → {"type": "ARTIST_BULK_IMPORT", "artist": "Metallica", "confidence": "high"} (famous band exception)
+"Nirvana" → {"type": "ARTIST_BULK_IMPORT", "artist": "Nirvana", "confidence": "high"} (famous band exception)
+
+**When MusicBrainz helps with single words:**
+If MusicBrainz says: "Cotton" has 0 artists, 3 songs (including "Cotton" by "The Mountain Goats")
+→ {"type": "SINGLE_TAB_IMPORT", "song": "Cotton", "artist": "The Mountain Goats", "confidence": "high"}
+
+**Typos requiring disambiguation:**
 "Beatels" → {"type": "AMBIGUOUS", "ambiguityReason": "Possible typo detected", "suggestions": ["The Beatles"], "confidence": "low"}
-"Stairway to Heaven" → {"type": "SINGLE_TAB_IMPORT", "song": "Stairway to Heaven", "confidence": "medium"}
-"im so tired" → {"type": "SINGLE_TAB_IMPORT", "song": "I'm So Tired", "confidence": "medium"}
+"Nirvanna Smells Like Teen Spirit" → {"type": "AMBIGUOUS", "ambiguityReason": "Possible typo in artist name", "suggestions": ["Nirvana - Smells Like Teen Spirit"], "confidence": "low"}
 
 Edge case examples:
 "RHCP Californication" → {"type": "SINGLE_TAB_IMPORT", "song": "Californication", "artist": "Red Hot Chili Peppers", "confidence": "high"}

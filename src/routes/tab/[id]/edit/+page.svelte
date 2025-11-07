@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { tabs } from '$lib/stores/tabs';
+	import { tabs } from '$lib/state/tabs.svelte';
 	import { goto } from '$app/navigation';
 	import { TabEditor } from '$features/tabs/components';
 
 	const id = $derived(page.params.id);
-	const currentTab = $derived($tabs.find((tab) => tab.id === id));
+	const currentTab = $derived(tabs.tabs.find((tab) => tab.id === id));
 
 	function handleSaved(event: { id: string }) {
 		goto(`/tab/${event.id}`);

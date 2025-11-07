@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { RefreshCw, X } from 'lucide-svelte';
 
 	let showUpdate = $state(false);
 	let registration: ServiceWorkerRegistration | null = $state(null);
 
-	onMount(() => {
+	$effect(() => {
 		if ('serviceWorker' in navigator) {
 			// Check for updates every 60 seconds
-			setInterval(() => {
+			const updateInterval = setInterval(() => {
 				navigator.serviceWorker.ready.then((reg) => {
 					reg.update();
 				});
@@ -24,24 +23,32 @@
 				}
 
 				// Listen for new service worker installing
-				reg.addEventListener('updatefound', () => {
+				const handleUpdateFound = () => {
 					const newWorker = reg.installing;
 					if (newWorker) {
-						newWorker.addEventListener('statechange', () => {
+						const handleStateChange = () => {
 							if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
 								// New service worker is installed and waiting
 								showUpdate = true;
 							}
-						});
+						};
+						newWorker.addEventListener('statechange', handleStateChange);
 					}
-				});
+				};
+				reg.addEventListener('updatefound', handleUpdateFound);
 			});
 
 			// Listen for controller change (new service worker activated)
-			navigator.serviceWorker.addEventListener('controllerchange', () => {
+			const handleControllerChange = () => {
 				// Reload the page to get the new version
 				window.location.reload();
-			});
+			};
+			navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+			return () => {
+				clearInterval(updateInterval);
+				navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+			};
 		}
 	});
 

@@ -55,6 +55,78 @@ interface TabInfo {
 	votes?: number;
 }
 
+const SEARCH_STOP_WORDS = new Set([
+	'tab',
+	'tabs',
+	'chord',
+	'chords',
+	'guitar',
+	'bass',
+	'ukulele',
+	'drum',
+	'drums',
+	'song',
+	'songs',
+	'ver',
+	'version',
+	'the',
+	'a',
+	'an',
+	'and',
+	'or',
+	'for',
+	'to',
+	'of',
+	'in',
+	'on',
+	'by',
+	'with',
+	'feat',
+	'featuring',
+	'ft'
+]);
+
+function normalizeForMatch(text: string): string {
+	return text
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '');
+}
+
+function extractKeywords(source?: string): string[] {
+	if (!source) return [];
+
+	return source
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, ' ')
+		.split(/[^a-z0-9]+/)
+		.map((token) => token.trim())
+		.filter((token) => token.length >= 2 && !SEARCH_STOP_WORDS.has(token));
+}
+
+function tabMatchesQuery(tab: TabInfo, songKeywords: string[], artistKeywords: string[]): boolean {
+	const haystack = normalizeForMatch(`${tab.title} ${tab.artist}`);
+
+	const matchesSong =
+		songKeywords.length === 0 || songKeywords.every((keyword) => haystack.includes(keyword));
+	const matchesArtist =
+		artistKeywords.length === 0 || artistKeywords.every((keyword) => haystack.includes(keyword));
+
+	return matchesSong && matchesArtist;
+}
+
+function filterTabsByQuery(tabs: TabInfo[], song: string, artist?: string): TabInfo[] {
+	const songKeywords = extractKeywords(song);
+	const artistKeywords = extractKeywords(artist);
+
+	if (songKeywords.length === 0 && artistKeywords.length === 0) {
+		return tabs;
+	}
+
+	return tabs.filter((tab) => tabMatchesQuery(tab, songKeywords, artistKeywords));
+}
+
 async function scrapeTitleSearch(song: string, artist?: string): Promise<TabInfo[]> {
 	let browser;
 	try {
@@ -74,7 +146,7 @@ async function scrapeTitleSearch(song: string, artist?: string): Promise<TabInfo
 		await page.waitForTimeout(2000);
 
 		// Scroll to load more results
-		console.log(`📜 Scrolling to load all results...`);
+		console.log('🔄 Scrolling to load all results...');
 		let previousTabCount = 0;
 		let currentTabCount = 0;
 		let scrollAttempts = 0;
@@ -104,14 +176,14 @@ async function scrapeTitleSearch(song: string, artist?: string): Promise<TabInfo
 		console.log(`✅ Finished scrolling. Total tabs found: ${currentTabCount}`);
 
 		// Extract tabs from search results
-		console.log(`📄 Extracting tabs from search results...`);
+		console.log('🧾 Extracting tabs from search results...');
 		const tabs = await page.evaluate(() => {
 			const results: TabInfo[] = [];
 			const seenUrls = new Set<string>();
 
 			// Find all rows in the search results table (each row is a tab)
 			const rows = document.querySelectorAll('article .dyhP1:not(.oStLJ)');
-			console.log(`Found ${rows.length} result rows`);
+			console.log(`ℹ️ Found ${rows.length} result rows`);
 
 			rows.forEach((row) => {
 				// Each row has 4 cells: Artist | Song | Rating | Type
@@ -189,9 +261,17 @@ async function scrapeTitleSearch(song: string, artist?: string): Promise<TabInfo
 		// Remove duplicates
 		const uniqueTabs = Array.from(new Map(tabs.map((tab) => [tab.url, tab])).values());
 
-		console.log(`✅ Found ${uniqueTabs.length} unique tabs`);
+		console.log(`✅ Found ${uniqueTabs.length} unique tabs before keyword filtering`);
 
-		return uniqueTabs;
+		const filteredTabs = filterTabsByQuery(uniqueTabs, song, artist);
+
+		console.log(
+			`🔎 Filtered tabs down to ${filteredTabs.length} using keywords from "${song}${
+				artist ? ` ${artist}` : ''
+			}"`
+		);
+
+		return filteredTabs;
 	} catch (error) {
 		if (browser) {
 			await browser.close();
