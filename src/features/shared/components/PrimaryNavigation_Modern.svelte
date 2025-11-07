@@ -59,7 +59,7 @@
 	}
 </script>
 
-<nav class="modern-nav" class:nav-hidden={!isHeaderVisible}>
+<nav class="modern-nav" class:nav-hidden={isHeaderVisible === false}>
 	{#each navItems as item}
 		{@const Icon = item.icon}
 		<button

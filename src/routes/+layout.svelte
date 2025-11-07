@@ -3,7 +3,7 @@
 	import { SettingsBottomSheet } from '$features/shared/components';
 	import PrimaryNavigation from '$features/shared/components/PrimaryNavigation_Modern.svelte';
 	import { GuitarTuner } from '$features/tuner/components';
-	import { AddTabBottomSheet, ImportTabModal, WebImportModal } from '$features/tabs/components';
+import { ImportTabModal, WebImportModal } from '$features/tabs/components';
 	import SessionIndicator from '$features/sessions/components/SessionIndicator.svelte';
 	import SessionBottomSheet from '$features/sessions/components/SessionBottomSheet.svelte';
 	import CreateSessionModal from '$features/sessions/components/CreateSessionModal.svelte';
@@ -11,17 +11,31 @@
 	import SessionQueueView from '$features/sessions/components/SessionQueueView.svelte';
 	import PWAInstallPrompt from '$lib/components/PWAInstallPrompt.svelte';
 	import PWAUpdateNotification from '$lib/components/PWAUpdateNotification.svelte';
-	import { setContext, getContext, onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import PageTransition from '$lib/components/PageTransition.svelte';
+	import { setContext, getContext } from 'svelte';
 	import { page } from '$app/state';
 	import { initializeApp } from '$lib/app';
 	import { useService } from '$lib/useService.svelte';
 	import { TYPES } from '$core/di';
-	import type { UIState, UserState } from '$features/shared/services';
-	import { tabs } from '$lib/stores/tabs';
-	import type { Tab } from '$lib/stores/tabs';
+	import type {
+		UIState,
+		LayoutState,
+		ModalOrchestrator,
+		ScrollBehaviorService,
+		NavigationCoordinator,
+		ContextManager
+	} from '$features/shared/services';
+	import { tabs } from '$lib/state/tabs.svelte';
+	import type { Tab } from '$lib/state/tabs.svelte';
 	import { useSessionState } from '$lib/useSessionState.svelte';
 	import { ArrowLeft } from 'lucide-svelte';
+
+	// HMR: Accept updates to this component for fast refresh
+	// Note: Changes to imported services will still cause full reload
+	// as InversifyJS doesn't support hot-swapping singleton instances
+	if (import.meta.hot) {
+		import.meta.hot.accept();
+	}
 
 	interface TunerState {
 		open: boolean;
@@ -31,40 +45,61 @@
 	let { children } = $props();
 	let childTunerState: TunerState | null = $state(null);
 
-	// Scroll-to-hide state
-	let lastScrollY = $state(0);
-	let isHeaderVisible = $state(true);
-	const scrollThreshold = 50; // Minimum scroll distance to trigger hide/show
-
-	// Get services from DI container (stored in $state to maintain reactivity)
+	// Services - all logic delegated to proper service layer
 	let uiState = $state<UIState | undefined>(undefined);
-	let userState = $state<UserState | undefined>(undefined);
-
-	// State for AddTab bottom sheet and import modals
-	let isAddTabPanelOpen = $state(false);
-	let isImportModalOpen = $state(false);
-	let isWebImportOpen = $state(false);
-
-	// State for session sheet
-	let isSessionSheetOpen = $state(false);
+	let layoutState = $state<LayoutState | undefined>(undefined);
+	let modalOrchestrator = $state<ModalOrchestrator | undefined>(undefined);
+	let scrollBehavior = $state<ScrollBehaviorService | undefined>(undefined);
+	let navigationCoordinator = $state<NavigationCoordinator | undefined>(undefined);
+	let contextManager = $state<ContextManager | undefined>(undefined);
 
 	// Session state initialization
 	let sessionState = $state<ReturnType<typeof useSessionState> | undefined>(undefined);
 	let sessionsEnabled = $state(false);
 
-	// Detect if we're viewing a tab and get current tab data
-	const isViewingTab = $derived(page.url.pathname.startsWith('/tab/') && !page.url.pathname.includes('/edit'));
-	const currentTabId = $derived(isViewingTab ? page.params.id : null);
-	const currentTab = $derived(currentTabId ? $tabs.find((tab) => tab.id === currentTabId) : null);
+	// Set up contexts SYNCHRONOUSLY so child components can access them
+	// The contexts will reactively update when services are initialized
+	setContext('tuner', {
+		get open() { return () => modalOrchestrator?.openTuner(); },
+		get close() { return () => modalOrchestrator?.closeTuner(); },
+		get toggle() { return () => modalOrchestrator?.toggleTuner(); }
+	});
 
-	// Initialize application on mount (SSR is disabled so this is safe)
-	onMount(() => {
+	// Create a reactive context object that will be properly tracked
+	// We need to return a function that accesses the state, not a getter
+	setContext('scrollVisibility', {
+		// Return a function so it's called in the child's reactive context
+		getVisible: () => layoutState?.isHeaderVisible ?? true,
+		hide: () => scrollBehavior?.forceHideHeader(),
+		show: () => scrollBehavior?.forceShowHeader(),
+		handleContainerScroll: (scrollTop: number, lastScroll: number) => {
+			scrollBehavior?.handleContainerScroll(scrollTop, lastScroll);
+		}
+	});
+
+	// Detect if we're viewing a tab and get current tab data
+	const isViewingTab = $derived(
+		navigationCoordinator?.isViewingTab(page.url.pathname) ?? false
+	);
+	const currentTabId = $derived(
+		isViewingTab ? navigationCoordinator?.extractTabId(page.url.pathname, page.params) : null
+	);
+	const currentTab = $derived(currentTabId ? tabs.tabs.find((tab) => tab.id === currentTabId) : null);
+
+	// Initialize application on mount using $effect (SSR is disabled so this is safe)
+	$effect(() => {
+		let scrollCleanup: (() => void) | undefined;
+
 		(async () => {
 			await initializeApp();
 
-			// Get services after initialization
+			// Get all services after initialization
 			uiState = useService<UIState>(TYPES.UIState);
-			userState = useService<UserState>(TYPES.UserState);
+			layoutState = useService<LayoutState>(TYPES.LayoutState);
+			modalOrchestrator = useService<ModalOrchestrator>(TYPES.ModalOrchestrator);
+			scrollBehavior = useService<ScrollBehaviorService>(TYPES.ScrollBehaviorService);
+			navigationCoordinator = useService<NavigationCoordinator>(TYPES.NavigationCoordinator);
+			contextManager = useService<ContextManager>(TYPES.ContextManager);
 
 			// Initialize session state
 			try {
@@ -74,75 +109,19 @@
 			} catch (error) {
 				console.error('❌ Failed to initialize SessionState:', error);
 			}
+
+			// Set up scroll listener using service
+			if (scrollBehavior) {
+				scrollCleanup = scrollBehavior.createWindowScrollListener();
+			}
 		})();
 
-		// Set up scroll listener for hide/show navigation
-		window.addEventListener('scroll', handleScroll, { passive: true });
-
+		// Cleanup function must handle async case where scrollCleanup might not be set yet
 		return () => {
-			window.removeEventListener('scroll', handleScroll);
+			if (scrollCleanup) {
+				scrollCleanup();
+			}
 		};
-	});
-
-	function handleScroll() {
-		const currentScrollY = window.scrollY;
-		const scrollDelta = currentScrollY - lastScrollY;
-
-		// Only trigger if scrolled past threshold
-		if (Math.abs(scrollDelta) < scrollThreshold) return;
-
-		if (scrollDelta > 0 && currentScrollY > 100) {
-			// Scrolling down & past initial position - hide header/nav
-			isHeaderVisible = false;
-		} else if (scrollDelta < 0) {
-			// Scrolling up - show header/nav
-			isHeaderVisible = true;
-		}
-
-		lastScrollY = currentScrollY;
-	}
-
-	// Create a global tuner context
-	setContext('tuner', {
-		open: () => uiState?.openModal('tuner'),
-		close: () => uiState?.closeModal('tuner'),
-		toggle: () => {
-			if (uiState) {
-				if (uiState.tunerModalOpen) {
-					uiState.closeModal('tuner');
-				} else {
-					uiState.openModal('tuner');
-				}
-			}
-		}
-	});
-
-	// Create scroll visibility context for child routes
-	setContext('scrollVisibility', {
-		get visible() {
-			return isHeaderVisible;
-		},
-		hide: () => {
-			isHeaderVisible = false;
-		},
-		show: () => {
-			isHeaderVisible = true;
-		},
-		handleContainerScroll: (scrollTop: number, lastScroll: number) => {
-			// Handle scroll from child container (for tab pages with internal scroll)
-			const scrollDelta = scrollTop - lastScroll;
-			
-			// Only trigger if scrolled past threshold
-			if (Math.abs(scrollDelta) < scrollThreshold) return;
-
-			if (scrollDelta > 0 && scrollTop > 100) {
-				// Scrolling down - hide header/nav
-				isHeaderVisible = false;
-			} else if (scrollDelta < 0) {
-				// Scrolling up - show header/nav
-				isHeaderVisible = true;
-			}
-		}
 	});
 
 	// Handle state synchronization between parent and child
@@ -171,80 +150,53 @@
 		};
 	}
 
+	// Event handlers - delegate to services
 	function toggleSettings() {
-		uiState?.openModal('settings');
+		modalOrchestrator?.toggleSettings();
 	}
 
 	function closeSettings() {
-		uiState?.closeModal('settings');
+		modalOrchestrator?.closeSettings();
 	}
 
 	function closeTuner() {
-		uiState?.closeModal('tuner');
-	}
-
-	function toggleTuner() {
-		if (uiState) {
-			if (uiState.tunerModalOpen) {
-				uiState.closeModal('tuner');
-			} else {
-				uiState.openModal('tuner');
-			}
-		}
+		modalOrchestrator?.closeTuner();
 	}
 
 	function handleOpenAddTab() {
-		isAddTabPanelOpen = true;
-	}
-
-	function handleCloseAddTab() {
-		isAddTabPanelOpen = false;
-	}
-
-	function handleURLImport() {
-		isAddTabPanelOpen = false;
-		isWebImportOpen = true;
-	}
-
-	function handlePasteImport() {
-		isAddTabPanelOpen = false;
-		isImportModalOpen = true;
+		modalOrchestrator?.openAddTab();
 	}
 
 	function closeImportModal() {
-		isImportModalOpen = false;
+		modalOrchestrator?.closeImportModal();
 	}
 
 	function closeWebImport() {
-		isWebImportOpen = false;
+		modalOrchestrator?.closeWebImport();
 	}
 
 	function handleImportSubmit(newTab: Tab) {
-		tabs.add(newTab);
-		isImportModalOpen = false;
-		setTimeout(() => {
-			goto(`/tab/${newTab.id}`, {});
-		}, 100);
+		const actualTabId = tabs.add(newTab);
+		modalOrchestrator?.closeImportModal();
+		navigationCoordinator?.goToTabDelayed(actualTabId);
 	}
 
 	function handleWebImportSubmit(newTab: Tab) {
-		tabs.add(newTab);
-		isWebImportOpen = false;
-		setTimeout(() => {
-			goto(`/tab/${newTab.id}`, {});
-		}, 100);
+		const actualTabId = tabs.add(newTab);
+		modalOrchestrator?.closeWebImport();
+		navigationCoordinator?.goToTabDelayed(actualTabId);
 	}
 
 	function handleOpenSessions() {
-		isSessionSheetOpen = true;
+		modalOrchestrator?.openSessions();
 	}
 
 	function handleCloseSessions() {
-		isSessionSheetOpen = false;
+		modalOrchestrator?.closeSessions();
 	}
 
 	function goBackToLibrary() {
-		goto('/');
+		navigationCoordinator?.goToLibrary();
 	}
 
 	// Dark mode is always active - no theme switching needed
@@ -261,13 +213,13 @@
 </svelte:head>
 
 <div class="app-container tabscroll-app-container">
-	<header class="app-header tabscroll-app-header" class:header-hidden={!isHeaderVisible}>
+	<header class="app-header tabscroll-app-header" class:header-hidden={layoutState?.isHeaderVisible === false}>
 		{#if isViewingTab && currentTab}
 			<!-- Tab viewing mode - show back button and song info -->
 			<button class="back-button" onclick={goBackToLibrary} aria-label="Back to library">
 				<ArrowLeft size={20} />
 			</button>
-			<div class="tab-header-info">	
+			<div class="tab-header-info">
 				<h1 class="tab-title">{currentTab.title}</h1>
 				{#if currentTab.artist}
 					<p class="tab-artist">{currentTab.artist}</p>
@@ -290,35 +242,41 @@
 	</header>
 
 	<div class="content-wrapper tabscroll-content-wrapper" use:handleContextMount>
-		{@render children()}
+		<PageTransition>
+			{@render children()}
+		</PageTransition>
 	</div>
 
-	<PrimaryNavigation onAddTab={handleOpenAddTab} onOpenSettings={toggleSettings} {isHeaderVisible} />
+	<PrimaryNavigation
+		onAddTab={handleOpenAddTab}
+		onOpenSettings={toggleSettings}
+		isHeaderVisible={layoutState?.isHeaderVisible ?? true}
+	/>
 </div>
 
-{#if uiState}
+{#if uiState && layoutState}
 	<SettingsBottomSheet open={uiState.settingsModalOpen} onclose={closeSettings} />
 	<GuitarTuner showTuner={uiState.tunerModalOpen} onclose={closeTuner} />
-	<AddTabBottomSheet
-		open={isAddTabPanelOpen}
-		onclose={handleCloseAddTab}
-		onURLImport={handleURLImport}
-		onPasteImport={handlePasteImport}
-	/>
 	<ImportTabModal
-		open={isImportModalOpen}
+		open={layoutState.isImportModalOpen}
 		onclose={closeImportModal}
 		onimport={handleImportSubmit}
 	/>
 	<WebImportModal
-		open={isWebImportOpen}
+		open={layoutState.isWebImportOpen}
 		onclose={closeWebImport}
 		onimport={handleWebImportSubmit}
 	/>
 {/if}
 
 <!-- Session components - always rendered, handle their own visibility -->
-<SessionBottomSheet isOpen={isSessionSheetOpen} onClose={handleCloseSessions} sessionState={sessionState} />
+{#if layoutState}
+	<SessionBottomSheet
+		isOpen={layoutState.isSessionSheetOpen}
+		onClose={handleCloseSessions}
+		sessionState={sessionState}
+	/>
+{/if}
 <CreateSessionModal sessionState={sessionState} />
 <JoinSessionModal sessionState={sessionState} />
 <SessionQueueView sessionState={sessionState} />
@@ -341,8 +299,8 @@
 
 	.app-header,
 	.tabscroll-app-header {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
 		align-items: center;
 		gap: var(--spacing-md);
 		padding: var(--spacing-md) var(--spacing-lg);
@@ -376,6 +334,8 @@
 		min-width: var(--touch-target-min);
 		min-height: var(--touch-target-min);
 		flex-shrink: 0;
+		justify-self: start;
+		grid-column: 1;
 	}
 
 	.back-button:hover {
@@ -391,8 +351,10 @@
 	}
 
 	.tab-header-info {
-		flex: 1;
+		grid-column: 2;
+		justify-self: center;
 		min-width: 0;
+		width: 100%;
 		text-align: center;
 	}
 
@@ -427,6 +389,8 @@
 		display: flex;
 		align-items: center;
 		gap: var(--spacing-sm);
+		justify-self: end;
+		grid-column: 3;
 	}
 
 	.logo-link {
