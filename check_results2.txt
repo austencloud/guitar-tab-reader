@@ -1,0 +1,2084 @@
+
+> tabscroll@0.0.1 check
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+
+====================================
+Loading svelte-check in workspace: c:\_TABSCROLL
+Getting Svelte diagnostics...
+
+c:\_TABSCROLL\[32msrc\features\tabs\modules\import\components\views\ImportUrlView.svelte[39m:24:4
+[33mWarn[39m: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+[36m			disabled={isLoading}
+			[35mautofocus[36m
+		/>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\tabs\modules\import\components\views\ImportDualSearchView.svelte[39m:113:6
+[33mWarn[39m: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+[36m					disabled={isLoading}
+					[35mautofocus[36m
+				/>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\tabs\modules\import\components\views\ImportDualSearchView.svelte[39m:127:6
+[33mWarn[39m: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+[36m					disabled={isLoading}
+					[35mautofocus[36m
+				/>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\tabs\modules\import\components\views\ImportDualSearchView.svelte[39m:156:6
+[33mWarn[39m: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+[36m					disabled={isLoading}
+					[35mautofocus[36m
+				/>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\tabs\modules\import\components\views\ImportPasteView.svelte[39m:46:4
+[33mWarn[39m: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+[36m			placeholder="Paste tab content here..."
+			[35mautofocus[36m
+		></textarea>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\tabs\modules\import\components\views\ImportSmartView.svelte[39m:47:4
+[33mWarn[39m: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+[36m			disabled={isLoading}
+			[35mautofocus[36m
+		/>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\tabs\components\AITabGeneratorModal.svelte[39m:315:2
+[33mWarn[39m: Unused CSS selector ".panel-header h2"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+	[35m.panel-header h2[36m {
+		margin: 0;
+[39m
+
+c:\_TABSCROLL\[32msrc\features\tabs\components\AITabGeneratorModal.svelte[39m:347:2
+[33mWarn[39m: Unused CSS selector ".close-btn svg"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+	[35m.close-btn svg[36m {
+		width: 20px;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:138:2
+[33mWarn[39m: Unused CSS selector "header"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+	[35mheader[36m {
+		display: flex;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:144:2
+[33mWarn[39m: Unused CSS selector ".title-container"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+	[35m.title-container[36m {
+		display: flex;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:150:2
+[33mWarn[39m: Unused CSS selector "h1"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+	[35mh1[36m {
+		margin: 0;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:158:2
+[33mWarn[39m: Unused CSS selector ".version"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+	[35m.version[36m {
+		color: var(--color-text-tertiary);
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:186:3
+[33mWarn[39m: Unused CSS selector "h1"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+		[35mh1[36m {
+			font-size: 1.5rem;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:197:3
+[33mWarn[39m: Unused CSS selector ".title-container"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+		[35m.title-container[36m {
+			flex-direction: column;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:203:3
+[33mWarn[39m: Unused CSS selector "h1"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+		[35mh1[36m {
+			font-size: 1.25rem;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:207:3
+[33mWarn[39m: Unused CSS selector ".version"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+		[35m.version[36m {
+			font-size: 0.625rem;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:218:3
+[33mWarn[39m: Unused CSS selector "h1"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m	@media (max-width: 360px) {
+		[35mh1[36m {
+			font-size: 1.125rem;
+[39m
+
+c:\_TABSCROLL\[32msrc\routes\+page.svelte[39m:222:3
+[33mWarn[39m: Unused CSS selector ".version"
+https://svelte.dev/e/css_unused_selector (svelte)
+[36m
+		[35m.version[36m {
+			font-size: 0.5rem;
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\CreateSessionModal.svelte[39m:60:2
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m{#if sessionState?.showCreateModal}
+	[35m<div class="modal-overlay" onclick={handleClose}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-header">
+				<h2>Create Jam Session</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close">
+					<X size={24} />
+				</button>
+			</div>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+				<div class="form-group">
+					<label for="session-name">Session Name</label>
+					<input
+						id="session-name"
+						type="text"
+						bind:value={sessionName}
+						placeholder="Sunday Jam"
+						autofocus
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				<div class="form-group">
+					<label for="device-name">Your Device Name</label>
+					<input
+						id="device-name"
+						type="text"
+						bind:value={deviceName}
+						placeholder="Alex's iPhone"
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				{#if sessionState?.error}
+					<div class="error-message">
+						{sessionState.error}
+					</div>
+				{/if}
+
+				<div class="button-group">
+					<button type="button" class="button-secondary" onclick={handleClose}>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="button-primary"
+						disabled={sessionState?.isConnecting || !sessionName.trim() || !deviceName.trim()}
+					>
+						{sessionState?.isConnecting ? 'Creating...' : 'Create Session'}
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>[36m
+{/if}
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\CreateSessionModal.svelte[39m:60:2
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m{#if sessionState?.showCreateModal}
+	[35m<div class="modal-overlay" onclick={handleClose}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-header">
+				<h2>Create Jam Session</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close">
+					<X size={24} />
+				</button>
+			</div>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+				<div class="form-group">
+					<label for="session-name">Session Name</label>
+					<input
+						id="session-name"
+						type="text"
+						bind:value={sessionName}
+						placeholder="Sunday Jam"
+						autofocus
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				<div class="form-group">
+					<label for="device-name">Your Device Name</label>
+					<input
+						id="device-name"
+						type="text"
+						bind:value={deviceName}
+						placeholder="Alex's iPhone"
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				{#if sessionState?.error}
+					<div class="error-message">
+						{sessionState.error}
+					</div>
+				{/if}
+
+				<div class="button-group">
+					<button type="button" class="button-secondary" onclick={handleClose}>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="button-primary"
+						disabled={sessionState?.isConnecting || !sessionName.trim() || !deviceName.trim()}
+					>
+						{sessionState?.isConnecting ? 'Creating...' : 'Create Session'}
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>[36m
+{/if}
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\CreateSessionModal.svelte[39m:61:3
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m	<div class="modal-overlay" onclick={handleClose}>
+		[35m<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-header">
+				<h2>Create Jam Session</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close">
+					<X size={24} />
+				</button>
+			</div>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+				<div class="form-group">
+					<label for="session-name">Session Name</label>
+					<input
+						id="session-name"
+						type="text"
+						bind:value={sessionName}
+						placeholder="Sunday Jam"
+						autofocus
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				<div class="form-group">
+					<label for="device-name">Your Device Name</label>
+					<input
+						id="device-name"
+						type="text"
+						bind:value={deviceName}
+						placeholder="Alex's iPhone"
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				{#if sessionState?.error}
+					<div class="error-message">
+						{sessionState.error}
+					</div>
+				{/if}
+
+				<div class="button-group">
+					<button type="button" class="button-secondary" onclick={handleClose}>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="button-primary"
+						disabled={sessionState?.isConnecting || !sessionName.trim() || !deviceName.trim()}
+					>
+						{sessionState?.isConnecting ? 'Creating...' : 'Create Session'}
+					</button>
+				</div>
+			</form>
+		</div>[36m
+	</div>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\CreateSessionModal.svelte[39m:61:3
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m	<div class="modal-overlay" onclick={handleClose}>
+		[35m<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-header">
+				<h2>Create Jam Session</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close">
+					<X size={24} />
+				</button>
+			</div>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+				<div class="form-group">
+					<label for="session-name">Session Name</label>
+					<input
+						id="session-name"
+						type="text"
+						bind:value={sessionName}
+						placeholder="Sunday Jam"
+						autofocus
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				<div class="form-group">
+					<label for="device-name">Your Device Name</label>
+					<input
+						id="device-name"
+						type="text"
+						bind:value={deviceName}
+						placeholder="Alex's iPhone"
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				{#if sessionState?.error}
+					<div class="error-message">
+						{sessionState.error}
+					</div>
+				{/if}
+
+				<div class="button-group">
+					<button type="button" class="button-secondary" onclick={handleClose}>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="button-primary"
+						disabled={sessionState?.isConnecting || !sessionName.trim() || !deviceName.trim()}
+					>
+						{sessionState?.isConnecting ? 'Creating...' : 'Create Session'}
+					</button>
+				</div>
+			</form>
+		</div>[36m
+	</div>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\CreateSessionModal.svelte[39m:77:7
+[33mWarn[39m: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+[36m						placeholder="Sunday Jam"
+						[35mautofocus[36m
+						required
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\JoinSessionModal.svelte[39m:71:2
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m{#if sessionState?.showJoinModal}
+	[35m<div class="modal-overlay" onclick={handleClose}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-header">
+				<h2>Join Jam Session</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close">
+					<X size={24} />
+				</button>
+			</div>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleJoin(); }}>
+				<div class="form-group">
+					<label for="room-code">Session Code</label>
+					<input
+						id="room-code"
+						type="text"
+						value={roomCode}
+						oninput={handleCodeInput}
+						placeholder="ABC123"
+						maxlength="6"
+						autofocus
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+						class:invalid={roomCode.length > 0 && !isCodeValid}
+					/>
+					<p class="help-text">Enter the 6-character code from your friend</p>
+				</div>
+
+				<div class="form-group">
+					<label for="device-name">Your Device Name</label>
+					<input
+						id="device-name"
+						type="text"
+						bind:value={deviceName}
+						placeholder="Alex's iPhone"
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				{#if sessionState?.error}
+					<div class="error-message">
+						{sessionState.error}
+					</div>
+				{/if}
+
+				<div class="button-group">
+					<button type="button" class="button-secondary" onclick={handleClose}>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="button-primary"
+						disabled={sessionState?.isConnecting || !isCodeValid || !deviceName.trim()}
+					>
+						{sessionState?.isConnecting ? 'Joining...' : 'Join Session'}
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>[36m
+{/if}
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\JoinSessionModal.svelte[39m:71:2
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m{#if sessionState?.showJoinModal}
+	[35m<div class="modal-overlay" onclick={handleClose}>
+		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-header">
+				<h2>Join Jam Session</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close">
+					<X size={24} />
+				</button>
+			</div>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleJoin(); }}>
+				<div class="form-group">
+					<label for="room-code">Session Code</label>
+					<input
+						id="room-code"
+						type="text"
+						value={roomCode}
+						oninput={handleCodeInput}
+						placeholder="ABC123"
+						maxlength="6"
+						autofocus
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+						class:invalid={roomCode.length > 0 && !isCodeValid}
+					/>
+					<p class="help-text">Enter the 6-character code from your friend</p>
+				</div>
+
+				<div class="form-group">
+					<label for="device-name">Your Device Name</label>
+					<input
+						id="device-name"
+						type="text"
+						bind:value={deviceName}
+						placeholder="Alex's iPhone"
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				{#if sessionState?.error}
+					<div class="error-message">
+						{sessionState.error}
+					</div>
+				{/if}
+
+				<div class="button-group">
+					<button type="button" class="button-secondary" onclick={handleClose}>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="button-primary"
+						disabled={sessionState?.isConnecting || !isCodeValid || !deviceName.trim()}
+					>
+						{sessionState?.isConnecting ? 'Joining...' : 'Join Session'}
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>[36m
+{/if}
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\JoinSessionModal.svelte[39m:72:3
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m	<div class="modal-overlay" onclick={handleClose}>
+		[35m<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-header">
+				<h2>Join Jam Session</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close">
+					<X size={24} />
+				</button>
+			</div>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleJoin(); }}>
+				<div class="form-group">
+					<label for="room-code">Session Code</label>
+					<input
+						id="room-code"
+						type="text"
+						value={roomCode}
+						oninput={handleCodeInput}
+						placeholder="ABC123"
+						maxlength="6"
+						autofocus
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+						class:invalid={roomCode.length > 0 && !isCodeValid}
+					/>
+					<p class="help-text">Enter the 6-character code from your friend</p>
+				</div>
+
+				<div class="form-group">
+					<label for="device-name">Your Device Name</label>
+					<input
+						id="device-name"
+						type="text"
+						bind:value={deviceName}
+						placeholder="Alex's iPhone"
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				{#if sessionState?.error}
+					<div class="error-message">
+						{sessionState.error}
+					</div>
+				{/if}
+
+				<div class="button-group">
+					<button type="button" class="button-secondary" onclick={handleClose}>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="button-primary"
+						disabled={sessionState?.isConnecting || !isCodeValid || !deviceName.trim()}
+					>
+						{sessionState?.isConnecting ? 'Joining...' : 'Join Session'}
+					</button>
+				</div>
+			</form>
+		</div>[36m
+	</div>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\JoinSessionModal.svelte[39m:72:3
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m	<div class="modal-overlay" onclick={handleClose}>
+		[35m<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-header">
+				<h2>Join Jam Session</h2>
+				<button class="close-button" onclick={handleClose} aria-label="Close">
+					<X size={24} />
+				</button>
+			</div>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleJoin(); }}>
+				<div class="form-group">
+					<label for="room-code">Session Code</label>
+					<input
+						id="room-code"
+						type="text"
+						value={roomCode}
+						oninput={handleCodeInput}
+						placeholder="ABC123"
+						maxlength="6"
+						autofocus
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+						class:invalid={roomCode.length > 0 && !isCodeValid}
+					/>
+					<p class="help-text">Enter the 6-character code from your friend</p>
+				</div>
+
+				<div class="form-group">
+					<label for="device-name">Your Device Name</label>
+					<input
+						id="device-name"
+						type="text"
+						bind:value={deviceName}
+						placeholder="Alex's iPhone"
+						required
+						autocomplete="off"
+						data-lpignore="true"
+						data-form-type="other"
+					/>
+				</div>
+
+				{#if sessionState?.error}
+					<div class="error-message">
+						{sessionState.error}
+					</div>
+				{/if}
+
+				<div class="button-group">
+					<button type="button" class="button-secondary" onclick={handleClose}>
+						Cancel
+					</button>
+					<button
+						type="submit"
+						class="button-primary"
+						disabled={sessionState?.isConnecting || !isCodeValid || !deviceName.trim()}
+					>
+						{sessionState?.isConnecting ? 'Joining...' : 'Join Session'}
+					</button>
+				</div>
+			</form>
+		</div>[36m
+	</div>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\JoinSessionModal.svelte[39m:90:7
+[33mWarn[39m: Avoid using autofocus
+https://svelte.dev/e/a11y_autofocus (svelte)
+[36m						maxlength="6"
+						[35mautofocus[36m
+						required
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\SessionQueueView.svelte[39m:107:2
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m{#if sessionState?.showQueueView && sessionState?.currentSession}
+	[35m<div class="queue-overlay" onclick={handleClose}>
+		<div class="queue-container" onclick={(e) => e.stopPropagation()}>
+			<!-- Header -->
+			<div class="queue-header">
+				<div class="header-content">
+					<h2>{sessionState.currentSession.name}</h2>
+					<div class="session-info">
+						<div class="info-item">
+							<Users size={16} />
+							<span>{sessionState.members.length} online</span>
+						</div>
+						<button class="code-button" onclick={copyRoomCode}>
+							<span class="code">{formattedCode}</span>
+							<Copy size={14} />
+							{#if showCopiedFeedback}
+								<span class="copied-feedback">Copied!</span>
+							{/if}
+						</button>
+					</div>
+				</div>
+				<button class="close-button" onclick={handleClose}>
+					<X size={24} />
+				</button>
+			</div>
+
+			<!-- Current Tab -->
+			{#if sessionState?.currentTab}
+				<div class="current-tab">
+					<div class="tab-label">NOW PLAYING</div>
+					<div class="tab-info">
+						<Music size={20} />
+						<div class="tab-details">
+							<div class="tab-title">{sessionState.currentTab.tab.title}</div>
+							{#if sessionState.currentTab.tab.artist}
+								<div class="tab-artist">{sessionState.currentTab.tab.artist}</div>
+							{/if}
+						</div>
+					</div>
+					<div class="tab-actions">
+						<button
+							class="action-button"
+							onclick={() => handleSaveTab(sessionState?.currentTab!)}
+							title="Save to library"
+						>
+							<Save size={18} />
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Queue -->
+			<div class="queue-section">
+				<div class="queue-label">
+					QUEUE ({sessionState?.queue.length})
+				</div>
+
+				{#if sessionState?.queue.length === 0}
+					<div class="empty-queue">
+						<Music size={48} />
+						<p>No tabs in queue</p>
+						<p class="empty-hint">Add tabs from your library to get started</p>
+					</div>
+				{:else}
+					<div class="queue-list">
+						{#each sessionState?.queue as item, index (item.id)}
+							<div
+								class="queue-item"
+								class:dragging={draggedItem?.id === item.id}
+								class:drag-over={dragOverIndex === index}
+								class:is-current={item.id === sessionState?.currentSession?.currentTabId}
+								draggable="true"
+								ondragstart={(e) => handleDragStart(e, item)}
+								ondragover={(e) => handleDragOver(e, index)}
+								ondragleave={handleDragLeave}
+								ondrop={(e) => handleDrop(e, index)}
+								ondragend={handleDragEnd}
+							>
+								<div class="drag-handle">
+									<div class="handle-bars">
+										<div class="bar"></div>
+										<div class="bar"></div>
+										<div class="bar"></div>
+									</div>
+								</div>
+								<div class="item-content">
+									<div class="item-info">
+										<div class="item-title">{item.tab.title}</div>
+										{#if item.tab.artist}
+											<div class="item-artist">{item.tab.artist}</div>
+										{/if}
+										<div class="item-meta">
+											Added by {sessionState?.members.find((m) => m.id === item.addedBy)?.deviceName || 'Unknown'}
+										</div>
+									</div>
+									<div class="item-actions">
+										<button
+											class="action-button"
+											onclick={() => handlePlayTab(item)}
+											title="Play now"
+										>
+											<Play size={18} />
+										</button>
+										<button
+											class="action-button"
+											onclick={() => handleSaveTab(item)}
+											title="Save to library"
+										>
+											<Save size={18} />
+										</button>
+										<button
+											class="action-button danger"
+											onclick={() => handleRemoveTab(item.id)}
+											title="Remove from queue"
+										>
+											<Trash2 size={18} />
+										</button>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
+			<!-- Footer -->
+			<div class="queue-footer">
+				<button class="button-secondary" onclick={handleLeaveSession}>
+					Leave Session
+				</button>
+			</div>
+		</div>
+	</div>[36m
+{/if}
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\SessionQueueView.svelte[39m:107:2
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m{#if sessionState?.showQueueView && sessionState?.currentSession}
+	[35m<div class="queue-overlay" onclick={handleClose}>
+		<div class="queue-container" onclick={(e) => e.stopPropagation()}>
+			<!-- Header -->
+			<div class="queue-header">
+				<div class="header-content">
+					<h2>{sessionState.currentSession.name}</h2>
+					<div class="session-info">
+						<div class="info-item">
+							<Users size={16} />
+							<span>{sessionState.members.length} online</span>
+						</div>
+						<button class="code-button" onclick={copyRoomCode}>
+							<span class="code">{formattedCode}</span>
+							<Copy size={14} />
+							{#if showCopiedFeedback}
+								<span class="copied-feedback">Copied!</span>
+							{/if}
+						</button>
+					</div>
+				</div>
+				<button class="close-button" onclick={handleClose}>
+					<X size={24} />
+				</button>
+			</div>
+
+			<!-- Current Tab -->
+			{#if sessionState?.currentTab}
+				<div class="current-tab">
+					<div class="tab-label">NOW PLAYING</div>
+					<div class="tab-info">
+						<Music size={20} />
+						<div class="tab-details">
+							<div class="tab-title">{sessionState.currentTab.tab.title}</div>
+							{#if sessionState.currentTab.tab.artist}
+								<div class="tab-artist">{sessionState.currentTab.tab.artist}</div>
+							{/if}
+						</div>
+					</div>
+					<div class="tab-actions">
+						<button
+							class="action-button"
+							onclick={() => handleSaveTab(sessionState?.currentTab!)}
+							title="Save to library"
+						>
+							<Save size={18} />
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Queue -->
+			<div class="queue-section">
+				<div class="queue-label">
+					QUEUE ({sessionState?.queue.length})
+				</div>
+
+				{#if sessionState?.queue.length === 0}
+					<div class="empty-queue">
+						<Music size={48} />
+						<p>No tabs in queue</p>
+						<p class="empty-hint">Add tabs from your library to get started</p>
+					</div>
+				{:else}
+					<div class="queue-list">
+						{#each sessionState?.queue as item, index (item.id)}
+							<div
+								class="queue-item"
+								class:dragging={draggedItem?.id === item.id}
+								class:drag-over={dragOverIndex === index}
+								class:is-current={item.id === sessionState?.currentSession?.currentTabId}
+								draggable="true"
+								ondragstart={(e) => handleDragStart(e, item)}
+								ondragover={(e) => handleDragOver(e, index)}
+								ondragleave={handleDragLeave}
+								ondrop={(e) => handleDrop(e, index)}
+								ondragend={handleDragEnd}
+							>
+								<div class="drag-handle">
+									<div class="handle-bars">
+										<div class="bar"></div>
+										<div class="bar"></div>
+										<div class="bar"></div>
+									</div>
+								</div>
+								<div class="item-content">
+									<div class="item-info">
+										<div class="item-title">{item.tab.title}</div>
+										{#if item.tab.artist}
+											<div class="item-artist">{item.tab.artist}</div>
+										{/if}
+										<div class="item-meta">
+											Added by {sessionState?.members.find((m) => m.id === item.addedBy)?.deviceName || 'Unknown'}
+										</div>
+									</div>
+									<div class="item-actions">
+										<button
+											class="action-button"
+											onclick={() => handlePlayTab(item)}
+											title="Play now"
+										>
+											<Play size={18} />
+										</button>
+										<button
+											class="action-button"
+											onclick={() => handleSaveTab(item)}
+											title="Save to library"
+										>
+											<Save size={18} />
+										</button>
+										<button
+											class="action-button danger"
+											onclick={() => handleRemoveTab(item.id)}
+											title="Remove from queue"
+										>
+											<Trash2 size={18} />
+										</button>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
+			<!-- Footer -->
+			<div class="queue-footer">
+				<button class="button-secondary" onclick={handleLeaveSession}>
+					Leave Session
+				</button>
+			</div>
+		</div>
+	</div>[36m
+{/if}
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\SessionQueueView.svelte[39m:108:3
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m	<div class="queue-overlay" onclick={handleClose}>
+		[35m<div class="queue-container" onclick={(e) => e.stopPropagation()}>
+			<!-- Header -->
+			<div class="queue-header">
+				<div class="header-content">
+					<h2>{sessionState.currentSession.name}</h2>
+					<div class="session-info">
+						<div class="info-item">
+							<Users size={16} />
+							<span>{sessionState.members.length} online</span>
+						</div>
+						<button class="code-button" onclick={copyRoomCode}>
+							<span class="code">{formattedCode}</span>
+							<Copy size={14} />
+							{#if showCopiedFeedback}
+								<span class="copied-feedback">Copied!</span>
+							{/if}
+						</button>
+					</div>
+				</div>
+				<button class="close-button" onclick={handleClose}>
+					<X size={24} />
+				</button>
+			</div>
+
+			<!-- Current Tab -->
+			{#if sessionState?.currentTab}
+				<div class="current-tab">
+					<div class="tab-label">NOW PLAYING</div>
+					<div class="tab-info">
+						<Music size={20} />
+						<div class="tab-details">
+							<div class="tab-title">{sessionState.currentTab.tab.title}</div>
+							{#if sessionState.currentTab.tab.artist}
+								<div class="tab-artist">{sessionState.currentTab.tab.artist}</div>
+							{/if}
+						</div>
+					</div>
+					<div class="tab-actions">
+						<button
+							class="action-button"
+							onclick={() => handleSaveTab(sessionState?.currentTab!)}
+							title="Save to library"
+						>
+							<Save size={18} />
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Queue -->
+			<div class="queue-section">
+				<div class="queue-label">
+					QUEUE ({sessionState?.queue.length})
+				</div>
+
+				{#if sessionState?.queue.length === 0}
+					<div class="empty-queue">
+						<Music size={48} />
+						<p>No tabs in queue</p>
+						<p class="empty-hint">Add tabs from your library to get started</p>
+					</div>
+				{:else}
+					<div class="queue-list">
+						{#each sessionState?.queue as item, index (item.id)}
+							<div
+								class="queue-item"
+								class:dragging={draggedItem?.id === item.id}
+								class:drag-over={dragOverIndex === index}
+								class:is-current={item.id === sessionState?.currentSession?.currentTabId}
+								draggable="true"
+								ondragstart={(e) => handleDragStart(e, item)}
+								ondragover={(e) => handleDragOver(e, index)}
+								ondragleave={handleDragLeave}
+								ondrop={(e) => handleDrop(e, index)}
+								ondragend={handleDragEnd}
+							>
+								<div class="drag-handle">
+									<div class="handle-bars">
+										<div class="bar"></div>
+										<div class="bar"></div>
+										<div class="bar"></div>
+									</div>
+								</div>
+								<div class="item-content">
+									<div class="item-info">
+										<div class="item-title">{item.tab.title}</div>
+										{#if item.tab.artist}
+											<div class="item-artist">{item.tab.artist}</div>
+										{/if}
+										<div class="item-meta">
+											Added by {sessionState?.members.find((m) => m.id === item.addedBy)?.deviceName || 'Unknown'}
+										</div>
+									</div>
+									<div class="item-actions">
+										<button
+											class="action-button"
+											onclick={() => handlePlayTab(item)}
+											title="Play now"
+										>
+											<Play size={18} />
+										</button>
+										<button
+											class="action-button"
+											onclick={() => handleSaveTab(item)}
+											title="Save to library"
+										>
+											<Save size={18} />
+										</button>
+										<button
+											class="action-button danger"
+											onclick={() => handleRemoveTab(item.id)}
+											title="Remove from queue"
+										>
+											<Trash2 size={18} />
+										</button>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
+			<!-- Footer -->
+			<div class="queue-footer">
+				<button class="button-secondary" onclick={handleLeaveSession}>
+					Leave Session
+				</button>
+			</div>
+		</div>[36m
+	</div>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\SessionQueueView.svelte[39m:108:3
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m	<div class="queue-overlay" onclick={handleClose}>
+		[35m<div class="queue-container" onclick={(e) => e.stopPropagation()}>
+			<!-- Header -->
+			<div class="queue-header">
+				<div class="header-content">
+					<h2>{sessionState.currentSession.name}</h2>
+					<div class="session-info">
+						<div class="info-item">
+							<Users size={16} />
+							<span>{sessionState.members.length} online</span>
+						</div>
+						<button class="code-button" onclick={copyRoomCode}>
+							<span class="code">{formattedCode}</span>
+							<Copy size={14} />
+							{#if showCopiedFeedback}
+								<span class="copied-feedback">Copied!</span>
+							{/if}
+						</button>
+					</div>
+				</div>
+				<button class="close-button" onclick={handleClose}>
+					<X size={24} />
+				</button>
+			</div>
+
+			<!-- Current Tab -->
+			{#if sessionState?.currentTab}
+				<div class="current-tab">
+					<div class="tab-label">NOW PLAYING</div>
+					<div class="tab-info">
+						<Music size={20} />
+						<div class="tab-details">
+							<div class="tab-title">{sessionState.currentTab.tab.title}</div>
+							{#if sessionState.currentTab.tab.artist}
+								<div class="tab-artist">{sessionState.currentTab.tab.artist}</div>
+							{/if}
+						</div>
+					</div>
+					<div class="tab-actions">
+						<button
+							class="action-button"
+							onclick={() => handleSaveTab(sessionState?.currentTab!)}
+							title="Save to library"
+						>
+							<Save size={18} />
+						</button>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Queue -->
+			<div class="queue-section">
+				<div class="queue-label">
+					QUEUE ({sessionState?.queue.length})
+				</div>
+
+				{#if sessionState?.queue.length === 0}
+					<div class="empty-queue">
+						<Music size={48} />
+						<p>No tabs in queue</p>
+						<p class="empty-hint">Add tabs from your library to get started</p>
+					</div>
+				{:else}
+					<div class="queue-list">
+						{#each sessionState?.queue as item, index (item.id)}
+							<div
+								class="queue-item"
+								class:dragging={draggedItem?.id === item.id}
+								class:drag-over={dragOverIndex === index}
+								class:is-current={item.id === sessionState?.currentSession?.currentTabId}
+								draggable="true"
+								ondragstart={(e) => handleDragStart(e, item)}
+								ondragover={(e) => handleDragOver(e, index)}
+								ondragleave={handleDragLeave}
+								ondrop={(e) => handleDrop(e, index)}
+								ondragend={handleDragEnd}
+							>
+								<div class="drag-handle">
+									<div class="handle-bars">
+										<div class="bar"></div>
+										<div class="bar"></div>
+										<div class="bar"></div>
+									</div>
+								</div>
+								<div class="item-content">
+									<div class="item-info">
+										<div class="item-title">{item.tab.title}</div>
+										{#if item.tab.artist}
+											<div class="item-artist">{item.tab.artist}</div>
+										{/if}
+										<div class="item-meta">
+											Added by {sessionState?.members.find((m) => m.id === item.addedBy)?.deviceName || 'Unknown'}
+										</div>
+									</div>
+									<div class="item-actions">
+										<button
+											class="action-button"
+											onclick={() => handlePlayTab(item)}
+											title="Play now"
+										>
+											<Play size={18} />
+										</button>
+										<button
+											class="action-button"
+											onclick={() => handleSaveTab(item)}
+											title="Save to library"
+										>
+											<Save size={18} />
+										</button>
+										<button
+											class="action-button danger"
+											onclick={() => handleRemoveTab(item.id)}
+											title="Remove from queue"
+										>
+											<Trash2 size={18} />
+										</button>
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+
+			<!-- Footer -->
+			<div class="queue-footer">
+				<button class="button-secondary" onclick={handleLeaveSession}>
+					Leave Session
+				</button>
+			</div>
+		</div>[36m
+	</div>
+[39m
+
+c:\_TABSCROLL\[32msrc\features\sessions\components\SessionQueueView.svelte[39m:172:8
+[33mWarn[39m: `<div>` with a dragstart, dragover, dragleave, drop or dragend handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m						{#each sessionState?.queue as item, index (item.id)}
+							[35m<div
+								class="queue-item"
+								class:dragging={draggedItem?.id === item.id}
+								class:drag-over={dragOverIndex === index}
+								class:is-current={item.id === sessionState?.currentSession?.currentTabId}
+								draggable="true"
+								ondragstart={(e) => handleDragStart(e, item)}
+								ondragover={(e) => handleDragOver(e, index)}
+								ondragleave={handleDragLeave}
+								ondrop={(e) => handleDrop(e, index)}
+								ondragend={handleDragEnd}
+							>
+								<div class="drag-handle">
+									<div class="handle-bars">
+										<div class="bar"></div>
+										<div class="bar"></div>
+										<div class="bar"></div>
+									</div>
+								</div>
+								<div class="item-content">
+									<div class="item-info">
+										<div class="item-title">{item.tab.title}</div>
+										{#if item.tab.artist}
+											<div class="item-artist">{item.tab.artist}</div>
+										{/if}
+										<div class="item-meta">
+											Added by {sessionState?.members.find((m) => m.id === item.addedBy)?.deviceName || 'Unknown'}
+										</div>
+									</div>
+									<div class="item-actions">
+										<button
+											class="action-button"
+											onclick={() => handlePlayTab(item)}
+											title="Play now"
+										>
+											<Play size={18} />
+										</button>
+										<button
+											class="action-button"
+											onclick={() => handleSaveTab(item)}
+											title="Save to library"
+										>
+											<Save size={18} />
+										</button>
+										<button
+											class="action-button danger"
+											onclick={() => handleRemoveTab(item.id)}
+											title="Remove from queue"
+										>
+											<Trash2 size={18} />
+										</button>
+									</div>
+								</div>
+							</div>[36m
+						{/each}
+[39m
+
+c:\_TABSCROLL\[32msrc\lib\components\PWAInstallPrompt.svelte[39m:82:2
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m{#if showPrompt}
+	[35m<div class="pwa-prompt-overlay" onclick={handleDismiss}>
+		<div class="pwa-prompt" onclick={(e) => e.stopPropagation()}>
+			<button class="close-button" onclick={handleDismiss} aria-label="Close">
+				<X size={20} />
+			</button>
+
+			<div class="prompt-content">
+				<div class="app-icon">
+					<img src="/icon-192.png" alt="TabScroll" />
+				</div>
+
+				<h2>Install TabScroll</h2>
+				<p>Install this app on your device for a better experience!</p>
+
+				{#if isIOS}
+					<div class="ios-instructions">
+						<p>To install this app on your iOS device:</p>
+						<ol>
+							<li>Tap the Share button <span class="share-icon">⎋</span></li>
+							<li>Scroll down and tap "Add to Home Screen"</li>
+							<li>Tap "Add" in the top right corner</li>
+						</ol>
+					</div>
+				{:else if deferredPrompt}
+					<button class="install-button" onclick={handleInstall}>
+						<Download size={20} />
+						Install App
+					</button>
+				{/if}
+
+				<button class="dismiss-button" onclick={handleDismiss}>Maybe Later</button>
+			</div>
+		</div>
+	</div>[36m
+{/if}
+[39m
+
+c:\_TABSCROLL\[32msrc\lib\components\PWAInstallPrompt.svelte[39m:82:2
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m{#if showPrompt}
+	[35m<div class="pwa-prompt-overlay" onclick={handleDismiss}>
+		<div class="pwa-prompt" onclick={(e) => e.stopPropagation()}>
+			<button class="close-button" onclick={handleDismiss} aria-label="Close">
+				<X size={20} />
+			</button>
+
+			<div class="prompt-content">
+				<div class="app-icon">
+					<img src="/icon-192.png" alt="TabScroll" />
+				</div>
+
+				<h2>Install TabScroll</h2>
+				<p>Install this app on your device for a better experience!</p>
+
+				{#if isIOS}
+					<div class="ios-instructions">
+						<p>To install this app on your iOS device:</p>
+						<ol>
+							<li>Tap the Share button <span class="share-icon">⎋</span></li>
+							<li>Scroll down and tap "Add to Home Screen"</li>
+							<li>Tap "Add" in the top right corner</li>
+						</ol>
+					</div>
+				{:else if deferredPrompt}
+					<button class="install-button" onclick={handleInstall}>
+						<Download size={20} />
+						Install App
+					</button>
+				{/if}
+
+				<button class="dismiss-button" onclick={handleDismiss}>Maybe Later</button>
+			</div>
+		</div>
+	</div>[36m
+{/if}
+[39m
+
+c:\_TABSCROLL\[32msrc\lib\components\PWAInstallPrompt.svelte[39m:83:3
+[33mWarn[39m: Visible, non-interactive elements with a click event must be accompanied by a keyboard event handler. Consider whether an interactive element such as `<button type="button">` or `<a>` might be more appropriate
+https://svelte.dev/e/a11y_click_events_have_key_events (svelte)
+[36m	<div class="pwa-prompt-overlay" onclick={handleDismiss}>
+		[35m<div class="pwa-prompt" onclick={(e) => e.stopPropagation()}>
+			<button class="close-button" onclick={handleDismiss} aria-label="Close">
+				<X size={20} />
+			</button>
+
+			<div class="prompt-content">
+				<div class="app-icon">
+					<img src="/icon-192.png" alt="TabScroll" />
+				</div>
+
+				<h2>Install TabScroll</h2>
+				<p>Install this app on your device for a better experience!</p>
+
+				{#if isIOS}
+					<div class="ios-instructions">
+						<p>To install this app on your iOS device:</p>
+						<ol>
+							<li>Tap the Share button <span class="share-icon">⎋</span></li>
+							<li>Scroll down and tap "Add to Home Screen"</li>
+							<li>Tap "Add" in the top right corner</li>
+						</ol>
+					</div>
+				{:else if deferredPrompt}
+					<button class="install-button" onclick={handleInstall}>
+						<Download size={20} />
+						Install App
+					</button>
+				{/if}
+
+				<button class="dismiss-button" onclick={handleDismiss}>Maybe Later</button>
+			</div>
+		</div>[36m
+	</div>
+[39m
+
+c:\_TABSCROLL\[32msrc\lib\components\PWAInstallPrompt.svelte[39m:83:3
+[33mWarn[39m: `<div>` with a click handler must have an ARIA role
+https://svelte.dev/e/a11y_no_static_element_interactions (svelte)
+[36m	<div class="pwa-prompt-overlay" onclick={handleDismiss}>
+		[35m<div class="pwa-prompt" onclick={(e) => e.stopPropagation()}>
+			<button class="close-button" onclick={handleDismiss} aria-label="Close">
+				<X size={20} />
+			</button>
+
+			<div class="prompt-content">
+				<div class="app-icon">
+					<img src="/icon-192.png" alt="TabScroll" />
+				</div>
+
+				<h2>Install TabScroll</h2>
+				<p>Install this app on your device for a better experience!</p>
+
+				{#if isIOS}
+					<div class="ios-instructions">
+						<p>To install this app on your iOS device:</p>
+						<ol>
+							<li>Tap the Share button <span class="share-icon">⎋</span></li>
+							<li>Scroll down and tap "Add to Home Screen"</li>
+							<li>Tap "Add" in the top right corner</li>
+						</ol>
+					</div>
+				{:else if deferredPrompt}
+					<button class="install-button" onclick={handleInstall}>
+						<Download size={20} />
+						Install App
+					</button>
+				{/if}
+
+				<button class="dismiss-button" onclick={handleDismiss}>Maybe Later</button>
+			</div>
+		</div>[36m
+	</div>
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-ambiguity.spec.js[39m:235:9
+[31mError[39m: Variable 'logs' implicitly has type 'any[]' in some locations where its type cannot be determined. 
+[36m		// Capture console logs
+		const [35mlogs[36m = [];
+		page.on('console', msg => {
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-ambiguity.spec.js[39m:259:3
+[31mError[39m: Variable 'logs' implicitly has an 'any[]' type. 
+[36m		console.log('\n=== CLIENT-SIDE LOGS ===');
+		[35mlogs[36m.forEach(log => {
+			if (log.text.includes('MusicBrainz') || 
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-ambiguity.spec.js[39m:270:29
+[31mError[39m: Variable 'logs' implicitly has an 'any[]' type. 
+[36m		// Check if key processes were logged
+		const hasMusicBrainzLog = [35mlogs[36m.some(log => log.text.includes('MusicBrainz'));
+		const hasIntentLog = logs.some(log => log.text.includes('Intent') || log.text.includes('intent'));
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-ambiguity.spec.js[39m:271:24
+[31mError[39m: Variable 'logs' implicitly has an 'any[]' type. 
+[36m		const hasMusicBrainzLog = logs.some(log => log.text.includes('MusicBrainz'));
+		const hasIntentLog = [35mlogs[36m.some(log => log.text.includes('Intent') || log.text.includes('intent'));
+		const hasResultLog = logs.some(log => log.text.includes('result') || log.text.includes('Result'));
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-ambiguity.spec.js[39m:272:24
+[31mError[39m: Variable 'logs' implicitly has an 'any[]' type. 
+[36m		const hasIntentLog = logs.some(log => log.text.includes('Intent') || log.text.includes('intent'));
+		const hasResultLog = [35mlogs[36m.some(log => log.text.includes('result') || log.text.includes('Result'));
+
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-debug.spec.js[39m:86:5
+[31mError[39m: Expected 1-3 arguments, but got 4. 
+[36m				null,
+				[35mfalse[36m
+			);
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-debug.spec.js[39m:91:18
+[31mError[39m: 'node.textContent' is possibly 'null'. 
+[36m			while (node = walker.nextNode()) {
+				const text = [35mnode.textContent[36m.trim();
+				if (text.length > 0) {
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-debug.spec.js[39m:131:11
+[31mError[39m: Property 'progressMessages' does not exist on type 'Window & typeof globalThis'. 
+[36m		await page.evaluate(() => {
+			window.[35mprogressMessages[36m = [];
+			const observer = new MutationObserver((mutations) => {
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-debug.spec.js[39m:138:28
+[31mError[39m: Property 'progressMessages' does not exist on type 'Window & typeof globalThis'. 
+[36m							const text = loadingText.textContent;
+							if (text && !window.[35mprogressMessages[36m.includes(text)) {
+								window.progressMessages.push(text);
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-debug.spec.js[39m:139:16
+[31mError[39m: Property 'progressMessages' does not exist on type 'Window & typeof globalThis'. 
+[36m							if (text && !window.progressMessages.includes(text)) {
+								window.[35mprogressMessages[36m.push(text);
+								console.log('Progress update:', text);
+[39m
+
+c:\_TABSCROLL\[32mtests\ai-import-debug.spec.js[39m:168:53
+[31mError[39m: Property 'progressMessages' does not exist on type 'Window & typeof globalThis'. 
+[36m		// Get the collected progress messages
+		const messages = await page.evaluate(() => window.[35mprogressMessages[36m);
+		console.log('Collected progress messages:', messages);
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:12:40
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Check if element has unexpected horizontal overflow
+async function checkHorizontalOverflow([35mpage[36m, selector, description) {
+  const element = page.locator(selector).first();
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:12:46
+[31mError[39m: Parameter 'selector' implicitly has an 'any' type. 
+[36m// Helper: Check if element has unexpected horizontal overflow
+async function checkHorizontalOverflow(page, [35mselector[36m, description) {
+  const element = page.locator(selector).first();
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:12:56
+[31mError[39m: Parameter 'description' implicitly has an 'any' type. 
+[36m// Helper: Check if element has unexpected horizontal overflow
+async function checkHorizontalOverflow(page, selector, [35mdescription[36m) {
+  const element = page.locator(selector).first();
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:33:34
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Check touch target size (minimum 44x44px)
+async function checkTouchTargets([35mpage[36m, selector, description) {
+  const elements = page.locator(selector);
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:33:40
+[31mError[39m: Parameter 'selector' implicitly has an 'any' type. 
+[36m// Helper: Check touch target size (minimum 44x44px)
+async function checkTouchTargets(page, [35mselector[36m, description) {
+  const elements = page.locator(selector);
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:33:50
+[31mError[39m: Parameter 'description' implicitly has an 'any' type. 
+[36m// Helper: Check touch target size (minimum 44x44px)
+async function checkTouchTargets(page, selector, [35mdescription[36m) {
+  const elements = page.locator(selector);
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:55:39
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureAuditScreenshot([35mpage[36m, name, testInfo) {
+  const screenshotDir = 'mobile-audit-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:55:45
+[31mError[39m: Parameter 'name' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureAuditScreenshot(page, [35mname[36m, testInfo) {
+  const screenshotDir = 'mobile-audit-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:55:51
+[31mError[39m: Parameter 'testInfo' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureAuditScreenshot(page, name, [35mtestInfo[36m) {
+  const screenshotDir = 'mobile-audit-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:69:33
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Check viewport fit
+async function checkViewportFit([35mpage[36m, pageName) {
+  const viewportHeight = page.viewportSize().height;
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:69:39
+[31mError[39m: Parameter 'pageName' implicitly has an 'any' type. 
+[36m// Helper: Check viewport fit
+async function checkViewportFit(page, [35mpageName[36m) {
+  const viewportHeight = page.viewportSize().height;
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:75:11
+[31mError[39m: Variable 'issues' implicitly has type 'any[]' in some locations where its type cannot be determined. 
+[36m    const elements = document.querySelectorAll('*');
+    const [35missues[36m = [];
+
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:92:12
+[31mError[39m: Variable 'issues' implicitly has an 'any[]' type. 
+[36m
+    return [35missues[36m;
+  });
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:187:11
+[31mError[39m: Object is possibly 'null'. 
+[36m      // On mobile (width < 480px), should be 1-2 columns max
+      if ([35mpage.viewportSize()[36m.width < 480) {
+        expect(columnCount).toBeLessThanOrEqual(2);
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:341:14
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m    await page.setViewportSize({
+      width: [35mviewport[36m.height,
+      height: viewport.width
+[39m
+
+c:\_TABSCROLL\[32mtests\mobile-audit.spec.js[39m:342:15
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m      width: viewport.height,
+      height: [35mviewport[36m.width
+    });
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:16:31
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Comprehensive overflow detection
+async function detectOverflow([35mpage[36m, testInfo) {
+	const results = await page.evaluate(() => {
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:16:37
+[31mError[39m: Parameter 'testInfo' implicitly has an 'any' type. 
+[36m// Helper: Comprehensive overflow detection
+async function detectOverflow(page, [35mtestInfo[36m) {
+	const results = await page.evaluate(() => {
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:72:37
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Check touch targets
+async function validateTouchTargets([35mpage[36m, testInfo) {
+	const MIN_SIZE = 44;
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:72:43
+[31mError[39m: Parameter 'testInfo' implicitly has an 'any' type. 
+[36m// Helper: Check touch targets
+async function validateTouchTargets(page, [35mtestInfo[36m) {
+	const MIN_SIZE = 44;
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:75:39
+[31mError[39m: Parameter 'minSize' implicitly has an 'any' type. 
+[36m
+	const results = await page.evaluate(([35mminSize[36m) => {
+		const interactiveElements = document.querySelectorAll(
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:80:9
+[31mError[39m: Variable 'failures' implicitly has type 'any[]' in some locations where its type cannot be determined. 
+[36m
+		const [35mfailures[36m = [];
+
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:106:10
+[31mError[39m: Variable 'failures' implicitly has an 'any[]' type. 
+[36m
+		return [35mfailures[36m;
+	}, MIN_SIZE);
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:117:34
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot([35mpage[36m, name, testInfo) {
+	const screenshotDir = 'settings-responsive-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:117:40
+[31mError[39m: Parameter 'name' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot(page, [35mname[36m, testInfo) {
+	const screenshotDir = 'settings-responsive-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:117:46
+[31mError[39m: Parameter 'testInfo' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot(page, name, [35mtestInfo[36m) {
+	const screenshotDir = 'settings-responsive-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:132:29
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Open settings panel
+async function openSettings([35mpage[36m) {
+	await page.goto('/');
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:184:4
+[31mError[39m: Parameter 'issue' implicitly has an 'any' type. 
+[36m		const horizontalOverflows = overflowCheck.issues.filter(
+			[35missue[36m => issue.type === 'ELEMENT_OVERFLOW'
+		);
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:200:11
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m		await page.setViewportSize({
+			width: [35mviewport[36m.height,
+			height: viewport.width
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:201:12
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m			width: viewport.height,
+			height: [35mviewport[36m.width
+		});
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:218:4
+[31mError[39m: Parameter 'issue' implicitly has an 'any' type. 
+[36m		const horizontalOverflows = overflowCheck.issues.filter(
+			[35missue[36m => issue.type === 'ELEMENT_OVERFLOW'
+		);
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:239:54
+[31mError[39m: Parameter 'f' implicitly has an 'any' type. 
+[36m		// Filter out only visible failures
+		const visibleFailures = touchTargetFailures.filter([35mf[36m => f.width > 0 && f.height > 0);
+
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:286:47
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m							height: box.height,
+							fitsHorizontally: box.x + box.width <= [35mviewport[36m.width
+						});
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:290:53
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m						// Component must fit horizontally
+						expect(box.x + box.width).toBeLessThanOrEqual([35mviewport[36m.width + 1); // +1 for rounding
+					}
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:303:7
+[31mError[39m: 'viewportSize' is possibly 'null'. 
+[36m		// Only test on small screens
+		if ([35mviewportSize[36m.width > 380 && viewportSize.height > 650) {
+			test.skip();
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:303:35
+[31mError[39m: 'viewportSize' is possibly 'null'. 
+[36m		// Only test on small screens
+		if (viewportSize.width > 380 && [35mviewportSize[36m.height > 650) {
+			test.skip();
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:379:4
+[31mError[39m: Parameter 'issue' implicitly has an 'any' type. 
+[36m		const horizontalOverflows = overflowCheck.issues.filter(
+			[35missue[36m => issue.type === 'ELEMENT_OVERFLOW'
+		);
+[39m
+
+c:\_TABSCROLL\[32mtests\settings-responsive-validation.spec.js[39m:406:26
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m
+		const viewportHeight = [35mviewport[36m.height;
+		const heightRatio = contentHeight / viewportHeight;
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:11:34
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot([35mpage[36m, name, testInfo) {
+  const screenshotDir = 'tuner-audit-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:11:40
+[31mError[39m: Parameter 'name' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot(page, [35mname[36m, testInfo) {
+  const screenshotDir = 'tuner-audit-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:11:46
+[31mError[39m: Parameter 'testInfo' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot(page, name, [35mtestInfo[36m) {
+  const screenshotDir = 'tuner-audit-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:25:33
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Check element fits in viewport
+async function checkElementFits([35mpage[36m, selector, description) {
+  const element = page.locator(selector).first();
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:25:39
+[31mError[39m: Parameter 'selector' implicitly has an 'any' type. 
+[36m// Helper: Check element fits in viewport
+async function checkElementFits(page, [35mselector[36m, description) {
+  const element = page.locator(selector).first();
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:25:49
+[31mError[39m: Parameter 'description' implicitly has an 'any' type. 
+[36m// Helper: Check element fits in viewport
+async function checkElementFits(page, selector, [35mdescription[36m) {
+  const element = page.locator(selector).first();
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:53:33
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Check touch targets
+async function checkTouchTarget([35mpage[36m, selector, minSize = 44) {
+  const elements = page.locator(selector);
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:53:39
+[31mError[39m: Parameter 'selector' implicitly has an 'any' type. 
+[36m// Helper: Check touch targets
+async function checkTouchTarget(page, [35mselector[36m, minSize = 44) {
+  const elements = page.locator(selector);
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:101:57
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m    const viewport = page.viewportSize();
+    console.log(`[${testInfo.project.name}] Viewport: ${[35mviewport[36m.width}x${viewport.height}`);
+
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:101:75
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m    const viewport = page.viewportSize();
+    console.log(`[${testInfo.project.name}] Viewport: ${viewport.width}x${[35mviewport[36m.height}`);
+
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:151:98
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m      const viewport = page.viewportSize();
+      console.log(`[${testInfo.project.name}] Meter height: ${tuningMeter.height}px, Viewport: ${[35mviewport[36m.height}px`);
+    }
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:260:97
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m
+    console.log(`[${testInfo.project.name}] Total content height: ${totalHeight}px, Viewport: ${[35mviewport[36m.height}px`);
+
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:263:39
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m    // Content should ideally fit or require minimal scrolling
+    const heightRatio = totalHeight / [35mviewport[36m.height;
+    console.log(`[${testInfo.project.name}] Height ratio: ${heightRatio.toFixed(2)}`);
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:298:14
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m    await page.setViewportSize({
+      width: [35mviewport[36m.height,
+      height: viewport.width
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-mobile-audit.spec.js[39m:299:15
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m      width: viewport.height,
+      height: [35mviewport[36m.width
+    });
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:18:31
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Comprehensive overflow detection
+async function detectOverflow([35mpage[36m, testInfo) {
+	const results = await page.evaluate(() => {
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:18:37
+[31mError[39m: Parameter 'testInfo' implicitly has an 'any' type. 
+[36m// Helper: Comprehensive overflow detection
+async function detectOverflow(page, [35mtestInfo[36m) {
+	const results = await page.evaluate(() => {
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:76:37
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Validate touch targets
+async function validateTouchTargets([35mpage[36m, testInfo) {
+	const MIN_SIZE = 44;
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:76:43
+[31mError[39m: Parameter 'testInfo' implicitly has an 'any' type. 
+[36m// Helper: Validate touch targets
+async function validateTouchTargets(page, [35mtestInfo[36m) {
+	const MIN_SIZE = 44;
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:79:39
+[31mError[39m: Parameter 'minSize' implicitly has an 'any' type. 
+[36m
+	const results = await page.evaluate(([35mminSize[36m) => {
+		const interactiveElements = document.querySelectorAll(
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:84:9
+[31mError[39m: Variable 'failures' implicitly has type 'any[]' in some locations where its type cannot be determined. 
+[36m
+		const [35mfailures[36m = [];
+
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:105:10
+[31mError[39m: Variable 'failures' implicitly has an 'any[]' type. 
+[36m
+		return [35mfailures[36m;
+	}, MIN_SIZE);
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:116:34
+[31mError[39m: Parameter 'page' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot([35mpage[36m, name, testInfo) {
+	const screenshotDir = 'responsive-validation-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:116:40
+[31mError[39m: Parameter 'name' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot(page, [35mname[36m, testInfo) {
+	const screenshotDir = 'responsive-validation-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:116:46
+[31mError[39m: Parameter 'testInfo' implicitly has an 'any' type. 
+[36m// Helper: Capture screenshot
+async function captureScreenshot(page, name, [35mtestInfo[36m) {
+	const screenshotDir = 'responsive-validation-screenshots';
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:143:4
+[31mError[39m: Parameter 'issue' implicitly has an 'any' type. 
+[36m		const horizontalOverflows = overflowCheck.issues.filter(
+			[35missue[36m => issue.type === 'ELEMENT_OVERFLOW'
+		);
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:159:11
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m		await page.setViewportSize({
+			width: [35mviewport[36m.height,
+			height: viewport.width
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:160:12
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m			width: viewport.height,
+			height: [35mviewport[36m.width
+		});
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:173:4
+[31mError[39m: Parameter 'issue' implicitly has an 'any' type. 
+[36m		const horizontalOverflows = overflowCheck.issues.filter(
+			[35missue[36m => issue.type === 'ELEMENT_OVERFLOW'
+		);
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:191:54
+[31mError[39m: Parameter 'f' implicitly has an 'any' type. 
+[36m		// Filter out only visible failures
+		const visibleFailures = touchTargetFailures.filter([35mf[36m => f.visible);
+
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:231:46
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m						height: box.height,
+						fitsHorizontally: box.x + box.width <= [35mviewport[36m.width,
+						fitsVertically: box.y + box.height <= viewport.height
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:232:45
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m						fitsHorizontally: box.x + box.width <= viewport.width,
+						fitsVertically: box.y + box.height <= [35mviewport[36m.height
+					});
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:236:52
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m					// Component must fit horizontally
+					expect(box.x + box.width).toBeLessThanOrEqual([35mviewport[36m.width);
+				}
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:276:4
+[31mError[39m: Parameter 'issue' implicitly has an 'any' type. 
+[36m		const horizontalOverflows = overflowCheck.issues.filter(
+			[35missue[36m => issue.type === 'ELEMENT_OVERFLOW'
+		);
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:313:39
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m
+		const heightRatio = contentHeight / [35mviewport[36m.height;
+
+[39m
+
+c:\_TABSCROLL\[32mtests\tuner-responsive-validation.spec.js[39m:317:20
+[31mError[39m: 'viewport' is possibly 'null'. 
+[36m			contentHeight,
+			viewportHeight: [35mviewport[36m.height,
+			ratio: heightRatio.toFixed(2)
+[39m
+
+====================================
+[31msvelte-check found 85 errors and 37 warnings in 16 files
+[39m
